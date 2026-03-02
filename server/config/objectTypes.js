@@ -107,6 +107,63 @@ export const objectTypes = {
     },
   },
 
+  // АС класу 1 2 3
+  class_a_systems: {
+    table: 'class_a_systems',
+    displayName: 'АС класу 1, 2, 3',
+    icon: '🖥️',
+    mainFields: ['subdivisionName', 'systemClass', 'systemName'],
+    nestedTables: {
+      documents: {
+        table: 'class_a_systems_documents',
+        fields: ['docType', 'date', 'number'],
+      },
+      protectionMeans: {
+        table: 'class_a_systems_protection_means',
+        fields: ['name', 'serialNumber', 'releaseYear', 'certificateInfo'],
+      },
+      software: {
+        table: 'class_a_systems_software',
+        fields: ['name', 'version'],
+      },
+      orders: {
+        table: 'class_a_systems_orders',
+        fields: ['orderType', 'number', 'date', 'publisher'],
+      },
+    },
+    foreignKeyName: 'systemId',
+    fields: [
+      'address',
+      'subdivisionName',
+      'subdivisionType',
+      'serviceName',
+      'systemClass',
+      'systemName',
+      'categorizationActDate',
+      'categorizationActNumber',
+      'kzzName',
+      'kzzSerial',
+      'antivirus',
+      'antivirusOpinionNumber',
+      'ttCreateDate',
+      'ttCreateNumber',
+      'formulaDate',
+      'formulaNumber',
+      'passportDate',
+      'passportNumber',
+      'protocolDate',
+      'protocolNumber',
+      'protocolValidUntil',
+      'kspActDate',
+      'kspActNumber',
+      'attestationRegDate',
+      'attestationRegNumber',
+      'attestationDsszziDate',
+      'attestationDsszziNumber',
+      'attestationValidUntil',
+    ],
+  },
+
   'service-premises': {
     table: 'service_premises',
     label: 'Службові приміщення',
@@ -226,3 +283,71 @@ export const objectTypes = {
 
 export const getObjectType = (type) => objectTypes[type];
 export const isValidObjectType = (type) => type in objectTypes;
+
+//////////
+
+export function validateObjectType(req, res, next) {
+  const { objectType } = req.params;
+
+  if (!objectTypes[objectType]) {
+    return res.status(404).json({
+      error: `Unknown object type: ${objectType}`,
+    });
+  }
+
+  req.objectType = objectType;
+  req.config = objectTypes[objectType];
+  next();
+}
+
+export function validateFields(req, res, next) {
+  const { config } = req;
+
+  if (!config || !config.fields) {
+    return res.status(500).json({
+      error: `Invalid config for object type`,
+    });
+  }
+
+  const allowedFields = config.fields || [];
+  const receivedFields = Object.keys(req.body);
+
+  for (const field of receivedFields) {
+    if (
+      !allowedFields.includes(field) &&
+      !Object.keys(config.nestedTables || {}).includes(field)
+    ) {
+      console.warn(`⚠️ Unknown field: ${field}`);
+    }
+  }
+
+  next();
+}
+
+export function validateNestedFields(nestedTables) {
+  return (req, res, next) => {
+    if (!nestedTables) {
+      return next();
+    }
+
+    for (const [key, config] of Object.entries(nestedTables)) {
+      if (Array.isArray(req.body[key])) {
+        req.body[key].forEach((item, index) => {
+          if (!Array.isArray(config.fields)) {
+            return;
+          }
+
+          for (const field of Object.keys(item)) {
+            if (!config.fields.includes(field)) {
+              console.warn(
+                `⚠️ Unknown nested field: ${key}[${index}].${field}`,
+              );
+            }
+          }
+        });
+      }
+    }
+
+    next();
+  };
+}

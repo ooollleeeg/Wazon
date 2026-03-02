@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './styles/App.css';
 import PersonnelTab from './components/tabs/PersonnelTab';
-import ClassASystemsTab from './components/tabs/ClassASystemsTab';
+import ClassASTab from './components/tabs/ClassASTab';
 import ServicePremisesTab from './components/tabs/ServicePremisesTab';
 import CombinedOIDTab from './components/tabs/CombinedOIDTab';
 import KRTTab from './components/tabs/KRTTab';
@@ -35,7 +35,7 @@ const TABS: Tab[] = [
     id: 'class-a',
     label: 'АС класу 1,2,3',
     icon: '📡',
-    component: ClassASystemsTab,
+    component: ClassASTab,
     color: '#764ba2',
   },
   {

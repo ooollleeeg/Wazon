@@ -1,4 +1,4 @@
-import '../styles/PersonnelCard.css';
+import './styles/PersonnelCard.css';
 
 interface PersonnelCardCompactProps {
   id: number;

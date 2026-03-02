@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
-import '../styles/PersonnelCard.css';
+import './styles/PersonnelCard.css';
 
 interface Education {
   id?: number;
@@ -32,6 +32,7 @@ interface PersonnelCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onClose?: () => void;
+  showCloseButton?: boolean;
 }
 
 export default function PersonnelCard({
@@ -49,6 +50,7 @@ export default function PersonnelCard({
   onEdit,
   onDelete,
   onClose,
+  showCloseButton = true,
 }: PersonnelCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -92,13 +94,16 @@ export default function PersonnelCard({
             >
               ✎
             </button>
-            <button
-              className='btn-icon btn-close'
-              onClick={onClose}
-              title='Закрити'
-            >
-              ✕
-            </button>
+            {/* ПОКАЗУЄМО КНОПКУ ТІЛЬКИ ЯКЩО showCloseButton = true */}
+            {showCloseButton && onClose && (
+              <button
+                className='btn-close'
+                onClick={onClose}
+                title='Закрити картку'
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
 

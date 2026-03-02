@@ -1,132 +1,172 @@
 import sqlite3 from 'sqlite3';
-import path from 'path';
 import { fileURLToPath } from 'url';
+import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, '../data/oid_registry.db');
+const dbPath = path.join(__dirname, '../data/vazon.db');
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) console.error('Ошибка подключения:', err);
-  else console.log('✓ Подключено к SQLite: oid_registry.db');
+// ✅ ЕКСПОРТУЙТЕ db
+export const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('❌ Database connection error:', err.message);
+  } else {
+    console.log('✅ Database connected at:', dbPath);
+    initializeDatabase();
+  }
 });
 
-// Миграция: удалить UNIQUE constraint
-db.serialize(() => {
-  // Проверяем, нужна ли миграция
-  db.all('PRAGMA table_info(personnel)', (err, columns) => {
-    if (err) {
-      console.error('Ошибка проверки схемы:', err);
-      return;
-    }
+function initializeDatabase() {
+  db.serialize(() => {
+    // Включаємо зовнішні ключі
+    db.run('PRAGMA foreign_keys = ON');
 
-    console.log('Проверка схемы personnel...');
+    // Таблиці для personnelId
+    db.run(`
+  CREATE TABLE IF NOT EXISTS personnel (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fullName TEXT NOT NULL,
+    position TEXT,
+    officialRank TEXT,
+    actualRank TEXT,
+    dateOfBirth TEXT,
+    email TEXT,
+    phone TEXT,
+    mobilePhone TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
-    // Если таблица существует, пересоздаём её без UNIQUE constraint
-    db.run(
-      `
-      CREATE TABLE IF NOT EXISTS personnel_new (
+    db.run(`
+  CREATE TABLE IF NOT EXISTS personnel_education (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    personnelId INTEGER NOT NULL,
+    institution TEXT,
+    yearCompleted INTEGER,
+    specialties TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (personnelId) REFERENCES personnel(id) ON DELETE CASCADE
+  )
+`);
+
+    db.run(`
+  CREATE TABLE IF NOT EXISTS personnel_certificates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    personnelId INTEGER NOT NULL,
+    certificateNumber TEXT,
+    trainingName TEXT,
+    location TEXT,
+    year INTEGER,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (personnelId) REFERENCES personnel(id) ON DELETE CASCADE
+  )
+`);
+
+    // Таблиці для class_a_systems
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        position TEXT NOT NULL,
-        officialRank TEXT,
-        actualRank TEXT,
-        fullName TEXT NOT NULL,
-        dateOfBirth DATE,
-        email TEXT NOT NULL,
-        phone TEXT,
-        mobilePhone TEXT,
+        address TEXT,
+        subdivisionName TEXT NOT NULL,
+        subdivisionType TEXT,
+        serviceName TEXT,
+        systemClass TEXT NOT NULL,
+        systemName TEXT,
+        categorizationActDate TEXT,
+        categorizationActNumber TEXT,
+        kzzName TEXT,
+        kzzSerial TEXT,
+        antivirus TEXT,
+        antivirusOpinionNumber TEXT,
+        ttCreateDate TEXT,
+        ttCreateNumber TEXT,
+        formulaDate TEXT,
+        formulaNumber TEXT,
+        passportDate TEXT,
+        passportNumber TEXT,
+        protocolDate TEXT,
+        protocolNumber TEXT,
+        protocolValidUntil TEXT,
+        kspActDate TEXT,
+        kspActNumber TEXT,
+        attestationRegDate TEXT,
+        attestationRegNumber TEXT,
+        attestationDsszziDate TEXT,
+        attestationDsszziNumber TEXT,
+        attestationValidUntil TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        docType TEXT,
+        date TEXT,
+        number TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_protection_means (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        name TEXT,
+        serialNumber TEXT,
+        releaseYear INTEGER,
+        certificateInfo TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_software (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        name TEXT,
+        version TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(
+      `
+      CREATE TABLE IF NOT EXISTS class_a_systems_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        orderType TEXT,
+        number TEXT,
+        date TEXT,
+        publisher TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
       )
     `,
       (err) => {
         if (err) {
-          console.error('Ошибка создания personnel_new:', err);
-          return;
+          console.error('❌ Database initialization error:', err.message);
+        } else {
+          console.log('✅ Database tables initialized');
         }
-
-        // Копируем данные из старой таблицы
-        db.run(
-          `
-        INSERT INTO personnel_new 
-        SELECT * FROM personnel
-      `,
-          (err) => {
-            if (err && err.message.includes('no such table')) {
-              // Таблица personnel не существует, просто переименовываем новую
-              console.log('✓ Таблица personnel создана без UNIQUE constraint');
-              return;
-            }
-
-            if (err) {
-              console.error('Ошибка копирования данных:', err);
-              return;
-            }
-
-            // Удаляем старую таблицу и переименовываем новую
-            db.run(`DROP TABLE personnel`, (err) => {
-              if (err) {
-                console.error('Ошибка удаления старой таблицы:', err);
-                return;
-              }
-
-              db.run(`ALTER TABLE personnel_new RENAME TO personnel`, (err) => {
-                if (err) {
-                  console.error('Ошибка переименования таблицы:', err);
-                  return;
-                }
-
-                console.log(
-                  '✓ Таблица personnel мигрирована успешно (UNIQUE constraint удалён)',
-                );
-              });
-            });
-          },
-        );
       },
     );
   });
+}
 
-  // Остальные таблицы...
-  db.run(
-    `
-    CREATE TABLE IF NOT EXISTS personnel_education (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      personnelId INTEGER NOT NULL,
-      institution TEXT NOT NULL,
-      yearCompleted INTEGER,
-      specialties TEXT,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (personnelId) REFERENCES personnel(id) ON DELETE CASCADE
-    )
-  `,
-    (err) => {
-      if (err) console.error('Ошибка создания personnel_education:', err);
-      else console.log('✓ Таблица personnel_education готова');
-    },
-  );
-
-  db.run(
-    `
-    CREATE TABLE IF NOT EXISTS personnel_certificates (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      personnelId INTEGER NOT NULL,
-      certificateNumber TEXT,
-      trainingName TEXT NOT NULL,
-      location TEXT,
-      year INTEGER,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (personnelId) REFERENCES personnel(id) ON DELETE CASCADE
-    )
-  `,
-    (err) => {
-      if (err) console.error('Ошибка создания personnel_certificates:', err);
-      else console.log('✓ Таблица personnel_certificates готова');
-    },
-  );
+// Закрите базу даних при завершенні процеса
+process.on('exit', () => {
+  db.close((err) => {
+    if (err) console.error('Error closing database:', err);
+    else console.log('Database connection closed');
+  });
 });
 
 export default db;

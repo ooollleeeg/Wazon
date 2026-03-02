@@ -1,5 +1,5 @@
 // import React from 'react';
-import '../../styles/DeleteConfirmModal.css';
+import './styles/DeleteConfirmModal.css';
 
 interface DeleteConfirmModalProps {
   fullName: string;

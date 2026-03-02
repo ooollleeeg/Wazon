@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PersonnelCard from './PersonnelCard';
 import PersonnelCardCompact from './PersonnelCardCompact';
-import '../styles/PersonnelList.css';
+import './styles/PersonnelList.css';
 
 interface PersonnelData {
   id: number;
@@ -25,6 +25,41 @@ interface PersonnelListProps {
   isLoading?: boolean;
 }
 
+/**
+ * Функция для вычисления приоритета по названию посади
+ * Высший приоритет = 0, низший = большое число
+ */
+const calculatePriority = (position: string): number => {
+  const positionLower = position.toLowerCase();
+
+  // Приоритет 1: "начальник"
+  if (positionLower.includes('начальник ')) {
+    return 0;
+  }
+
+  // Приоритет 2: "заступник"
+  if (positionLower.includes('заступник')) {
+    return 1;
+  }
+
+  // Приоритет 3+: по длине названия (чем длиннее - тем выше приоритет)
+  // Используем отрицательную длину, чтобы длинные названия шли в начало
+  return 2 + (1000 - position.length) / 100;
+};
+
+/**
+ * Сортируем персонал по приоритету
+ */
+const sortPersonnelByPriority = (
+  personnel: PersonnelData[],
+): PersonnelData[] => {
+  return [...personnel].sort((a, b) => {
+    const priorityA = calculatePriority(a.position);
+    const priorityB = calculatePriority(b.position);
+    return priorityA - priorityB;
+  });
+};
+
 export default function PersonnelList({
   searchTerm = '',
   onEdit,
@@ -39,7 +74,9 @@ export default function PersonnelList({
 
   useEffect(() => {
     if (!searchTerm) {
-      setFilteredPersonnel(personnel);
+      // Сортируем по приоритету, если нет поиска
+      const sorted = sortPersonnelByPriority(personnel);
+      setFilteredPersonnel(sorted);
       return;
     }
 
@@ -50,7 +87,10 @@ export default function PersonnelList({
         p.position.toLowerCase().includes(term) ||
         p.email.toLowerCase().includes(term),
     );
-    setFilteredPersonnel(filtered);
+
+    // Сортируем отфильтрованные результаты тоже
+    const sorted = sortPersonnelByPriority(filtered);
+    setFilteredPersonnel(sorted);
   }, [searchTerm, personnel]);
 
   if (isLoading) {
@@ -67,6 +107,8 @@ export default function PersonnelList({
 
   // Якщо більше 2 карточок - показуємо компактний вид
   const useCompactMode = filteredPersonnel.length > 2;
+  //  ВИЗНАЧАЄМО, ПОТРІБНО ЛИ ПОКАЗУВАТИ КНОПКУ ЗАКРИТТЯ
+  const showCloseButton = filteredPersonnel.length > 2;
 
   return (
     <div className='personnel-list'>
@@ -96,6 +138,7 @@ export default function PersonnelList({
                           setExpandedId(null);
                         }}
                         onClose={() => setExpandedId(null)}
+                        showCloseButton={showCloseButton} // ✅ ПЕРЕДАЄМО ФЛАГ
                       />
                     ))}
                 </div>

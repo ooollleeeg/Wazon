@@ -33,12 +33,14 @@ interface PersonnelFormProps {
   onSubmit: (data: PersonnelFormData) => void;
   initialData?: PersonnelFormData;
   isLoading?: boolean;
+  onClose?: () => void;
 }
 
 export default function PersonnelForm({
   onSubmit,
   initialData,
   isLoading,
+  onClose,
 }: PersonnelFormProps) {
   const [formData, setFormData] = useState<PersonnelFormData>(() => {
     console.log('Initializing form with:', initialData);
@@ -158,6 +160,22 @@ export default function PersonnelForm({
 
   return (
     <form className='personnel-form' onSubmit={handleSubmit}>
+      {/* FORM HEADER WITH CLOSE BUTTON */}
+      <div className='form-header'>
+        <h2 className='form-title'>
+          {initialData ? '✎ Редагування запису' : 'Новий запис'}
+        </h2>
+        <button
+          type='button'
+          className='form-close-btn'
+          onClick={onClose}
+          title='Закрити форму'
+          aria-label='Закрити'
+        >
+          ✕
+        </button>
+      </div>
+
       {/* ОСНОВНА ІНФОРМАЦІЯ */}
       <section className='form-section'>
         <h3>Основна інформація</h3>

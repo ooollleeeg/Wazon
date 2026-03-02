@@ -1,46 +1,66 @@
 import { useState, useEffect, useRef } from 'react';
-import PersonnelForm from '../personnel/PersonnelForm';
-import PersonnelList from '../personnel/PersonnelList';
+import ClassASForm from '../class-as/ClassASForm';
+import ClassASList from '../class-as/ClassASList';
 import '../../styles/TabContent.css';
 
-interface PersonnelData {
+interface ClassASData {
   id: number;
-  position: string;
-  officialRank: string;
-  actualRank: string;
-  fullName: string;
-  dateOfBirth: string;
-  email: string;
-  phone: string;
-  mobilePhone: string;
-  education: any[];
-  certificates: any[];
+  address: string;
+  subdivisionName: string;
+  subdivisionType: string;
+  serviceName: string;
+  systemClass: string;
+  systemName: string;
+  categorizationActDate: string;
+  categorizationActNumber: string;
+  kzzName: string;
+  kzzSerial: string;
+  antivirus: string;
+  antivirusOpinionNumber: string;
+  ttCreateDate: string;
+  ttCreateNumber: string;
+  formulaDate: string;
+  formulaNumber: string;
+  passportDate: string;
+  passportNumber: string;
+  protocolDate: string;
+  protocolNumber: string;
+  protocolValidUntil: string;
+  kspActDate: string;
+  kspActNumber: string;
+  attestationRegDate: string;
+  attestationRegNumber: string;
+  attestationDsszziDate: string;
+  attestationDsszziNumber: string;
+  attestationValidUntil: string;
+  documents: any[];
+  protectionMeans: any[];
+  software: any[];
+  orders: any[];
 }
 
-export default function PersonnelTab() {
-  const [personnel, setPersonnel] = useState<PersonnelData[]>([]);
+export default function ClassASTab() {
+  const [systems, setSystems] = useState<ClassASData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Ref для прокрутки в начало формы
   const formContainerRef = useRef<HTMLDivElement>(null);
 
-  // Загрузить список персонала
   useEffect(() => {
-    console.log('PersonnelTab mounted, fetching personnel...');
-    fetchPersonnel();
+    console.log('ClassASTab mounted, fetching systems...');
+    fetchSystems();
   }, []);
 
-  const fetchPersonnel = async () => {
+  const fetchSystems = async () => {
     try {
       setIsLoading(true);
       setError('');
-      console.log('Fetching from /api/objects/personnel');
+      console.log('Fetching from /api/objects/class_a_systems');
 
-      const response = await fetch('/api/objects/personnel');
+      const response = await fetch('/api/objects/class_a_systems');
 
       console.log('Response status:', response.status);
 
@@ -50,7 +70,7 @@ export default function PersonnelTab() {
 
       const data = await response.json();
       console.log('Received data:', data);
-      setPersonnel(data);
+      setSystems(data);
     } catch (err) {
       console.error('Fetch error:', err);
       setError(`Помилка завантаження: ${(err as Error).message}`);
@@ -59,15 +79,14 @@ export default function PersonnelTab() {
     }
   };
 
-  // Сохранить новый или обновить
-  const handleSubmit = async (data: Omit<PersonnelData, 'id'>) => {
+  const handleSubmit = async (data: ClassASData) => {
     try {
       setIsLoading(true);
       setError('');
 
       const url = editingId
-        ? `/api/objects/personnel/${editingId}`
-        : '/api/objects/personnel';
+        ? `/api/objects/class_a_systems/${editingId}`
+        : '/api/objects/class_a_systems';
       const method = editingId ? 'PUT' : 'POST';
 
       console.log('=== SUBMIT START ===');
@@ -94,7 +113,7 @@ export default function PersonnelTab() {
       const result = await response.json();
       console.log('Success response:', result);
 
-      await fetchPersonnel();
+      await fetchSystems();
       setShowForm(false);
       setEditingId(null);
       console.log('=== SUBMIT END (SUCCESS) ===');
@@ -106,15 +125,14 @@ export default function PersonnelTab() {
     }
   };
 
-  // Удалить
   const handleDelete = async (id: number) => {
     try {
       setIsLoading(true);
       setError('');
 
-      console.log('Deleting personnel:', id);
+      console.log('Deleting system:', id);
 
-      const response = await fetch(`/api/objects/personnel/${id}`, {
+      const response = await fetch(`/api/objects/class_a_systems/${id}`, {
         method: 'DELETE',
       });
 
@@ -122,8 +140,8 @@ export default function PersonnelTab() {
         throw new Error('Помилка видалення');
       }
 
-      console.log('Personnel deleted successfully');
-      await fetchPersonnel();
+      console.log('System deleted successfully');
+      await fetchSystems();
     } catch (err) {
       console.error('Delete error:', err);
       setError(`Помилка видалення: ${(err as Error).message}`);
@@ -132,13 +150,12 @@ export default function PersonnelTab() {
     }
   };
 
-  const handleEdit = (p: PersonnelData) => {
+  const handleEdit = (system: ClassASData) => {
     console.log('=== EDIT START ===');
-    console.log('Personnel data:', p);
-    setEditingId(p.id || null);
+    console.log('System data:', system);
+    setEditingId(system.id || null);
     setShowForm(true);
 
-    // Прокрутка к форме с небольшой задержкой
     setTimeout(() => {
       if (formContainerRef.current) {
         formContainerRef.current.scrollIntoView({
@@ -156,6 +173,10 @@ export default function PersonnelTab() {
     setEditingId(null);
   };
 
+  const handleFormSubmit = (data: any) => {
+    handleSubmit({ ...data, id: editingId || 0 });
+  };
+
   return (
     <div className='tab-content-wrapper'>
       {error && (
@@ -169,7 +190,7 @@ export default function PersonnelTab() {
         <input
           type='text'
           className='search-input'
-          placeholder='Пошук по ПІБ, посаді, email...'
+          placeholder='Пошук по адресі, назві підрозділу, назві АС...'
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -189,17 +210,17 @@ export default function PersonnelTab() {
               }, 100);
             }}
           >
-            + Додати працівника
+            + Додати АС
           </button>
         )}
       </div>
 
       {showForm && (
         <div className='form-container' ref={formContainerRef}>
-          <PersonnelForm
-            onSubmit={handleSubmit}
+          <ClassASForm
+            onSubmit={handleFormSubmit}
             initialData={
-              editingId ? personnel.find((p) => p.id === editingId) : undefined
+              editingId ? systems.find((s) => s.id === editingId) : undefined
             }
             isLoading={isLoading}
             onClose={handleCloseForm}
@@ -207,8 +228,8 @@ export default function PersonnelTab() {
         </div>
       )}
 
-      <PersonnelList
-        personnel={personnel}
+      <ClassASList
+        systems={systems}
         searchTerm={searchTerm}
         onEdit={handleEdit}
         onDelete={handleDelete}

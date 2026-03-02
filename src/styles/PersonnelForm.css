@@ -183,6 +183,50 @@
   cursor: not-allowed;
 }
 
+/* FORM HEADER */
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid #f0f0f0;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.form-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.form-close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+  transform: scale(1.1);
+}
+
+.form-close-btn:active {
+  transform: scale(0.95);
+}
+
 @media (max-width: 768px) {
   .personnel-form {
     padding: 15px;
