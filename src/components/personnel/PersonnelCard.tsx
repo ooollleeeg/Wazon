@@ -242,7 +242,7 @@ export default function PersonnelCard({
       {/* МОДАЛЬНОЕ ОКНО УДАЛЕНИЯ */}
       {showDeleteModal && (
         <DeleteConfirmModal
-          fullName={fullName}
+          fullName={`працівника ${fullName}`} // ✅ ПЕРЕДАЄМО ПОВНЕ ІМ'Я
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteModal(false)}
         />

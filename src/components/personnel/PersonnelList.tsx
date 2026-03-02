@@ -26,29 +26,29 @@ interface PersonnelListProps {
 }
 
 /**
- * Функция для вычисления приоритета по названию посади
- * Высший приоритет = 0, низший = большое число
+ * Функція для обчислення пріоритету по назві посади
+ * Вищий пріоритет = 0, нижчий = велике число
  */
 const calculatePriority = (position: string): number => {
   const positionLower = position.toLowerCase();
 
-  // Приоритет 1: "начальник"
+  // Пріоритет 1: "начальник"
   if (positionLower.includes('начальник ')) {
     return 0;
   }
 
-  // Приоритет 2: "заступник"
+  // Пріоритет 2: "заступник"
   if (positionLower.includes('заступник')) {
     return 1;
   }
 
-  // Приоритет 3+: по длине названия (чем длиннее - тем выше приоритет)
-  // Используем отрицательную длину, чтобы длинные названия шли в начало
+  // Пріоритет 3+: по довжині назви (чим довше - тим вищий пріоритет)
+  // Використовуємо від'ємну довжину, щоб довгі назви йшли на початок
   return 2 + (1000 - position.length) / 100;
 };
 
 /**
- * Сортируем персонал по приоритету
+ * Сортуємо персонал по пріоритету
  */
 const sortPersonnelByPriority = (
   personnel: PersonnelData[],
@@ -74,7 +74,7 @@ export default function PersonnelList({
 
   useEffect(() => {
     if (!searchTerm) {
-      // Сортируем по приоритету, если нет поиска
+      // Сортуємо по пріоритету, якщо немає пошуку
       const sorted = sortPersonnelByPriority(personnel);
       setFilteredPersonnel(sorted);
       return;
@@ -88,7 +88,7 @@ export default function PersonnelList({
         p.email.toLowerCase().includes(term),
     );
 
-    // Сортируем отфильтрованные результаты тоже
+    // Сортуємо відфільтровані результати теж
     const sorted = sortPersonnelByPriority(filtered);
     setFilteredPersonnel(sorted);
   }, [searchTerm, personnel]);
@@ -164,7 +164,7 @@ export default function PersonnelList({
           )}
         </div>
       ) : (
-        // ПОВНИЙ ВИД - Повні карточки
+        // ПОВНИЙ ВИД - Повні картки
         <div className='cards-container full-mode'>
           {filteredPersonnel.length > 0 ? (
             filteredPersonnel.map((p) => (

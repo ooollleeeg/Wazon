@@ -27,10 +27,11 @@ export default function DeleteConfirmModal({
         <div className='modal-body'>
           <p className='warning-icon'>⚠️</p>
           <p className='warning-text'>
-            Зараз усі дані про працівника <strong>{fullName}</strong> будуть
-            видалені.
+            Зараз усі дані про <strong>{fullName}</strong> будуть видалені.
           </p>
-          <p className='warning-subtext'>Ця операція не може бути скасована.</p>
+          <p className='warning-subtext'>
+            Після видалення цю інформацію неможливо буде відновити
+          </p>
         </div>
 
         <div className='modal-actions'>
@@ -46,7 +47,7 @@ export default function DeleteConfirmModal({
             onClick={onConfirm}
             disabled={isLoading}
           >
-            {isLoading ? 'Видаління...' : 'Так, видалити'}
+            {isLoading ? 'Видалення...' : 'Так, видалити'}
           </button>
         </div>
       </div>

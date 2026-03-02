@@ -99,8 +99,9 @@
 
 .warning-subtext {
   margin: 0;
-  font-size: 13px;
-  color: #999;
+  font-size: 16px;
+  font-weight: bold;
+  color: #c92a2a;
 }
 
 .modal-actions {
