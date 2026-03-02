@@ -1,32 +1,54 @@
-
 ```
 vazon
 ├─ data
-│  └─ oid_registry.db
 ├─ index.html
 ├─ package-lock.json
 ├─ package.json
 ├─ project_structure.txt
+├─ README.md
 ├─ server
+│  ├─ # Code Citations.md
+│  ├─ config
+│  │  └─ objectTypes.js
 │  ├─ database.js
 │  ├─ index.js
-│  └─ routes.js
+│  ├─ routes.js
+│  └─ utils
+│     └─ dbHelpers.js
 ├─ src
 │  ├─ App.tsx
 │  ├─ components
+│  │  ├─ class-as
+│  │  │  ├─ ClassASCard.tsx
+│  │  │  ├─ ClassASCardCompact.tsx
+│  │  │  ├─ ClassASForm.tsx
+│  │  │  ├─ ClassASList.tsx
+│  │  │  └─ styles
+│  │  │     ├─ ClassASCard.css
+│  │  │     ├─ ClassASCardCompact.css
+│  │  │     ├─ ClassASForm.css
+│  │  │     └─ ClassASList.css
 │  │  ├─ FireEquipmentCard.tsx
 │  │  ├─ FireEquipmentForm.tsx
 │  │  ├─ FireEquipmentList.tsx
+│  │  ├─ modals
+│  │  │  ├─ DeleteConfirmModal.tsx
+│  │  │  └─ styles
+│  │  │     └─ DeleteConfirmModal.css
 │  │  ├─ personnel
 │  │  │  ├─ PersonnelCard.tsx
+│  │  │  ├─ PersonnelCardCompact.tsx
 │  │  │  ├─ PersonnelForm.tsx
-│  │  │  └─ PersonnelList.tsx
+│  │  │  ├─ PersonnelList.tsx
+│  │  │  └─ styles
+│  │  │     ├─ PersonnelCard.css
+│  │  │     └─ PersonnelList.css
 │  │  ├─ PropertyCard.tsx
 │  │  ├─ PropertyForm.tsx
 │  │  ├─ PropertyList.tsx
 │  │  └─ tabs
 │  │     ├─ AntivirusTab.tsx
-│  │     ├─ ClassASystemsTab.tsx
+│  │     ├─ ClassASTab.tsx
 │  │     ├─ CombinedOIDTab.tsx
 │  │     ├─ DocumentsTab.tsx
 │  │     ├─ ElectricalTab.tsx
@@ -46,6 +68,7 @@ vazon
 │  ├─ main.tsx
 │  └─ styles
 │     ├─ App.css
+│     ├─ PersonnelForm.css
 │     ├─ PropertyCard.css
 │     ├─ PropertyForm.css
 │     ├─ PropertyList.css
