@@ -140,8 +140,8 @@ function App() {
         }}
       >
         <div className='header-content'>
-          <h1>📋 Відділ технічного захисту інформації</h1>
-          <p className='subtitle'>Система управління данними</p>
+          <h1>📋 Інформаційно-пошукова система "ВАЗОН"</h1>
+          <p className='subtitle'>Технічний захист інформації</p>
         </div>
         <button
           className='menu-toggle'

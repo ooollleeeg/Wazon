@@ -280,7 +280,7 @@ export default function PersonnelForm({
                   </div>
 
                   <div className='form-group'>
-                    <label>Рік закінчення *</label>
+                    <label>Рік завершення навчання *</label>
                     <input
                       type='number'
                       value={edu.yearCompleted || new Date().getFullYear()}

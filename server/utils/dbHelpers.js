@@ -213,7 +213,7 @@ export const createObjectWithNested = (config, data) => {
                   console.log(
                     `✅ ${nestedKey} record created with ID: ${this.lastID}`,
                   );
-                  resolveNested();
+                  // resolveNested();
                 });
               }
             }
