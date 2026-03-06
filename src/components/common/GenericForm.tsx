@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './GenericForm.css';
 
 export interface FormField {
   name: string;
@@ -62,11 +63,7 @@ export default function GenericForm({
     // Добавляем основные поля
     config.sections.forEach((section) => {
       section.fields.forEach((field) => {
-        if (field.type === 'number') {
-          emptyForm[field.name] = '';
-        } else {
-          emptyForm[field.name] = '';
-        }
+        emptyForm[field.name] = '';
       });
     });
 
@@ -175,6 +172,66 @@ export default function GenericForm({
     );
   };
 
+  // ✅ ОКРЕМИЙ РЕНДЕРЕР ДЛЯ ВЛОЖЕНИХ ПОЛІВ
+  const renderNestedField = (
+    field: FormField,
+    value: any,
+    nestedName: string,
+    itemIndex: number,
+  ) => {
+    const fieldClass = field.fullWidth ? 'full-width' : '';
+
+    if (field.type === 'select') {
+      return (
+        <div key={field.name} className={`form-group ${fieldClass}`}>
+          <label>
+            {field.label}
+            {field.required && ' *'}
+          </label>
+          <select
+            value={value || ''}
+            onChange={(e) =>
+              updateNestedItem(
+                nestedName,
+                itemIndex,
+                field.name,
+                e.target.value,
+              )
+            }
+            required={field.required}
+          >
+            <option value=''>Виберіть опцію</option>
+            {field.options?.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    return (
+      <div key={field.name} className={`form-group ${fieldClass}`}>
+        <label>
+          {field.label}
+          {field.required && ' *'}
+        </label>
+        <input
+          type={field.type}
+          value={value || ''}
+          onChange={(e) =>
+            updateNestedItem(nestedName, itemIndex, field.name, e.target.value)
+          }
+          required={field.required}
+          placeholder={field.placeholder}
+          min={field.min}
+          max={field.max}
+        />
+      </div>
+    );
+  };
+
   return (
     <form className='generic-form' onSubmit={handleSubmit}>
       {/* FORM HEADER */}
@@ -240,7 +297,13 @@ export default function GenericForm({
 
                 <div className='form-grid'>
                   {nestedConfig.fields.map((field) =>
-                    renderField(field, item[field.name]),
+                    // ✅ ВИКОРИСТОВУЄМО renderNestedField ЗІ ЗВИЧАЙНОЇ ФУНКЦІЇ
+                    renderNestedField(
+                      field,
+                      item[field.name],
+                      nestedConfig.name,
+                      itemIdx,
+                    ),
                   )}
                 </div>
               </div>

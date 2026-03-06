@@ -5,7 +5,44 @@ export const objectTypes = {
     label: 'Особовий склад',
     icon: '👥',
     fields: [
-      { name: 'position', label: 'Посада', type: 'text', required: true },
+      {
+        name: 'fullName',
+        label: "Прізвище, ім'я, по-батькові",
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'dateOfBirth',
+        label: 'Дата народження',
+        type: 'date',
+        required: true,
+      },
+
+      {
+        name: 'dateOfOvs',
+        label: 'З якого часу в ОВС',
+        type: 'date',
+        required: false,
+      },
+      {
+        name: 'dateOfNpu',
+        label: 'З якого часу в НПУ',
+        type: 'date',
+        required: false,
+      },
+
+      {
+        name: 'position',
+        label: 'Посада',
+        type: 'text',
+        required: true,
+      },
+      {
+        name: 'dateOfPosition',
+        label: 'З якого часу на посаді',
+        type: 'date',
+        required: false,
+      },
       {
         name: 'officialRank',
         label: 'Спец. звання за посадою',
@@ -19,22 +56,23 @@ export const objectTypes = {
         required: false,
       },
       {
-        name: 'fullName',
-        label: "Прізвище, ім'я, по-батькові",
+        name: 'department',
+        label: 'Підрозділ',
         type: 'text',
-        required: true,
+        required: false,
       },
       {
-        name: 'dateOfBirth',
-        label: 'Дата народження',
+        name: 'dateOfDepartment',
+        label: 'З якого часу в підрозділі',
         type: 'date',
-        required: true,
+        required: false,
       },
+
       {
         name: 'email',
         label: 'Службовий EMAIL',
         type: 'email',
-        required: true,
+        required: false,
       },
       {
         name: 'phone',
@@ -61,16 +99,22 @@ export const objectTypes = {
             required: true,
           },
           {
+            name: 'specialties',
+            label: 'Спеціальність',
+            type: 'text',
+            required: false,
+          },
+          {
+            name: 'educationRank',
+            label: 'Здобутий рівень освіти',
+            type: 'text',
+            required: false,
+          },
+          {
             name: 'yearCompleted',
             label: 'Рік закінчення',
             type: 'number',
             required: true,
-          },
-          {
-            name: 'specialties',
-            label: 'Спеціальності',
-            type: 'json',
-            required: false,
           },
         ],
       },
@@ -79,17 +123,18 @@ export const objectTypes = {
         label: 'Свідоцтва про перепідготовку/підвищення',
         fields: [
           {
-            name: 'certificateNumber',
-            label: 'Номер свідоцтва',
-            type: 'text',
-            required: false,
-          },
-          {
             name: 'trainingName',
             label: 'Назва курсу/семінару',
             type: 'text',
             required: true,
           },
+          {
+            name: 'certificateNumber',
+            label: 'Номер свідоцтва',
+            type: 'text',
+            required: false,
+          },
+
           {
             name: 'location',
             label: 'Місце проведення',

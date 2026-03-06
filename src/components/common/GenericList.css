@@ -1,0 +1,502 @@
+/* ============================================================================
+   GENERIC LIST STYLES - Modern, Professional, Responsive
+   ============================================================================ */
+
+.generic-list {
+  width: 100%;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================================================
+   LIST HEADER
+   ============================================================================ */
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: white;
+  border-bottom: 2px solid #edf2f7;
+  border-radius: 12px 12px 0 0;
+  margin-bottom: 0.5rem;
+}
+
+.count {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #718096;
+}
+
+/* ============================================================================
+   EMPTY & NO RESULTS STATES
+   ============================================================================ */
+
+.empty-state,
+.no-results {
+  padding: 4rem 2rem;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  margin: 1rem 0;
+  color: #718096;
+  border: 2px dashed #e2e8f0;
+}
+
+.empty-state p,
+.no-results p {
+  font-size: 1rem;
+  margin: 0;
+  color: #718096;
+}
+
+.empty-state {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-results {
+  padding: 2rem;
+  margin: 1rem 0;
+}
+
+/* ============================================================================
+   LOADING STATE
+   ============================================================================ */
+
+.loading {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #718096;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   CARDS CONTAINER
+   ============================================================================ */
+
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0;
+}
+
+/* ============================================================================
+   COMPACT MODE STYLES
+   ============================================================================ */
+
+.cards-container.compact-mode {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.expanded-card-wrapper {
+  grid-column: 1 / -1;
+  animation: expandCard 0.3s ease-out;
+}
+
+@keyframes expandCard {
+  from {
+    opacity: 0;
+    transform: scaleY(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.compact-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* ============================================================================
+   FULL MODE STYLES
+   ============================================================================ */
+
+.cards-container.full-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cards-container.full-mode .generic-card {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* ============================================================================
+   CARD COMPACT VIEW STYLES
+   ============================================================================ */
+
+.compact-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.compact-card:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateX(4px);
+}
+
+.compact-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.compact-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+  word-break: break-word;
+}
+
+.compact-card-subtitle {
+  font-size: 0.85rem;
+  color: #718096;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-card-info {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-compact-action {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: none;
+  background: #edf2f7;
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.btn-compact-action:hover {
+  background: #e2e8f0;
+  transform: scale(1.05);
+}
+
+.btn-compact-action:active {
+  transform: scale(0.95);
+}
+
+.btn-compact-action.btn-edit {
+  background: #c3dafe;
+  color: #2c5282;
+}
+
+.btn-compact-action.btn-edit:hover {
+  background: #a3bffa;
+}
+
+.btn-compact-action.btn-delete {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.btn-compact-action.btn-delete:hover {
+  background: #fc8181;
+  color: white;
+}
+
+/* ============================================================================
+   PERSONNEL CARD COMPACT SPECIFIC
+   ============================================================================ */
+
+.personnel-card-compact {
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: slideIn 0.3s ease-out;
+}
+
+.personnel-card-compact:hover {
+  border-color: #667eea;
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.15);
+  transform: translateY(-4px);
+}
+
+.personnel-card-compact .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.personnel-card-compact .header-left {
+  flex: 1;
+}
+
+.personnel-card-compact .name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2d3748;
+  word-break: break-word;
+}
+
+.personnel-card-compact .position {
+  font-size: 0.9rem;
+  color: #667eea;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.personnel-card-compact .compact-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.personnel-card-compact .compact-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.personnel-card-compact .info-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #a0aec0;
+  letter-spacing: 0.3px;
+}
+
+.personnel-card-compact .info-value {
+  font-size: 0.9rem;
+  color: #2d3748;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.personnel-card-compact .card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-direction: column;
+}
+
+.personnel-card-compact .btn-action {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.personnel-card-compact .btn-edit {
+  background: #c3dafe;
+  color: #2c5282;
+}
+
+.personnel-card-compact .btn-edit:hover {
+  background: #a3bffa;
+  transform: scale(1.02);
+}
+
+.personnel-card-compact .btn-delete {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.personnel-card-compact .btn-delete:hover {
+  background: #fc8181;
+  color: white;
+  transform: scale(1.02);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 1024px) {
+  .compact-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .list-header {
+    padding: 1rem;
+  }
+
+  .compact-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .compact-card {
+    padding: 0.75rem;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .compact-card-content {
+    width: 100%;
+  }
+
+  .compact-card-subtitle {
+    white-space: normal;
+  }
+
+  .compact-card-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .personnel-card-compact {
+    padding: 1rem;
+  }
+
+  .personnel-card-compact .compact-info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .empty-state,
+  .no-results {
+    padding: 2rem 1rem;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-header {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .count {
+    font-size: 0.85rem;
+  }
+
+  .compact-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .compact-card {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .compact-card-title {
+    font-size: 0.95rem;
+  }
+
+  .compact-card-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .compact-card-actions {
+    gap: 0.25rem;
+  }
+
+  .btn-compact-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .personnel-card-compact {
+    padding: 0.75rem;
+  }
+
+  .personnel-card-compact .name {
+    font-size: 1rem;
+  }
+
+  .personnel-card-compact .position {
+    font-size: 0.85rem;
+  }
+
+  .personnel-card-compact .compact-info-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .personnel-card-compact .card-actions {
+    flex-direction: row;
+    gap: 0.25rem;
+  }
+
+  .personnel-card-compact .btn-action {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .empty-state,
+  .no-results {
+    padding: 1.5rem 1rem;
+  }
+}

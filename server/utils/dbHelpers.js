@@ -173,47 +173,59 @@ export const createObjectWithNested = (config, data) => {
             if (nestedItems.length > 0) {
               console.log(`📦 Inserting ${nestedItems.length} ${nestedKey}`);
 
+              // ✅ ЧЕКАЄМО завершення всіх вложених вставок
               for (const item of nestedItems) {
                 // ✅ Пропускаємо порожні або невалідні записи
                 if (!item || typeof item !== 'object') {
                   console.warn(`⚠️ Invalid nested item in ${nestedKey}`, item);
-                  return;
+                  continue; // ✅ continue замість return
                 }
 
+                // ✅ ФІЛЬТРУЄМО тільки непусті поля
                 const nestedFields = Object.keys(item).filter(
-                  (f) => f !== 'id' && item[f] !== undefined,
+                  (f) => f !== 'id' && item[f] !== undefined && item[f] !== '',
                 );
-                const nestedValues = [
-                  ...nestedFields.map((f) => {
-                    const val = item[f];
-                    // ✅ Конвертуємо об'єкти в string
-                    if (val && typeof val === 'object') {
-                      return JSON.stringify(val);
-                    }
-                    return val ?? null;
-                  }),
-                  id,
-                ];
-                const nestedPlaceholders = nestedFields
-                  .map(() => '?')
-                  .join(', ');
 
-                const nestedQuery = `INSERT INTO ${nestedConfig.table} (${[...nestedFields, foreignKeyName].join(', ')}) VALUES (${nestedPlaceholders}, ?)`;
+                if (nestedFields.length === 0) {
+                  console.warn(`⚠️ No valid fields in nested item`, item);
+                  continue;
+                }
 
-                console.log(`  ↳ ${nestedConfig.table}:`, nestedValues);
-
-                db.run(nestedQuery, nestedValues, function (nestedErr) {
-                  if (nestedErr) {
-                    console.error(
-                      `❌ Nested insert error (${nestedKey}):`,
-                      nestedErr.message,
-                    );
-                    return reject(nestedErr);
+                const nestedValues = nestedFields.map((f) => {
+                  const val = item[f];
+                  // ✅ Конвертуємо об'єкти в string
+                  if (val && typeof val === 'object') {
+                    return JSON.stringify(val);
                   }
-                  console.log(
-                    `✅ ${nestedKey} record created with ID: ${this.lastID}`,
-                  );
-                  // resolveNested();
+                  return val ?? null;
+                });
+
+                const allFields = [...nestedFields, foreignKeyName];
+                const allValues = [...nestedValues, id];
+                const nestedPlaceholders = allFields.map(() => '?').join(', ');
+
+                const nestedQuery = `INSERT INTO ${nestedConfig.table} (${allFields.join(', ')}) VALUES (${nestedPlaceholders})`;
+
+                console.log(`  ↳ ${nestedConfig.table}:`, {
+                  fields: allFields,
+                  values: allValues,
+                });
+
+                // ✅ ЧЕКАЄМО кожну вставку
+                await new Promise((resolveNested, rejectNested) => {
+                  db.run(nestedQuery, allValues, function (nestedErr) {
+                    if (nestedErr) {
+                      console.error(
+                        `❌ Nested insert error (${nestedKey}):`,
+                        nestedErr.message,
+                      );
+                      return rejectNested(nestedErr);
+                    }
+                    console.log(
+                      `✅ ${nestedKey} record created with ID: ${this.lastID}`,
+                    );
+                    resolveNested();
+                  });
                 });
               }
             }

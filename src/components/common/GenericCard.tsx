@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
+import './GenericCard.css';
 
 export interface CardSection {
   title: string;
@@ -120,7 +121,7 @@ export default function GenericCard({
             </button>
             {showCloseButton && onClose && (
               <button
-                className='btn-close'
+                className='btn-icon btn-close'
                 onClick={onClose}
                 title='Закрити картку'
               >

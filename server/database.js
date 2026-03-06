@@ -27,10 +27,16 @@ function initializeDatabase() {
   CREATE TABLE IF NOT EXISTS personnel (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fullName TEXT NOT NULL,
+    dateOfBirth TEXT,
+    dateOfOvs TEXT,
+    dateOfNpu TEXT,
     position TEXT,
+    dateOfPosition TEXT,
     officialRank TEXT,
     actualRank TEXT,
-    dateOfBirth TEXT,
+    department TEXT,
+    dateOfDepartment TEXT,
+    
     email TEXT,
     phone TEXT,
     mobilePhone TEXT,
@@ -44,8 +50,9 @@ function initializeDatabase() {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     personnelId INTEGER NOT NULL,
     institution TEXT,
-    yearCompleted INTEGER,
     specialties TEXT,
+    educationRank TEXT,
+    yearCompleted INTEGER,    
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (personnelId) REFERENCES personnel(id) ON DELETE CASCADE
   )
@@ -55,8 +62,8 @@ function initializeDatabase() {
   CREATE TABLE IF NOT EXISTS personnel_certificates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     personnelId INTEGER NOT NULL,
-    certificateNumber TEXT,
     trainingName TEXT,
+    certificateNumber TEXT,
     location TEXT,
     year INTEGER,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,

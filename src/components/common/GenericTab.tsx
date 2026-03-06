@@ -6,7 +6,6 @@ export interface TabConfig {
   displayName: string; // 'Персонал'
   searchPlaceholder: string; // 'Пошук по ПІБ, посаді, email...'
   addButtonLabel: string; // '+ Додати працівника'
-  CardComponent: React.ComponentType<any>;
   FormComponent: React.ComponentType<any>;
   ListComponent: React.ComponentType<any>;
 }

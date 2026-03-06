@@ -6,14 +6,14 @@ import PersonnelCardCompact from '../personnel/PersonnelCardCompact';
 
 // ===== FORM CONFIG =====
 const personnelFormConfig: FormConfig = {
-  title: 'працівники',
+  title: 'Працівника',
   sections: [
     {
       title: '👤 Особисті дані',
       fields: [
         {
           name: 'fullName',
-          label: 'ПІБ *',
+          label: 'ПІБ',
           type: 'text',
           required: true,
           placeholder: "Введіть прізвище, ім'я та побатькові",
@@ -30,12 +30,27 @@ const personnelFormConfig: FormConfig = {
       title: '💼 Посадова інформація',
       fields: [
         {
+          name: 'dateOfOvs',
+          label: 'З якого часу в ОВС',
+          type: 'date',
+        },
+        {
+          name: 'dateOfNpu',
+          label: 'З якого часу в НПУ',
+          type: 'date',
+        },
+        {
           name: 'position',
           label: 'Посада',
           type: 'text',
           required: true,
           placeholder: 'Наприклад: Старший інспектор',
           fullWidth: true,
+        },
+        {
+          name: 'dateOfPosition',
+          label: 'З якого часу на посаді',
+          type: 'date',
         },
 
         {
@@ -54,7 +69,12 @@ const personnelFormConfig: FormConfig = {
           name: 'department',
           label: 'Підрозділ',
           type: 'text',
-          placeholder: 'Наприклад: Щ-1',
+          placeholder: 'Наприклад: відділ технічного захисту інформації',
+        },
+        {
+          name: 'dateOfDepartment',
+          label: 'З якого часу в підрозділі',
+          type: 'date',
         },
       ],
     },
@@ -63,7 +83,7 @@ const personnelFormConfig: FormConfig = {
       fields: [
         {
           name: 'email',
-          label: 'E-mail',
+          label: 'Службовий E-mail',
           type: 'email',
           placeholder: 'example@domain.com',
         },
@@ -87,7 +107,12 @@ const personnelFormConfig: FormConfig = {
       name: 'education',
       title: 'Освіта',
       icon: '📚',
-      defaultItem: { institution: '', yearCompleted: '', specialties: '' },
+      defaultItem: {
+        institution: '',
+        yearCompleted: '',
+        specialties: '',
+        educationRank: '',
+      },
       fields: [
         {
           name: 'institution',
@@ -105,10 +130,17 @@ const personnelFormConfig: FormConfig = {
           fullWidth: true,
         },
         {
+          name: 'educationRank',
+          label: 'Здобутий освітній ступінь',
+          type: 'text',
+          placeholder: 'Наприклад: бакалавр',
+          fullWidth: true,
+        },
+        {
           name: 'yearCompleted',
-          label: 'Рік завершення',
+          label: 'Рік закінчення',
           type: 'number',
-          placeholder: '2020',
+          placeholder: '2001',
           min: 1996,
           max: new Date().getFullYear(),
         },
@@ -116,7 +148,7 @@ const personnelFormConfig: FormConfig = {
     },
     {
       name: 'certificates',
-      title: 'Сертифікати та підготовка',
+      title: 'Підвищення кваліфікації та перепідготовка',
       icon: '📜',
       defaultItem: {
         certificateNumber: '',
@@ -127,10 +159,10 @@ const personnelFormConfig: FormConfig = {
       fields: [
         {
           name: 'trainingName',
-          label: 'Назва навчання *',
+          label: 'Назва навчання',
           type: 'text',
           required: true,
-          placeholder: 'Наприклад: Курс кібербезпеки',
+          placeholder: 'Наприклад: Курс підвищення кваліфікації у галузі ТЗІ',
           fullWidth: true,
         },
         {
@@ -156,7 +188,7 @@ const personnelFormConfig: FormConfig = {
       ],
     },
   ],
-  submitLabel: 'Зберегти внесену інформацію про працівника',
+  submitLabel: 'Зберегти внесену інформацію',
 };
 
 // ===== CARD CONFIG =====
@@ -174,16 +206,28 @@ const personnelCardConfig: CardConfig = {
     {
       title: '💼 Посадова інформація',
       fields: [
+        { label: 'З якого часу в ОВС', value: 'dateOfOvs', format: 'date' },
+        { label: 'З якого часу в НПУ', value: 'dateOfNpu', format: 'date' },
         { label: 'Посада', value: 'position', format: 'badge' },
-        { label: 'Офіційне звання', value: 'officialRank' },
-        { label: 'Фактичне звання', value: 'actualRank' },
+        {
+          label: 'З якого часу в посаді',
+          value: 'dateOfPosition',
+          format: 'date',
+        },
+        { label: 'Спеціальне звання за посадою', value: 'officialRank' },
+        { label: 'Фактичне спеціальне звання', value: 'actualRank' },
         { label: 'Підрозділ', value: 'department' },
+        {
+          label: 'З якого часу в підрозділі',
+          value: 'dateOfDepartment',
+          format: 'date',
+        },
       ],
     },
     {
       title: '📞 Контактні дані',
       fields: [
-        { label: 'E-mail', value: 'email', format: 'link' },
+        { label: 'Службовий E-mail', value: 'email', format: 'link' },
         { label: 'Робочий телефон', value: 'phone', format: 'link' },
         { label: 'Мобільний телефон', value: 'mobilePhone', format: 'link' },
       ],
@@ -197,6 +241,7 @@ const personnelCardConfig: CardConfig = {
       itemTitle: 'institution',
       fields: [
         { label: 'Спеціальність', value: 'specialties' },
+        { label: 'Здобутий освітній ступінь', value: 'educationRank' },
         { label: 'Рік закінчення', value: 'yearCompleted' },
       ],
     },
@@ -218,7 +263,14 @@ const personnelCardConfig: CardConfig = {
 
 // ===== LIST CONFIG =====
 const personnelListConfig: ListConfig = {
-  searchFields: ['fullName', 'position', 'department', 'email', 'phone'],
+  searchFields: [
+    'fullName',
+    'position',
+    'actualRank',
+    'department',
+    'email',
+    'phone',
+  ],
   compactThreshold: 2,
   CardComponent: (props) => (
     <GenericCard config={personnelCardConfig} data={props} {...props} />
@@ -246,223 +298,3 @@ const personnelTabConfig: TabConfig = {
 export default function PersonnelTab() {
   return <GenericTab config={personnelTabConfig} />;
 }
-
-// import { useState, useEffect, useRef } from 'react';
-// import PersonnelForm from '../personnel/PersonnelForm';
-// import PersonnelList from '../personnel/PersonnelList';
-// import '../../styles/TabContent.css';
-
-// interface PersonnelData {
-//   id: number;
-//   position: string;
-//   officialRank: string;
-//   actualRank: string;
-//   fullName: string;
-//   dateOfBirth: string;
-//   email: string;
-//   phone: string;
-//   mobilePhone: string;
-//   education: any[];
-//   certificates: any[];
-// }
-
-// export default function PersonnelTab() {
-//   const [personnel, setPersonnel] = useState<PersonnelData[]>([]);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [error, setError] = useState('');
-//   const [showForm, setShowForm] = useState(false);
-//   const [editingId, setEditingId] = useState<number | null>(null);
-//   const [searchTerm, setSearchTerm] = useState('');
-
-//   // Ref для прокрутки в начало формы
-//   const formContainerRef = useRef<HTMLDivElement>(null);
-
-//   // Загрузить список персонала
-//   useEffect(() => {
-//     console.log('PersonnelTab mounted, fetching personnel...');
-//     fetchPersonnel();
-//   }, []);
-
-//   const fetchPersonnel = async () => {
-//     try {
-//       setIsLoading(true);
-//       setError('');
-//       console.log('Fetching from /api/objects/personnel');
-
-//       const response = await fetch('/api/objects/personnel');
-
-//       console.log('Response status:', response.status);
-
-//       if (!response.ok) {
-//         throw new Error(`HTTP error! status: ${response.status}`);
-//       }
-
-//       const data = await response.json();
-//       console.log('Received data:', data);
-//       setPersonnel(data);
-//     } catch (err) {
-//       console.error('Fetch error:', err);
-//       setError(`Помилка завантаження: ${(err as Error).message}`);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   // Сохранить новый или обновить
-//   const handleSubmit = async (data: Omit<PersonnelData, 'id'>) => {
-//     try {
-//       setIsLoading(true);
-//       setError('');
-
-//       const url = editingId
-//         ? `/api/objects/personnel/${editingId}`
-//         : '/api/objects/personnel';
-//       const method = editingId ? 'PUT' : 'POST';
-
-//       console.log('=== SUBMIT START ===');
-//       console.log('URL:', url);
-//       console.log('Method:', method);
-//       console.log('Data:', data);
-
-//       const response = await fetch(url, {
-//         method,
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(data),
-//       });
-
-//       console.log('Response status:', response.status);
-
-//       if (!response.ok) {
-//         const errorData = await response.json();
-//         console.error('Error response:', errorData);
-//         throw new Error(
-//           errorData.error || `HTTP error! status: ${response.status}`,
-//         );
-//       }
-
-//       const result = await response.json();
-//       console.log('Success response:', result);
-
-//       await fetchPersonnel();
-//       setShowForm(false);
-//       setEditingId(null);
-//       console.log('=== SUBMIT END (SUCCESS) ===');
-//     } catch (err) {
-//       console.error('=== SUBMIT ERROR ===', err);
-//       setError(`Помилка збереження: ${(err as Error).message}`);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   // Удалить
-//   const handleDelete = async (id: number) => {
-//     try {
-//       setIsLoading(true);
-//       setError('');
-
-//       console.log('Deleting personnel:', id);
-
-//       const response = await fetch(`/api/objects/personnel/${id}`, {
-//         method: 'DELETE',
-//       });
-
-//       if (!response.ok) {
-//         throw new Error('Помилка видалення');
-//       }
-
-//       console.log('Personnel deleted successfully');
-//       await fetchPersonnel();
-//     } catch (err) {
-//       console.error('Delete error:', err);
-//       setError(`Помилка видалення: ${(err as Error).message}`);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const handleEdit = (p: PersonnelData) => {
-//     console.log('=== EDIT START ===');
-//     console.log('Personnel data:', p);
-//     setEditingId(p.id || null);
-//     setShowForm(true);
-
-//     // Прокрутка к форме с небольшой задержкой
-//     setTimeout(() => {
-//       if (formContainerRef.current) {
-//         formContainerRef.current.scrollIntoView({
-//           behavior: 'smooth',
-//           block: 'start',
-//         });
-//       }
-//     }, 100);
-
-//     console.log('=== EDIT END ===');
-//   };
-
-//   const handleCloseForm = () => {
-//     setShowForm(false);
-//     setEditingId(null);
-//   };
-
-//   return (
-//     <div className='tab-content-wrapper'>
-//       {error && (
-//         <div className='error-message'>
-//           <span>{error}</span>
-//           <button onClick={() => setError('')}>✕</button>
-//         </div>
-//       )}
-
-//       <div className='content-controls'>
-//         <input
-//           type='text'
-//           className='search-input'
-//           placeholder='Пошук по ПІБ, посаді, email...'
-//           value={searchTerm}
-//           onChange={(e) => setSearchTerm(e.target.value)}
-//         />
-//         {!showForm && (
-//           <button
-//             className='btn-primary'
-//             onClick={() => {
-//               setEditingId(null);
-//               setShowForm(true);
-//               setTimeout(() => {
-//                 if (formContainerRef.current) {
-//                   formContainerRef.current.scrollIntoView({
-//                     behavior: 'smooth',
-//                     block: 'start',
-//                   });
-//                 }
-//               }, 100);
-//             }}
-//           >
-//             + Додати працівника
-//           </button>
-//         )}
-//       </div>
-
-//       {showForm && (
-//         <div className='form-container' ref={formContainerRef}>
-//           <PersonnelForm
-//             onSubmit={handleSubmit}
-//             initialData={
-//               editingId ? personnel.find((p) => p.id === editingId) : undefined
-//             }
-//             isLoading={isLoading}
-//             onClose={handleCloseForm}
-//           />
-//         </div>
-//       )}
-
-//       <PersonnelList
-//         personnel={personnel}
-//         searchTerm={searchTerm}
-//         onEdit={handleEdit}
-//         onDelete={handleDelete}
-//         isLoading={isLoading}
-//       />
-//     </div>
-//   );
-// }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './GenericList.css';
 
 export interface ListConfig {
   searchFields: string[]; // ['fullName', 'position', 'email']
