@@ -1,80 +1,308 @@
-.class-as-card-compact {
+/* ============================================================================
+   CLASS AS COMPACT CARD - Modern, Clean, Professional Design
+   ============================================================================ */
+
+.class-as-compact-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
   background: white;
-  border-radius: 12px;
-  padding: 16px;
-  border-left: 5px solid #667eea;
+  border-radius: 10px;
+  border: 1px solid #e8eef7;
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative gradient background on hover */
+.class-as-compact-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(118, 75, 162, 0.03) 0%,
+    rgba(240, 147, 251, 0.03) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.class-as-compact-card:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 6px 20px rgba(240, 147, 251, 0.12);
+  transform: translateY(-2px);
+}
+
+.class-as-compact-card:hover::before {
+  opacity: 1;
+}
+
+.class-as-compact-card:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   AVATAR SECTION
+   ============================================================================ */
+
+.class-as-compact-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+  border-radius: 10px;
+  font-size: 1.5rem;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.25);
   transition: all 0.3s ease;
+}
+
+.class-as-compact-card:hover .class-as-compact-avatar {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(240, 147, 251, 0.35);
+}
+
+/* ============================================================================
+   CONTENT SECTION
+   ============================================================================ */
+
+.class-as-compact-content {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-height: 120px;
+  gap: 0.3rem;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
-.class-as-card-compact:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-  background: #f9fafb;
-}
-
-.compact-content {
-  flex: 1;
-}
-
-.compact-title {
-  margin: 0 0 6px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
+.class-as-compact-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d3748;
+  line-height: 1.3;
   word-break: break-word;
+  transition: color 0.3s ease;
 }
 
-.compact-system {
-  margin: 0 0 8px 0;
-  font-size: 13px;
-  color: #666;
-  font-style: italic;
+.class-as-compact-card:hover .class-as-compact-name {
+  color: #764ba2;
 }
 
-.compact-class {
-  display: inline-block;
-  background: #667eea;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 11px;
+.class-as-compact-class {
+  margin: 0;
+  font-size: 0.8rem;
   font-weight: 600;
+  color: #f093fb;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: color 0.3s ease;
 }
 
-.compact-arrow {
-  font-size: 18px;
-  color: #667eea;
-  font-weight: bold;
-  margin-top: 8px;
-  transition: transform 0.2s;
-  align-self: flex-end;
+.class-as-compact-card:hover .class-as-compact-class {
+  color: #e06ed2;
 }
 
-.class-as-card-compact:hover .compact-arrow {
-  transform: translateX(4px);
+.class-as-compact-address {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #718096;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.3s ease;
 }
 
-@media (max-width: 768px) {
-  .class-as-card-compact {
-    padding: 12px;
-    min-height: 100px;
+.class-as-compact-card:hover .class-as-compact-address {
+  color: #4a5568;
+}
+
+/* ============================================================================
+   SUBDIVISION BADGE
+   ============================================================================ */
+
+.class-as-compact-subdivision {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.5rem;
+  background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+  color: white;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+  width: fit-content;
+  box-shadow: 0 2px 8px rgba(240, 147, 251, 0.2);
+  transition: all 0.3s ease;
+}
+
+.class-as-compact-card:hover .class-as-compact-subdivision {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);
+}
+
+/* ============================================================================
+   ARROW INDICATOR
+   ============================================================================ */
+
+.class-as-compact-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+  background: #f0e6ff;
+  color: #764ba2;
+  font-size: 1.2rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.class-as-compact-card:hover .class-as-compact-arrow {
+  background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+  color: white;
+  /* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+  @media (max-width: 768px) {
+    .class-as-compact-card {
+      padding: 0.875rem;
+      gap: 0.75rem;
+    }
+
+    .class-as-compact-avatar {
+      width: 44px;
+      height: 44px;
+      font-size: 1.3rem;
+    }
+
+    .class-as-compact-name {
+      font-size: 0.9rem;
+    }
+
+    .class-as-compact-class {
+      font-size: 0.75rem;
+    }
+
+    .class-as-compact-address {
+      font-size: 0.7rem;
+    }
+
+    .class-as-compact-arrow {
+      width: 28px;
+      height: 28px;
+    }
   }
 
-  .compact-title {
-    font-size: 14px;
+  @media (max-width: 480px) {
+    .class-as-compact-card {
+      padding: 0.75rem;
+      gap: 0.5rem;
+    }
+
+    .class-as-compact-avatar {
+      width: 40px;
+      height: 40px;
+      font-size: 1.1rem;
+    }
+
+    .class-as-compact-name {
+      font-size: 0.85rem;
+    }
+
+    .class-as-compact-class {
+      font-size: 0.7rem;
+    }
+
+    .class-as-compact-address {
+      font-size: 0.65rem;
+    }
+
+    .class-as-compact-subdivision {
+      font-size: 0.6rem;
+      padding: 0.2rem 0.4rem;
+    }
+
+    .class-as-compact-arrow {
+      width: 24px;
+      height: 24px;
+      font-size: 1rem;
+    }
   }
 
-  .compact-system {
-    font-size: 12px;
+  /* ============================================================================
+   ANIMATION - Stagger effect for list items
+   ============================================================================ */
+
+  @keyframes cardSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 
-  .compact-class {
-    font-size: 10px;
+  .class-as-compact-card {
+    animation: cardSlideIn 0.3s ease-out backwards;
+  }
+
+  .class-as-compact-card:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .class-as-compact-card:nth-child(2) {
+    animation-delay: 30ms;
+  }
+  .class-as-compact-card:nth-child(3) {
+    animation-delay: 60ms;
+  }
+  .class-as-compact-card:nth-child(n + 4) {
+    animation-delay: 90ms;
+  }
+
+  /* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+  .class-as-compact-card:focus-visible {
+    outline: 2px solid #764ba2;
+    outline-offset: 2px;
+  }
+
+  /* Reduced motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .class-as-compact-card,
+    .class-as-compact-avatar,
+    .class-as-compact-name,
+    .class-as-compact-class,
+    .class-as-compact-address,
+    .class-as-compact-subdivision,
+    .class-as-compact-arrow {
+      transition: none;
+      animation: none;
+    }
   }
 }

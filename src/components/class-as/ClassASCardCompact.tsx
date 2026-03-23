@@ -1,3 +1,5 @@
+import './styles/ClassASCardCompact.css';
+
 interface ClassASCardCompactProps {
   id: number;
   systemName: string;
@@ -15,47 +17,19 @@ export default function ClassASCardCompact({
   onClick,
 }: ClassASCardCompactProps) {
   return (
-    <div className='compact-card' onClick={onClick}>
-      <div className='compact-card-header'>
-        <span className='avatar'>🖥️</span>
-        <div className='compact-card-title'>
-          <h4>{systemName}</h4>
-          <p className='subtitle'>{systemClass}</p>
-        </div>
+    <div className='class-as-compact-card' onClick={onClick}>
+      <div className='class-as-compact-avatar'>🖥️</div>
+      <div className='class-as-compact-content'>
+        <h4 className='class-as-compact-name'>{systemName}</h4>
+        <p className='class-as-compact-class'>{systemClass}</p>
+        <p className='class-as-compact-address'>{address}</p>
+        {subdivisionName && (
+          <span className='class-as-compact-subdivision'>
+            {subdivisionName}
+          </span>
+        )}
       </div>
-      <div className='compact-card-info'>
-        <p className='address'>{address}</p>
-        {subdivisionName && <span className='badge'>{subdivisionName}</span>}
-      </div>
+      <div className='class-as-compact-arrow'>›</div>
     </div>
   );
 }
-
-// // import React from 'react';
-// import './styles/ClassASCardCompact.css';
-
-// interface ClassASCardCompactProps {
-//   id: number;
-//   subdivisionName: string;
-//   systemName: string;
-//   systemClass: string;
-//   onClick: () => void;
-// }
-
-// export default function ClassASCardCompact({
-//   subdivisionName,
-//   systemName,
-//   systemClass,
-//   onClick,
-// }: ClassASCardCompactProps) {
-//   return (
-//     <div className='class-as-card-compact' onClick={onClick}>
-//       <div className='compact-content'>
-//         <h4 className='compact-title'>{subdivisionName}</h4>
-//         <p className='compact-system'>{systemName}</p>
-//         <span className='compact-class'>{systemClass}</span>
-//       </div>
-//       <div className='compact-arrow'>→</div>
-//     </div>
-//   );
-// }

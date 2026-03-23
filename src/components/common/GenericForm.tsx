@@ -81,7 +81,7 @@ export default function GenericForm({
     >,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
+    setFormData((prev: any) => {
       const updated = { ...prev, [name]: value };
       console.log('Input changed:', name, '=', value);
       return updated;
@@ -91,7 +91,7 @@ export default function GenericForm({
   // ===== ВЛОЖЁННЫЕ ПОЛЯ =====
   const addNestedItem = (nestedName: string, config: NestedFieldConfig) => {
     console.log(`Adding ${nestedName}`);
-    setFormData((prev) => ({
+    setFormData((prev: { [x: string]: any }) => ({
       ...prev,
       [nestedName]: [...prev[nestedName], { ...config.defaultItem }],
     }));
@@ -104,7 +104,7 @@ export default function GenericForm({
     value: any,
   ) => {
     console.log(`Updating ${nestedName}[${index}].${field} = ${value}`);
-    setFormData((prev) => {
+    setFormData((prev: { [x: string]: any }) => {
       const newItems = [...prev[nestedName]];
       newItems[index] = { ...newItems[index], [field]: value };
       return { ...prev, [nestedName]: newItems };
@@ -113,9 +113,9 @@ export default function GenericForm({
 
   const removeNestedItem = (nestedName: string, index: number) => {
     console.log(`Removing ${nestedName}[${index}]`);
-    setFormData((prev) => ({
+    setFormData((prev: { [x: string]: any[] }) => ({
       ...prev,
-      [nestedName]: prev[nestedName].filter((_, i) => i !== index),
+      [nestedName]: prev[nestedName].filter((_: any, i: number) => i !== index),
     }));
   };
 
