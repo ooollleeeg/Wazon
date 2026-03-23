@@ -230,6 +230,8 @@
   padding: 1.5rem;
   transition: all 0.3s ease;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .nested-item:hover {
@@ -257,12 +259,17 @@
   letter-spacing: 0.5px;
 }
 
-.btn-remove {
-  background: #fed7d7;
-  border: 1px solid #fc8181;
+/* ============================================================================
+   BUTTON - REMOVE NEW ITEM (UNSAVED)
+   ============================================================================ */
+
+.btn-remove-new {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
   color: #c53030;
   width: 32px;
   height: 32px;
+  min-width: 32px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 1rem;
@@ -273,14 +280,57 @@
   flex-shrink: 0;
 }
 
-.btn-remove:hover {
-  background: #fc8181;
-  color: white;
+.btn-remove-new:hover {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: rgba(255, 107, 107, 0.5);
   transform: scale(1.05);
 }
 
-.btn-remove:active {
+.btn-remove-new:active {
   transform: scale(0.95);
+}
+
+/* ============================================================================
+   NESTED ITEM SECTIONS
+   ============================================================================ */
+
+.nested-item .form-grid {
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.nested-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #edf2f7;
+  margin-top: auto;
+}
+
+.btn-delete-nested {
+  background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.btn-delete-nested:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.btn-delete-nested:active {
+  transform: translateY(0);
 }
 
 /* ============================================================================
@@ -402,6 +452,16 @@
 
   .nested-item {
     padding: 1rem;
+  }
+
+  .nested-footer {
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
+  }
+
+  .btn-delete-nested {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
   }
 
   .form-actions {

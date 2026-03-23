@@ -6,7 +6,7 @@ import PersonnelCardCompact from '../personnel/PersonnelCardCompact';
 
 // ===== FORM CONFIG =====
 const personnelFormConfig: FormConfig = {
-  title: 'Працівника',
+  title: 'працівника',
   sections: [
     {
       title: '👤 Особисті дані',
@@ -159,7 +159,7 @@ const personnelFormConfig: FormConfig = {
       fields: [
         {
           name: 'trainingName',
-          label: 'Назва навчання',
+          label: 'Назва курсу навчання',
           type: 'text',
           required: true,
           placeholder: 'Наприклад: Курс підвищення кваліфікації у галузі ТЗІ',

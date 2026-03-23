@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './GenericForm.css';
+import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 
 export interface FormField {
   name: string;
@@ -49,6 +50,13 @@ export default function GenericForm({
   isLoading,
   onClose,
 }: GenericFormProps) {
+  // State для отслеживания удаляемого элемента
+  const [deletingItem, setDeletingItem] = useState<{
+    nested: string;
+    index: number;
+    itemTitle: string;
+  } | null>(null);
+
   // Инициализируем данные формы
   const [formData, setFormData] = useState<any>(() => {
     console.log('Initializing form with:', initialData);
@@ -93,7 +101,10 @@ export default function GenericForm({
     console.log(`Adding ${nestedName}`);
     setFormData((prev: { [x: string]: any }) => ({
       ...prev,
-      [nestedName]: [...prev[nestedName], { ...config.defaultItem }],
+      [nestedName]: [
+        ...prev[nestedName],
+        { ...config.defaultItem, __isNew: true },
+      ],
     }));
   };
 
@@ -117,12 +128,36 @@ export default function GenericForm({
       ...prev,
       [nestedName]: prev[nestedName].filter((_: any, i: number) => i !== index),
     }));
+    setDeletingItem(null);
+  };
+
+  const openDeleteConfirm = (
+    nestedName: string,
+    index: number,
+    itemTitle: string,
+  ) => {
+    setDeletingItem({ nested: nestedName, index, itemTitle });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitting with data:', formData);
-    onSubmit(formData);
+    
+    // ✅ ОЧИЩАЄМО ДАНІ ВІД ФЛАГА __isNew ПЕРЕД ВІДПРАВКОЮ
+    const cleanedData = { ...formData };
+    
+    config.nestedFields?.forEach((nestedConfig) => {
+      if (cleanedData[nestedConfig.name]) {
+        cleanedData[nestedConfig.name] = cleanedData[nestedConfig.name].map(
+          (item: any) => {
+            const { __isNew, ...cleanItem } = item;
+            return cleanItem;
+          },
+        );
+      }
+    });
+    
+    console.log('Form submitting with cleaned data:', cleanedData);
+    onSubmit(cleanedData);
   };
 
   const renderField = (field: FormField, value: any) => {
@@ -237,7 +272,10 @@ export default function GenericForm({
       {/* FORM HEADER */}
       <div className='form-header'>
         <h2 className='form-title'>
-          {initialData ? '✎ Редагування' : '+'} {config.title}
+          {initialData
+            ? '✎ Редагування інформації про'
+            : '+ Додавання інформації про'}{' '}
+          {config.title}
         </h2>
         <button
           type='button'
@@ -285,14 +323,19 @@ export default function GenericForm({
                   <span className='item-number'>
                     {nestedConfig.title} {itemIdx + 1}
                   </span>
-                  <button
-                    type='button'
-                    className='btn-remove'
-                    onClick={() => removeNestedItem(nestedConfig.name, itemIdx)}
-                    title='Видалити'
-                  >
-                    ✕
-                  </button>
+                  {/* ✅ ХРЕСТИК ТІЛЬКИ ДЛЯ НОВИХ ЗАПИСІВ */}
+                  {item.__isNew && (
+                    <button
+                      type='button'
+                      className='btn-remove-new'
+                      onClick={() =>
+                        removeNestedItem(nestedConfig.name, itemIdx)
+                      }
+                      title='Видалити поле без збереження'
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
 
                 <div className='form-grid'>
@@ -306,6 +349,27 @@ export default function GenericForm({
                     ),
                   )}
                 </div>
+
+                {/* ✅ КНОПКА ВИДАЛЕННЯ ТІЛЬКИ ДЛЯ ІСНУЮЧИХ ЗАПИСІВ */}
+                {!item.__isNew && (
+                  <div className='nested-footer'>
+                    <button
+                      type='button'
+                      className='btn-delete-nested'
+                      onClick={() =>
+                        openDeleteConfirm(
+                          nestedConfig.name,
+                          itemIdx,
+                          item[nestedConfig.fields[0].name] ||
+                            `${nestedConfig.title} ${itemIdx + 1}`,
+                        )
+                      }
+                      title='Видалити запис'
+                    >
+                      🗑️ Видалити запис
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -318,6 +382,18 @@ export default function GenericForm({
           {isLoading ? 'Збереження...' : config.submitLabel || 'Зберегти'}
         </button>
       </div>
+
+      {/* MODAL - Видалення вложеного запису */}
+      {deletingItem && (
+        <DeleteConfirmModal
+          fullName={deletingItem.itemTitle}
+          onConfirm={() =>
+            removeNestedItem(deletingItem.nested, deletingItem.index)
+          }
+          onCancel={() => setDeletingItem(null)}
+          isLoading={false}
+        />
+      )}
     </form>
   );
 }
