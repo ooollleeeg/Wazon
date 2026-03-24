@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './GenericList.css';
 import LoadingSpinner from './LoadingSpinner';
+import { searchInObject } from '../../utils/searchUtils';
 
 export interface ListConfig {
   searchFields: string[]; // ['fullName', 'position', 'email']
@@ -42,13 +43,8 @@ export default function GenericList({
       return;
     }
 
-    // Фільтруємо за пошуковим терміном
-    const term = searchTerm.toLowerCase();
-    const filtered = items.filter((item) =>
-      config.searchFields.some((field) =>
-        item[field]?.toString().toLowerCase().includes(term),
-      ),
-    );
+    // ✅ Глибокий пошук по всім полям об'єкта
+    const filtered = items.filter((item) => searchInObject(item, searchTerm));
 
     // Применяем сортировку если есть
     const sorted = config.sortFunction
@@ -99,6 +95,7 @@ export default function GenericList({
                       <config.CardComponent
                         key={item.id}
                         {...item}
+                        searchTerm={searchTerm}
                         onEdit={() => onEdit(item)}
                         onDelete={() => {
                           onDelete(item.id);
@@ -119,6 +116,7 @@ export default function GenericList({
                     <config.CompactCardComponent
                       key={item.id}
                       {...item}
+                      searchTerm={searchTerm}
                       onClick={() => setExpandedId(item.id)}
                     />
                   ))}
@@ -138,9 +136,11 @@ export default function GenericList({
               <config.CardComponent
                 key={item.id}
                 {...item}
+                searchTerm={searchTerm}
                 onEdit={() => onEdit(item)}
                 onDelete={() => onDelete(item.id)}
-                showCloseButton={showCloseButton}
+                onClose={() => setExpandedId(null)}
+                showCloseButton={true}
               />
             ))
           ) : (

@@ -121,9 +121,7 @@
    ============================================================================ */
 
 .personnel-compact-rank {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
+  display: inline;
   padding: 0.3rem 0.6rem;
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   color: white;
@@ -132,13 +130,12 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-  width: fit-content;
   box-shadow: 0 2px 8px rgba(245, 87, 108, 0.2);
   transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
 .personnel-compact-card:hover .personnel-compact-rank {
-  transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
 }
 

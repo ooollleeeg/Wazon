@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
+import { highlightText } from '../../utils/searchUtils';
 import './GenericCard.css';
 
 export interface CardSection {
@@ -36,6 +37,7 @@ export interface CardConfig {
 interface GenericCardProps {
   config: CardConfig;
   data: any;
+  searchTerm?: string;
   onEdit: () => void;
   onDelete: () => void;
   onClose?: () => void;
@@ -45,6 +47,7 @@ interface GenericCardProps {
 export default function GenericCard({
   config,
   data,
+  searchTerm = '',
   onEdit,
   onDelete,
   onClose,
@@ -55,6 +58,10 @@ export default function GenericCard({
   const formatValue = (value: any, format?: string) => {
     if (!value) return '-';
 
+    // ✅ Підсвічуємо текст якщо є searchTerm
+    const displayValue =
+      typeof value === 'string' ? highlightText(value, searchTerm) : value;
+
     switch (format) {
       case 'date':
         return new Date(value).toLocaleDateString('uk-UA');
@@ -62,22 +69,22 @@ export default function GenericCard({
         if (value.includes('@')) {
           return (
             <a href={`mailto:${value}`} className='value link'>
-              {value}
+              {displayValue}
             </a>
           );
         }
         if (value.startsWith('+') || value.startsWith('0')) {
           return (
             <a href={`tel:${value}`} className='value link'>
-              {value}
+              {displayValue}
             </a>
           );
         }
-        return value;
+        return displayValue;
       case 'badge':
-        return <span className='value badge'>{value}</span>;
+        return <span className='value badge'>{displayValue}</span>;
       default:
-        return value;
+        return displayValue;
     }
   };
 

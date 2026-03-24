@@ -2,6 +2,18 @@
    GENERIC FORM STYLES - Modern, Professional, Responsive
    ============================================================================ */
 
+/* Search highlighting */
+mark {
+  background-color: #ffd700;
+  color: inherit;
+  font-weight: bold;
+  border-radius: 2px;
+  box-shadow: 0 0 4px rgba(255, 215, 0, 0.4);
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
 .generic-form {
   background: white;
   border-radius: 12px;
