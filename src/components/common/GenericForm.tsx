@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './GenericForm.css';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
+import LoadingSpinner from './LoadingSpinner';
 
 export interface FormField {
   name: string;
@@ -426,9 +427,18 @@ export default function GenericForm({
       ))}
 
       {/* КНОПКИ */}
+      {isLoading && (
+        <LoadingSpinner
+          fullScreen
+          label={
+            config.submitLabel ? `${config.submitLabel}...` : 'Збереження...'
+          }
+          size='small'
+        />
+      )}
       <div className='form-actions'>
         <button type='submit' className='btn-submit' disabled={isLoading}>
-          {isLoading ? 'Збереження...' : config.submitLabel || 'Зберегти'}
+          {isLoading ? 'Обробляємо...' : config.submitLabel || 'Зберегти'}
         </button>
       </div>
 

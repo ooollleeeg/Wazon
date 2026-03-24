@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './GenericList.css';
+import LoadingSpinner from './LoadingSpinner';
 
 export interface ListConfig {
   searchFields: string[]; // ['fullName', 'position', 'email']
@@ -57,7 +58,11 @@ export default function GenericList({
   }, [searchTerm, items, config]);
 
   if (isLoading) {
-    return <div className='loading'>Завантаження...</div>;
+    return (
+      <div className='loading'>
+        <LoadingSpinner fullScreen label='Завантаження записів...' />
+      </div>
+    );
   }
 
   if (items.length === 0) {
