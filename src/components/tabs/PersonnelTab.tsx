@@ -271,7 +271,6 @@ const personnelListConfig: ListConfig = {
     'email',
     'phone',
   ],
-  compactThreshold: 2,
   sortFunction: (items: any[]) => {
     return items.sort((a, b) => {
       const positionA = a.position?.toLowerCase() || '';
