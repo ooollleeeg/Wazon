@@ -180,6 +180,8 @@
   color: #2d3748;
   font-weight: 500;
   word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .info-item .value.link {
@@ -194,14 +196,16 @@
 }
 
 .info-item .value.badge {
-  display: inline;
+  display: inline-block;
   background: #edf2f7;
   color: #2d3748;
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 600;
-  white-space: nowrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 /* ============================================================================

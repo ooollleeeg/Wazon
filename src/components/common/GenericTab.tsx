@@ -17,6 +17,7 @@ interface GenericTabProps {
 export default function GenericTab({ config }: GenericTabProps) {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -56,7 +57,7 @@ export default function GenericTab({ config }: GenericTabProps) {
 
   const handleSubmit = async (data: any) => {
     try {
-      setIsLoading(true);
+      setIsSaving(true);
       setError('');
 
       const url = editingId
@@ -88,6 +89,7 @@ export default function GenericTab({ config }: GenericTabProps) {
       const result = await response.json();
       console.log('Success response:', result);
 
+      setIsSaving(false);
       await fetchItems();
       setShowForm(false);
       setEditingId(null);
@@ -95,8 +97,7 @@ export default function GenericTab({ config }: GenericTabProps) {
     } catch (err) {
       console.error('=== SUBMIT ERROR ===', err);
       setError(`Помилка збереження: ${(err as Error).message}`);
-    } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -197,7 +198,7 @@ export default function GenericTab({ config }: GenericTabProps) {
             initialData={
               editingId ? items.find((i) => i.id === editingId) : undefined
             }
-            isLoading={isLoading}
+            isLoading={isSaving}
             onClose={handleCloseForm}
           />
         </div>
@@ -209,6 +210,7 @@ export default function GenericTab({ config }: GenericTabProps) {
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
+        isSaving={isSaving}
       />
     </div>
   );

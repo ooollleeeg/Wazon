@@ -5,7 +5,6 @@ import { searchInObject } from '../../utils/searchUtils';
 
 export interface ListConfig {
   searchFields: string[]; // ['fullName', 'position', 'email']
-  compactThreshold: number; // After how many items to switch to compact mode (default: 2)
   sortFunction?: (items: any[]) => any[]; // Optional custom sort function
   CardComponent: React.ComponentType<any>;
   CompactCardComponent: React.ComponentType<any>;
@@ -20,6 +19,7 @@ interface GenericListProps {
   onEdit: (item: any) => void;
   onDelete: (id: number) => void;
   isLoading: boolean;
+  isSaving?: boolean;
 }
 
 export default function GenericList({
@@ -29,6 +29,7 @@ export default function GenericList({
   onEdit,
   onDelete,
   isLoading,
+  isSaving = false,
 }: GenericListProps) {
   const [filteredItems, setFilteredItems] = useState<any[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -53,10 +54,13 @@ export default function GenericList({
     setFilteredItems(sorted);
   }, [searchTerm, items, config]);
 
-  if (isLoading) {
+  if (isLoading || isSaving) {
     return (
       <div className='loading'>
-        <LoadingSpinner fullScreen label='Завантаження записів...' />
+        <LoadingSpinner
+          fullScreen
+          label={isSaving ? 'Збереження запису...' : 'Завантаження записів...'}
+        />
       </div>
     );
   }
@@ -69,9 +73,11 @@ export default function GenericList({
     );
   }
 
-  // Визначаємо, використовувати компактний режим
-  const useCompactMode = filteredItems.length > config.compactThreshold;
-  const showCloseButton = filteredItems.length > config.compactThreshold;
+  // Логіка відображення:
+  // - Якщо 1 карточка: повний вид без кнопки закриття
+  // - Якщо 2+ карточки: компактний вид з можливістю розгортання
+  const isSingleCard = filteredItems.length === 1;
+  const useCompactMode = filteredItems.length >= 2;
 
   return (
     <div className='generic-list'>
@@ -81,8 +87,22 @@ export default function GenericList({
         </span>
       </div>
 
-      {useCompactMode ? (
-        // КОМПАКТНИЙ ВИД - Плашки
+      {isSingleCard ? (
+        // ОДНА КАРТОЧКА - Повний вид без кнопки закриття
+        <div className='cards-container single-card-mode'>
+          {filteredItems.map((item) => (
+            <config.CardComponent
+              key={item.id}
+              {...item}
+              searchTerm={searchTerm}
+              onEdit={() => onEdit(item)}
+              onDelete={() => onDelete(item.id)}
+              showCloseButton={false}
+            />
+          ))}
+        </div>
+      ) : useCompactMode ? (
+        // 2+ КАРТОЧКИ - Компактний вид з розгортанням
         <div className='cards-container compact-mode'>
           {filteredItems.length > 0 ? (
             <>
@@ -102,7 +122,7 @@ export default function GenericList({
                           setExpandedId(null);
                         }}
                         onClose={() => setExpandedId(null)}
-                        showCloseButton={showCloseButton}
+                        showCloseButton={true}
                       />
                     ))}
                 </div>
@@ -129,25 +149,9 @@ export default function GenericList({
           )}
         </div>
       ) : (
-        // ПОВНИЙ ВИД - Повні картки
-        <div className='cards-container full-mode'>
-          {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <config.CardComponent
-                key={item.id}
-                {...item}
-                searchTerm={searchTerm}
-                onEdit={() => onEdit(item)}
-                onDelete={() => onDelete(item.id)}
-                onClose={() => setExpandedId(null)}
-                showCloseButton={true}
-              />
-            ))
-          ) : (
-            <div className='no-results'>
-              <p>{config.noResultsMessage}</p>
-            </div>
-          )}
+        // НЕ МАЄ КАРТОЧОК
+        <div className='no-results'>
+          <p>{config.noResultsMessage}</p>
         </div>
       )}
     </div>
