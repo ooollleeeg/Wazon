@@ -116,7 +116,7 @@ const personnelFormConfig: FormConfig = {
       fields: [
         {
           name: 'institution',
-          label: 'Навчальний заклад *',
+          label: 'Навчальний заклад',
           type: 'text',
           required: true,
           placeholder: 'Назва ВНЗ',
@@ -272,6 +272,29 @@ const personnelListConfig: ListConfig = {
     'phone',
   ],
   compactThreshold: 2,
+  sortFunction: (items: any[]) => {
+    return items.sort((a, b) => {
+      const positionA = a.position?.toLowerCase() || '';
+      const positionB = b.position?.toLowerCase() || '';
+
+      // Пріоритет 1: "начальник"
+      const aHasChief = positionA.includes('начальник');
+      const bHasChief = positionB.includes('начальник');
+
+      if (aHasChief && !bHasChief) return -1;
+      if (!aHasChief && bHasChief) return 1;
+
+      // Пріоритет 2: "заступник"
+      const aHasDeputy = positionA.includes('заступник');
+      const bHasDeputy = positionB.includes('заступник');
+
+      if (aHasDeputy && !bHasDeputy) return -1;
+      if (!aHasDeputy && bHasDeputy) return 1;
+
+      // Пріоритет 3: довжина названия посади (довше = вище)
+      return positionB.length - positionA.length;
+    });
+  },
   CardComponent: (props) => (
     <GenericCard config={personnelCardConfig} data={props} {...props} />
   ),

@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react';
 import './LoadingSpinner.css';
 
 export type SpinnerSize = 'small' | 'medium' | 'large';

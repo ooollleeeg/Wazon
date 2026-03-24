@@ -203,7 +203,7 @@ export default function GenericForm({
         <div key={field.name} className={`form-group ${fieldClass}`}>
           <label>
             {field.label}
-            {field.required && ' *'}
+            {field.required && <span className='required-mark'> *</span>}
           </label>
           <select
             name={field.name}
@@ -226,7 +226,7 @@ export default function GenericForm({
       <div key={field.name} className={`form-group ${fieldClass}`}>
         <label>
           {field.label}
-          {field.required && ' *'}
+          {field.required && <span className='required-mark'> *</span>}
         </label>
         <input
           type={field.type}
@@ -256,7 +256,7 @@ export default function GenericForm({
         <div key={field.name} className={`form-group ${fieldClass}`}>
           <label>
             {field.label}
-            {field.required && ' *'}
+            {field.required && <span className='required-mark'> *</span>}
           </label>
           <select
             value={value || ''}
@@ -285,7 +285,7 @@ export default function GenericForm({
       <div key={field.name} className={`form-group ${fieldClass}`}>
         <label>
           {field.label}
-          {field.required && ' *'}
+          {field.required && <span className='required-mark'> *</span>}
         </label>
         <input
           type={field.type}
