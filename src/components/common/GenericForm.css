@@ -401,6 +401,37 @@
 }
 
 /* ============================================================================
+   NEWLY ADDED ITEM HIGHLIGHT & ANIMATION
+   ============================================================================ */
+
+.nested-item.newly-added {
+  animation: highlightNewItem 0.6s ease-out;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.08) 0%,
+    rgba(118, 75, 162, 0.08) 100%
+  );
+  border: 2px solid rgba(102, 126, 234, 0.3);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15);
+}
+
+@keyframes highlightNewItem {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.98);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.25);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.15);
+  }
+}
+
+/* ============================================================================
    RESPONSIVE DESIGN
    ============================================================================ */
 

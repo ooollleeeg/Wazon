@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './GenericForm.css';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 
@@ -57,6 +57,15 @@ export default function GenericForm({
     itemTitle: string;
   } | null>(null);
 
+  // State для отслеживания недавно добавленного элемента
+  const [newlyAddedItem, setNewlyAddedItem] = useState<{
+    nested: string;
+    index: number;
+  } | null>(null);
+
+  // Refs для прокрутки к новому элементу
+  const nestedItemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
   // Инициализируем данные формы
   const [formData, setFormData] = useState<any>(() => {
     console.log('Initializing form with:', initialData);
@@ -96,16 +105,41 @@ export default function GenericForm({
     });
   };
 
+  // ✅ ПРОКРУТКА К НОВОМУ ELEMENT'У
+  useEffect(() => {
+    if (newlyAddedItem) {
+      const refKey = `${newlyAddedItem.nested}-${newlyAddedItem.index}`;
+      const element = nestedItemRefs.current[refKey];
+
+      if (element) {
+        // Плавна прокрутка к элем
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Видаляємо посилання на item після прокрутки
+          setTimeout(() => setNewlyAddedItem(null), 1000);
+        }, 100);
+      }
+    }
+  }, [newlyAddedItem]);
+
   // ===== ВЛОЖЁННЫЕ ПОЛЯ =====
   const addNestedItem = (nestedName: string, config: NestedFieldConfig) => {
     console.log(`Adding ${nestedName}`);
-    setFormData((prev: { [x: string]: any }) => ({
-      ...prev,
-      [nestedName]: [
+    setFormData((prev: { [x: string]: any }) => {
+      const newItems = [
         ...prev[nestedName],
         { ...config.defaultItem, __isNew: true },
-      ],
-    }));
+      ];
+      // ✅ ВСТАНОВЛЮЄМО НОВИЙ ITEM ДЛЯ ПРОКРУТКИ
+      setNewlyAddedItem({
+        nested: nestedName,
+        index: newItems.length - 1,
+      });
+      return {
+        ...prev,
+        [nestedName]: newItems,
+      };
+    });
   };
 
   const updateNestedItem = (
@@ -141,10 +175,10 @@ export default function GenericForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // ✅ ОЧИЩАЄМО ДАНІ ВІД ФЛАГА __isNew ПЕРЕД ВІДПРАВКОЮ
     const cleanedData = { ...formData };
-    
+
     config.nestedFields?.forEach((nestedConfig) => {
       if (cleanedData[nestedConfig.name]) {
         cleanedData[nestedConfig.name] = cleanedData[nestedConfig.name].map(
@@ -155,7 +189,7 @@ export default function GenericForm({
         );
       }
     });
-    
+
     console.log('Form submitting with cleaned data:', cleanedData);
     onSubmit(cleanedData);
   };
@@ -317,61 +351,76 @@ export default function GenericForm({
           </div>
 
           <div className='nested-items'>
-            {formData[nestedConfig.name]?.map((item: any, itemIdx: number) => (
-              <div key={itemIdx} className='nested-item'>
-                <div className='nested-header'>
-                  <span className='item-number'>
-                    {nestedConfig.title} {itemIdx + 1}
-                  </span>
-                  {/* ✅ ХРЕСТИК ТІЛЬКИ ДЛЯ НОВИХ ЗАПИСІВ */}
-                  {item.__isNew && (
-                    <button
-                      type='button'
-                      className='btn-remove-new'
-                      onClick={() =>
-                        removeNestedItem(nestedConfig.name, itemIdx)
-                      }
-                      title='Видалити поле без збереження'
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+            {formData[nestedConfig.name]?.map((item: any, itemIdx: number) => {
+              const refKey = `${nestedConfig.name}-${itemIdx}`;
+              const isNewlyAdded =
+                newlyAddedItem?.nested === nestedConfig.name &&
+                newlyAddedItem?.index === itemIdx;
 
-                <div className='form-grid'>
-                  {nestedConfig.fields.map((field) =>
-                    // ✅ ВИКОРИСТОВУЄМО renderNestedField ЗІ ЗВИЧАЙНОЇ ФУНКЦІЇ
-                    renderNestedField(
-                      field,
-                      item[field.name],
-                      nestedConfig.name,
-                      itemIdx,
-                    ),
-                  )}
-                </div>
-
-                {/* ✅ КНОПКА ВИДАЛЕННЯ ТІЛЬКИ ДЛЯ ІСНУЮЧИХ ЗАПИСІВ */}
-                {!item.__isNew && (
-                  <div className='nested-footer'>
-                    <button
-                      type='button'
-                      className='btn-delete-nested'
-                      onClick={() =>
-                        openDeleteConfirm(
-                          nestedConfig.name,
-                          itemIdx,
-                          item[nestedConfig.fields[0].name] ||
-                            `${nestedConfig.title} ${itemIdx + 1}`,
-                        )
-                      }
-                      title='Видалити запис'
-                    >
-                      🗑️ Видалити запис
-                    </button>
+              return (
+                <div
+                  key={itemIdx}
+                  ref={(el) => {
+                    if (el) {
+                      nestedItemRefs.current[refKey] = el;
+                    }
+                  }}
+                  className={`nested-item ${isNewlyAdded ? 'newly-added' : ''}`}
+                >
+                  <div className='nested-header'>
+                    <span className='item-number'>
+                      {nestedConfig.title} {itemIdx + 1}
+                    </span>
+                    {/* ✅ ХРЕСТИК ТІЛЬКИ ДЛЯ НОВИХ ЗАПИСІВ */}
+                    {item.__isNew && (
+                      <button
+                        type='button'
+                        className='btn-remove-new'
+                        onClick={() =>
+                          removeNestedItem(nestedConfig.name, itemIdx)
+                        }
+                        title='Видалити поле без збереження'
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  <div className='form-grid'>
+                    {nestedConfig.fields.map((field) =>
+                      // ✅ ВИКОРИСТОВУЄМО renderNestedField ЗІ ЗВИЧАЙНОЇ ФУНКЦІЇ
+                      renderNestedField(
+                        field,
+                        item[field.name],
+                        nestedConfig.name,
+                        itemIdx,
+                      ),
+                    )}
+                  </div>
+
+                  {/* ✅ КНОПКА ВИДАЛЕННЯ ТІЛЬКИ ДЛЯ ІСНУЮЧИХ ЗАПИСІВ */}
+                  {!item.__isNew && (
+                    <div className='nested-footer'>
+                      <button
+                        type='button'
+                        className='btn-delete-nested'
+                        onClick={() =>
+                          openDeleteConfirm(
+                            nestedConfig.name,
+                            itemIdx,
+                            item[nestedConfig.fields[0].name] ||
+                              `${nestedConfig.title} ${itemIdx + 1}`,
+                          )
+                        }
+                        title='Видалити запис'
+                      >
+                        🗑️ Видалити запис
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       ))}
