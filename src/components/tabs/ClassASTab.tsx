@@ -13,10 +13,9 @@ const classASFormConfig: FormConfig = {
       fields: [
         {
           name: 'address',
-          label: 'Адреса *',
+          label: 'Адреса',
           type: 'text',
-          required: true,
-          placeholder: "Наприклад: 252001, м. Одеса, вул. В'язів, 96",
+          placeholder: 'Наприклад: 01001, м. Київ, вул. Хрещатик, 26',
           fullWidth: true,
         },
         {
@@ -24,19 +23,26 @@ const classASFormConfig: FormConfig = {
           label: 'Назва підрозділу *',
           type: 'text',
           required: true,
-          placeholder: 'Наприклад: СВ 55',
+          placeholder: 'Наприклад: УОТЗ',
         },
         {
           name: 'subdivisionType',
           label: 'Тип підрозділу',
-          type: 'text',
-          placeholder: 'Територіальний підрозділ',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'підрозділ апарату', label: 'підрозділ апарату' },
+            {
+              value: 'територіальний підрозділ',
+              label: 'територіальний підрозділ',
+            },
+          ],
         },
         {
           name: 'serviceName',
           label: 'Назва служби',
           type: 'text',
-          placeholder: 'Наприклад: СВ',
+          placeholder: 'Наприклад: РСС',
         },
         {
           name: 'systemClass',
@@ -54,23 +60,14 @@ const classASFormConfig: FormConfig = {
           label: 'Назва системи',
           type: 'text',
           placeholder: 'Назва АС',
-          fullWidth: true,
+          required: true,
         },
       ],
     },
+
     {
-      title: '📋 Документація та сертифікація',
+      title: 'Комплекс засобів захисту від несанкціонованого доступу',
       fields: [
-        {
-          name: 'categorizationActDate',
-          label: 'Дата акту категоризації',
-          type: 'date',
-        },
-        {
-          name: 'categorizationActNumber',
-          label: 'Номер акту категоризації',
-          type: 'text',
-        },
         {
           name: 'kzzName',
           label: 'Назва КЗЗ',
@@ -81,99 +78,56 @@ const classASFormConfig: FormConfig = {
           label: 'Серійний номер КЗЗ',
           type: 'text',
         },
+      ],
+    },
+    {
+      title: 'Антивірусне програмне забезпечення',
+      fields: [
         {
           name: 'antivirus',
-          label: 'Антивірус',
+          label: 'Назва антивірусного ПЗ',
           type: 'text',
         },
         {
           name: 'antivirusOpinionNumber',
-          label: 'Номер висновку антивірусу',
+          label: 'Номер експертного висновку',
+          type: 'text',
+        },
+        {
+          name: 'antivirusOpinionDate',
+          label: 'Дата видачі експертного висновку',
           type: 'text',
         },
       ],
     },
     {
-      title: '✅ Тестування та атестація',
+      title: 'Формуляр на автоматизовану систему',
+      icon: '📋',
       fields: [
         {
-          name: 'ttCreateDate',
-          label: 'Дата створення ТТ',
-          type: 'date',
-        },
-        {
-          name: 'ttCreateNumber',
-          label: 'Номер ТТ',
+          name: 'formulaNumber',
+          label: 'Реєстраційний номер',
           type: 'text',
         },
         {
           name: 'formulaDate',
-          label: 'Дата формули',
+          label: 'Дата реєстрації',
           type: 'date',
         },
+      ],
+    },
+    {
+      title: 'Паспорт на комплекс технічного захисту інформації',
+      icon: '📋',
+      fields: [
         {
-          name: 'formulaNumber',
-          label: 'Номер формули',
+          name: 'passportNumber',
+          label: 'Реєстраційний номер',
           type: 'text',
         },
         {
           name: 'passportDate',
-          label: 'Дата паспорту',
-          type: 'date',
-        },
-        {
-          name: 'passportNumber',
-          label: 'Номер паспорту',
-          type: 'text',
-        },
-        {
-          name: 'protocolDate',
-          label: 'Дата протоколу',
-          type: 'date',
-        },
-        {
-          name: 'protocolNumber',
-          label: 'Номер протоколу',
-          type: 'text',
-        },
-        {
-          name: 'protocolValidUntil',
-          label: 'Дійсний до',
-          type: 'date',
-        },
-        {
-          name: 'kspActDate',
-          label: 'Дата акту КСП',
-          type: 'date',
-        },
-        {
-          name: 'kspActNumber',
-          label: 'Номер акту КСП',
-          type: 'text',
-        },
-        {
-          name: 'attestationRegDate',
-          label: 'Дата реєстрації атестації',
-          type: 'date',
-        },
-        {
-          name: 'attestationRegNumber',
-          label: 'Номер реєстрації атестації',
-          type: 'text',
-        },
-        {
-          name: 'attestationDsszziDate',
-          label: 'Дата атестації ДССЗЗІ',
-          type: 'date',
-        },
-        {
-          name: 'attestationDsszziNumber',
-          label: 'Номер атестації ДССЗЗІ',
-          type: 'text',
-        },
-        {
-          name: 'attestationValidUntil',
-          label: 'Атестація дійсна до',
+          label: 'Дата реєстрації',
           type: 'date',
         },
       ],
@@ -181,61 +135,398 @@ const classASFormConfig: FormConfig = {
   ],
   nestedFields: [
     {
-      name: 'documents',
-      title: 'Документи',
-      icon: '📄',
-      defaultItem: { docType: '', date: '', number: '' },
+      name: 'categorization',
+      title: 'Категоріювання ОІД (ОЕОТ)',
+      icon: '📋',
+      defaultItem: {
+        categorizationActDate: '',
+        categorizationActNumber: '',
+        categorizationRank: '',
+        foreignCriticalArea: '',
+        hightInformationRank: '',
+      },
       fields: [
         {
-          name: 'docType',
-          label: 'Тип документу *',
-          type: 'text',
-          required: true,
-          fullWidth: true,
-        },
-        {
-          name: 'date',
-          label: 'Дата',
+          name: 'categorizationActDate',
+          label: 'Дата реєстрації акта категоріювання',
           type: 'date',
         },
         {
-          name: 'number',
-          label: 'Номер',
+          name: 'categorizationActNumber',
+          label: 'Номер акта категоріювання',
+          type: 'text',
+        },
+        {
+          name: 'categorizationRank',
+          label: 'Встановлена категорія',
+          type: 'select',
+          options: [
+            { value: 'I', label: 'I' },
+            { value: 'II', label: 'II' },
+            { value: 'III', label: 'III' },
+            { value: 'IV', label: 'IV' },
+          ],
+        },
+        {
+          name: 'foreignCriticalArea',
+          label:
+            'Наявність в критичній зоні екстериторіальних установ (організацій)',
+          type: 'select',
+          options: [
+            { value: 'Наявні', label: 'Наявні' },
+            { value: 'Відсутні', label: 'Відсутні' },
+          ],
+        },
+        {
+          name: 'hightInformationRank',
+          label: 'Вищий ступінь обмеження доступу до інформації',
+          type: 'select',
+          options: [
+            { value: 'цілком таємно', label: 'цілком таємно' },
+            { value: 'таємно', label: 'таємно' },
+            {
+              value: 'для службового користування',
+              label: 'для службового користування',
+            },
+            {
+              value: 'конфіденційна інформація',
+              label: 'конфіденційна інформація',
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'technicalTask',
+      title: 'Технічне завдання на створення комплексу ТЗІ',
+      icon: '🛠️',
+      defaultItem: { taskDate: '', taskNumber: '', taskClearance: '' },
+      fields: [
+        {
+          name: 'taskDate',
+          label: 'Дата реєстрації технічного завдання',
+          type: 'date',
+        },
+        {
+          name: 'taskNumber',
+          label: 'Реєстраційний номер технічного завдання',
+          type: 'text',
+        },
+        {
+          name: 'taskClearance',
+          label: 'Дата погодження технічного завдання',
+          type: 'date',
+        },
+      ],
+    },
+    {
+      name: 'instrumentalControl',
+      title: 'Протокол інструментального контролю захищеності інформації',
+      icon: '🔍',
+      defaultItem: {
+        controlNumber: '',
+        controlDate: '',
+        controlTermin: '',
+        controlPerformer: 'УРТЗІ ГУНП',
+        permissionPerformer:
+          'Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+      },
+      fields: [
+        {
+          name: 'controlNumber',
+          label: 'Реєстраційний номер протокола',
+          type: 'text',
+        },
+        {
+          name: 'controlDate',
+          label: 'Дата реєстрації протокола',
+          type: 'date',
+        },
+
+        {
+          name: 'controlTermin',
+          label: 'Термін дії протокола',
+          type: 'date',
+        },
+        {
+          name: 'controlPerformer',
+          label: 'Виконавець робіт з ТЗІ',
+          type: 'text',
+        },
+        {
+          name: 'permissionPerformer',
+          label: 'Реквізити Дозволу (ліцензії) на проведення робіт',
           type: 'text',
         },
       ],
     },
     {
+      name: 'specialCheck',
+      title: 'Акт комплексної спеціальної перевірки',
+      icon: '🔍',
+      defaultItem: {
+        checkNumber: '',
+        checkDate: '',
+        checkPerformer: 'УРТЗІ ГУНП',
+        checkPermissionPerformer:
+          'Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+      },
+      fields: [
+        {
+          name: 'checkNumber',
+          label: 'Реєстраційний номер акта',
+          type: 'text',
+        },
+        {
+          name: 'checkDate',
+          label: 'Дата реєстрації акта',
+          type: 'date',
+        },
+
+        {
+          name: 'checkPerformer',
+          label: 'Виконавець робіт з ТЗІ',
+          type: 'text',
+        },
+        {
+          name: 'checkPermissionPerformer',
+          label: 'Реквізити Дозволу (ліцензії) на проведення робіт',
+          type: 'text',
+        },
+      ],
+    },
+    {
+      name: 'atestation',
+      title: 'Атестація комплексу технічного захисту інформації',
+      icon: '✅',
+      defaultItem: {
+        attestationRegNumber: '',
+        attestationRegDate: '',
+        attestationDsszziDate: '',
+        attestationDsszziNumber: '',
+        attestationValidUntil: '',
+        atestationPerformer: 'УРТЗІ ГУНП',
+        atestationPermissionPerformer:
+          'Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+      },
+      fields: [
+        {
+          name: 'attestationRegNumber',
+          label: 'Реєстраційний номер акта атестації',
+          type: 'text',
+        },
+        {
+          name: 'attestationRegDate',
+          label: 'Дата реєстрації акта атестації',
+          type: 'date',
+        },
+
+        {
+          name: 'attestationDsszziDate',
+          label: 'Дата реєстрації акта в ДССЗЗІ',
+          type: 'date',
+        },
+        {
+          name: 'attestationDsszziNumber',
+          label: 'Реєстраційний номер акта в ДССЗЗІ',
+          type: 'text',
+        },
+        {
+          name: 'attestationValidUntil',
+          label: 'Акт атестації дійсний до',
+          type: 'date',
+        },
+        {
+          name: 'atestationPerformer',
+          label: 'Виконавець робіт з атестації комплексу ТЗІ',
+          type: 'text',
+        },
+        {
+          name: 'atestationPermissionPerformer',
+          label: 'Реквізити Дозволу (ліцензії) на проведення робіт',
+          type: 'text',
+        },
+      ],
+    },
+    //     {
+    // name: ''
+    //     },
+
+    {
+      name: 'complianceDocuments',
+      title: 'Документи про відповідність та сертифікацію',
+      icon: '📜',
+      defaultItem: {
+        documentType: '',
+        dsszzіNumber: '',
+        dsszzіDate: '',
+        validUntil: '',
+        expertOpinionNumber: '',
+        expertOpinionDate: '',
+        inclusionDate: '',
+        serialNumberInList: '',
+        nextAuthorizationDeadline: '',
+      },
+      fields: [
+        {
+          name: 'documentType',
+          label: 'Тип документа *',
+          type: 'select',
+          required: true,
+          options: [
+            {
+              value: 'Атестат відповідності',
+              label: 'Атестат відповідності',
+            },
+            {
+              value:
+                'Декларація про відповідність вимогам нормативних документів',
+              label:
+                'Декларація про відповідність вимогам нормативних документів',
+            },
+            {
+              value: 'Акт завершення робіт',
+              label: 'Акт завершення робіт',
+            },
+            {
+              value:
+                'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+              label:
+                'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+            },
+          ],
+        },
+        {
+          name: 'dsszzіNumber',
+          label: 'Зареєстровано в ДССЗЗІ за номером',
+          type: 'text',
+          visibleWhen: {
+            field: 'documentType',
+            values: [
+              'Атестат відповідності',
+              'Декларація про відповідність вимогам нормативних документів',
+              'Акт завершення робіт',
+              'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+            ],
+          },
+        },
+        {
+          name: 'dsszzіDate',
+          label: 'Дата реєстрації в ДССЗЗІ',
+          type: 'date',
+          visibleWhen: {
+            field: 'documentType',
+            values: [
+              'Атестат відповідності',
+              'Декларація про відповідність вимогам нормативних документів',
+              'Акт завершення робіт',
+              'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+            ],
+          },
+        },
+        {
+          name: 'validUntil',
+          label: 'Дійсний до',
+          type: 'date',
+          visibleWhen: {
+            field: 'documentType',
+            values: [
+              'Атестат відповідності',
+              'Декларація про відповідність вимогам нормативних документів',
+              'Акт завершення робіт',
+            ],
+          },
+        },
+        {
+          name: 'expertOpinionNumber',
+          label: 'Реєстраційний номер Експертного висновку',
+          type: 'text',
+          visibleWhen: {
+            field: 'documentType',
+            values: ['Атестат відповідності'],
+          },
+        },
+        {
+          name: 'expertOpinionDate',
+          label: 'Дата реєстрації Експертного висновку',
+          type: 'date',
+          visibleWhen: {
+            field: 'documentType',
+            values: ['Атестат відповідності'],
+          },
+        },
+        {
+          name: 'inclusionDate',
+          label: 'Дата включення до переліку',
+          type: 'date',
+          visibleWhen: {
+            field: 'documentType',
+            values: [
+              'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+            ],
+          },
+        },
+        {
+          name: 'serialNumberInList',
+          label: 'Порядковий номер у переліку',
+          type: 'text',
+          visibleWhen: {
+            field: 'documentType',
+            values: [
+              'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+            ],
+          },
+        },
+        {
+          name: 'nextAuthorizationDeadline',
+          label:
+            'Кінцевий строк проведення планової авторизації системи з безпеки',
+          type: 'date',
+          visibleWhen: {
+            field: 'documentType',
+            values: [
+              'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+            ],
+          },
+        },
+      ],
+    },
+    {
       name: 'protectionMeans',
-      title: 'Засоби захисту',
+      title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
       defaultItem: {
         name: '',
         serialNumber: '',
+        invertarNumber: '',
         releaseYear: '',
         certificateInfo: '',
       },
       fields: [
         {
           name: 'name',
-          label: 'Назва *',
+          label: 'Назва',
           type: 'text',
-          required: true,
-          fullWidth: true,
+          placeholder: 'Наприклад: Базальт-5ГЕШ"',
         },
         {
           name: 'serialNumber',
-          label: 'Серійний номер',
+          label: 'Серійний номер засобу',
+          type: 'text',
+        },
+        {
+          name: 'invertarNumber',
+          label: 'Інвентарний номер засобу',
           type: 'text',
         },
         {
           name: 'releaseYear',
-          label: 'Рік випуску',
+          label: 'Рік випуску засобу',
           type: 'number',
         },
         {
           name: 'certificateInfo',
-          label: 'Інформація про сертифікат',
+          label: 'Інформація про експертний висновок (сертифікат)',
           type: 'text',
           fullWidth: true,
         },
@@ -245,11 +536,11 @@ const classASFormConfig: FormConfig = {
       name: 'software',
       title: 'Програмне забезпечення',
       icon: '💾',
-      defaultItem: { name: '', version: '' },
+      defaultItem: { name: '', version: '', manufacturer: '' },
       fields: [
         {
           name: 'name',
-          label: 'Назва ПЗ *',
+          label: 'Найменування програмного забезпечення',
           type: 'text',
           required: true,
           fullWidth: true,
@@ -259,17 +550,22 @@ const classASFormConfig: FormConfig = {
           label: 'Версія',
           type: 'text',
         },
+        {
+          name: 'manufacturer',
+          label: 'Найменування виробника та його національна приналежність',
+          type: 'text',
+        },
       ],
     },
     {
       name: 'orders',
-      title: 'Накази',
+      title: 'Наказ про введення в експлуатацію та інші розпорядчі документи',
       icon: '📑',
       defaultItem: { orderType: '', number: '', date: '', publisher: '' },
       fields: [
         {
           name: 'orderType',
-          label: 'Тип наказу',
+          label: 'Короткий зміст наказу',
           type: 'text',
         },
         {
@@ -290,44 +586,64 @@ const classASFormConfig: FormConfig = {
       ],
     },
   ],
-  submitLabel: 'Зберегти АС',
+  submitLabel: 'Зберегти внесену інформацію',
 };
 
 // ===== CARD CONFIG =====
 const classASCardConfig: CardConfig = {
   title: 'systemName',
-  subtitle: 'address',
+  subtitle: 'systemClass',
   sections: [
     {
       title: '🏢 Основна інформація',
       fields: [
         { label: 'Адреса', value: 'address' },
-        { label: 'Підрозділ', value: 'subdivisionName', format: 'badge' },
+        {
+          label: 'Назва підрозділу',
+          value: 'subdivisionName',
+          format: 'badge',
+        },
         { label: 'Тип підрозділу', value: 'subdivisionType' },
-        { label: 'Служба', value: 'serviceName' },
+        { label: 'Назва служби', value: 'serviceName' },
         { label: 'Клас системи', value: 'systemClass', format: 'badge' },
+        { label: 'Назва системи', value: 'systemName' },
+      ],
+    },
+    {
+      title: 'Комплекс засобів захисту від несанкціонованого доступу',
+      fields: [
+        { label: 'Назва КЗЗ', value: 'kzzName' },
+        { label: 'Серійний номер КЗЗ', value: 'kzzSerial' },
+      ],
+    },
+    {
+      title: 'Антивірусне програмне забезпечення',
+      fields: [
+        { label: 'Назва АВ ПЗ', value: 'antivirus' },
+        {
+          label: 'Номер експертного висновку',
+          value: 'antivirusOpinionNumber',
+        },
+        {
+          label: 'Дата видачі висновку',
+          value: 'antivirusOpinionDate',
+          format: 'date',
+        },
       ],
     },
     {
       title: '📋 Документація',
       fields: [
-        { label: 'Акт категоризації', value: 'categorizationActNumber' },
-        { label: 'КЗЗ', value: 'kzzName' },
-        { label: 'Серійний номер КЗЗ', value: 'kzzSerial' },
-        { label: 'Антивірус', value: 'antivirus' },
-      ],
-    },
-    {
-      title: '✅ Атестація',
-      fields: [
+        { label: 'Номер формуляру', value: 'formulaNumber' },
         {
-          label: 'Атестація дійсна до',
-          value: 'attestationValidUntil',
+          label: 'Дата реєстрації формуляру',
+          value: 'formulaDate',
           format: 'date',
         },
+        { label: 'Номер паспорту', value: 'passportNumber' },
         {
-          label: 'Протокол дійсний до',
-          value: 'protocolValidUntil',
+          label: 'Дата реєстрації паспорту',
+          value: 'passportDate',
           format: 'date',
         },
       ],
@@ -335,31 +651,115 @@ const classASCardConfig: CardConfig = {
   ],
   nestedSections: [
     {
-      name: 'documents',
-      title: 'Документи',
-      icon: '📄',
-      itemTitle: 'docType',
+      name: 'categorization',
+      title: 'Категоріювання ОІД (ОЕОТ)',
+      icon: '📋',
+      itemTitle: 'categorizationRank',
       fields: [
-        { label: 'Дата', value: 'date', format: 'date' },
-        { label: 'Номер', value: 'number' },
+        {
+          label: 'Дата реєстрації акта',
+          value: 'categorizationActDate',
+          format: 'date',
+        },
+        { label: 'Номер акта', value: 'categorizationActNumber' },
+        { label: 'Категорія', value: 'categorizationRank', format: 'badge' },
+        {
+          label: 'Іноземні організації в критичній зоні',
+          value: 'foreignCriticalArea',
+        },
+        { label: 'Ступінь таємності', value: 'hightInformationRank' },
+      ],
+    },
+    {
+      name: 'technicalTask',
+      title: 'Технічне завдання на створення комплексу ТЗІ',
+      icon: '🛠️',
+      itemTitle: 'taskNumber',
+      fields: [
+        { label: 'Дата реєстрації', value: 'taskDate', format: 'date' },
+        { label: 'Реєстраційний номер', value: 'taskNumber' },
+        { label: 'Дата погодження', value: 'taskClearance', format: 'date' },
+      ],
+    },
+    {
+      name: 'instrumentalControl',
+      title: 'Протокол інструментального контролю',
+      icon: '🔍',
+      itemTitle: 'controlNumber',
+      fields: [
+        { label: 'Реєстраційний номер', value: 'controlNumber' },
+        { label: 'Дата реєстрації', value: 'controlDate', format: 'date' },
+        { label: 'Термін дії', value: 'controlTermin', format: 'date' },
+        { label: 'Виконавець', value: 'controlPerformer' },
+      ],
+    },
+    {
+      name: 'specialCheck',
+      title: 'Акт комплексної спеціальної перевірки',
+      icon: '🔍',
+      itemTitle: 'checkNumber',
+      fields: [
+        { label: 'Реєстраційний номер', value: 'checkNumber' },
+        { label: 'Дата реєстрації', value: 'checkDate', format: 'date' },
+        { label: 'Виконавець', value: 'checkPerformer' },
+      ],
+    },
+    {
+      name: 'atestation',
+      title: 'Атестація комплексу технічного захисту інформації',
+      icon: '✅',
+      itemTitle: 'attestationRegNumber',
+      fields: [
+        { label: 'Реєстраційний номер', value: 'attestationRegNumber' },
+        {
+          label: 'Дата реєстрації',
+          value: 'attestationRegDate',
+          format: 'date',
+        },
+        {
+          label: 'Дата ДССЗЗІ',
+          value: 'attestationDsszziDate',
+          format: 'date',
+        },
+        { label: 'Номер ДССЗЗІ', value: 'attestationDsszziNumber' },
+        { label: 'Дійсний до', value: 'attestationValidUntil', format: 'date' },
+      ],
+    },
+    {
+      name: 'complianceDocuments',
+      title: 'Документи про відповідність та сертифікацію',
+      icon: '📜',
+      itemTitle: 'documentType',
+      fields: [
+        { label: 'Тип документа', value: 'documentType', format: 'badge' },
+        { label: 'Номер ДССЗЗІ', value: 'dsszzіNumber' },
+        { label: 'Дата ДССЗЗІ', value: 'dsszzіDate', format: 'date' },
+        { label: 'Дійсний до', value: 'validUntil', format: 'date' },
+        { label: 'Номер експертного висновку', value: 'expertOpinionNumber' },
       ],
     },
     {
       name: 'protectionMeans',
-      title: 'Засоби захисту',
+      title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
       itemTitle: 'name',
       fields: [
+        { label: 'Назва', value: 'name' },
         { label: 'Серійний номер', value: 'serialNumber' },
+        { label: 'Інвентарний номер', value: 'invertarNumber' },
         { label: 'Рік випуску', value: 'releaseYear' },
       ],
     },
     {
       name: 'software',
-      title: 'ПЗ',
+      title: 'Програмне забезпечення',
       icon: '💾',
       itemTitle: 'name',
-      fields: [{ label: 'Версія', value: 'version' }],
+      fields: [
+        { label: 'Найменування', value: 'name' },
+        { label: 'Версія', value: 'version' },
+        { label: 'Виробник', value: 'manufacturer' },
+      ],
     },
     {
       name: 'orders',
@@ -367,25 +767,39 @@ const classASCardConfig: CardConfig = {
       icon: '📑',
       itemTitle: 'orderType',
       fields: [
+        { label: 'Тип наказу', value: 'orderType' },
         { label: 'Номер', value: 'number' },
         { label: 'Дата', value: 'date', format: 'date' },
         { label: 'Видавець', value: 'publisher' },
       ],
     },
   ],
-  deleteLabel: 'Видалити систему',
-  deleteConfirmName: (data) => `АС ${data.systemName} (${data.systemClass})`,
+  deleteLabel: 'Видалити запис про автоматизовану систему',
+  deleteConfirmName: (data) => `${data.systemName} (${data.systemClass})`,
 };
 
 // ===== LIST CONFIG =====
 const classASListConfig: ListConfig = {
   searchFields: [
-    'address',
-    'subdivisionName',
-    'serviceName',
     'systemName',
+    'subdivisionName',
     'systemClass',
+    'serviceName',
+    'address',
   ],
+  sortFunction: (items: any[]) => {
+    return items.sort((a, b) => {
+      // Пріоритет за класом системи
+      const classOrder = { 'АС класу 1': 0, 'АС класу 2': 1, 'АС класу 3': 2 };
+      const classA =
+        classOrder[a.systemClass as keyof typeof classOrder] ?? 999;
+      const classB =
+        classOrder[b.systemClass as keyof typeof classOrder] ?? 999;
+      if (classA !== classB) return classA - classB;
+      // Потім за назвою системи
+      return (a.systemName || '').localeCompare(b.systemName || '');
+    });
+  },
   CardComponent: (props) => (
     <GenericCard config={classASCardConfig} data={props} {...props} />
   ),
@@ -397,10 +811,10 @@ const classASListConfig: ListConfig = {
 
 // ===== TAB CONFIG =====
 const classASTabConfig: TabConfig = {
-  apiEndpoint: '/api/objects/class_a_systems',
+  apiEndpoint: '/api/objects/class-a-systems',
   displayName: 'АС класу 1, 2, 3',
-  searchPlaceholder: 'Пошук по адресі, назві підрозділу, назві АС...',
-  addButtonLabel: '+ Додати АС',
+  searchPlaceholder: 'Пошук по назві системи, підрозділу, класу...',
+  addButtonLabel: '+ Додати автоматизовану систему',
   FormComponent: (props) => (
     <GenericForm config={classASFormConfig} {...props} />
   ),
@@ -413,244 +827,3 @@ const classASTabConfig: TabConfig = {
 export default function ClassASTab() {
   return <GenericTab config={classASTabConfig} />;
 }
-
-// import { useState, useEffect, useRef } from 'react';
-// import ClassASForm from '../class-as/ClassASForm';
-// import ClassASList from '../class-as/ClassASList';
-// import '../../styles/TabContent.css';
-
-// interface ClassASData {
-//   id: number;
-//   address: string;
-//   subdivisionName: string;
-//   subdivisionType: string;
-//   serviceName: string;
-//   systemClass: string;
-//   systemName: string;
-//   categorizationActDate: string;
-//   categorizationActNumber: string;
-//   kzzName: string;
-//   kzzSerial: string;
-//   antivirus: string;
-//   antivirusOpinionNumber: string;
-//   ttCreateDate: string;
-//   ttCreateNumber: string;
-//   formulaDate: string;
-//   formulaNumber: string;
-//   passportDate: string;
-//   passportNumber: string;
-//   protocolDate: string;
-//   protocolNumber: string;
-//   protocolValidUntil: string;
-//   kspActDate: string;
-//   kspActNumber: string;
-//   attestationRegDate: string;
-//   attestationRegNumber: string;
-//   attestationDsszziDate: string;
-//   attestationDsszziNumber: string;
-//   attestationValidUntil: string;
-//   documents: any[];
-//   protectionMeans: any[];
-//   software: any[];
-//   orders: any[];
-// }
-
-// export default function ClassASTab() {
-//   const [systems, setSystems] = useState<ClassASData[]>([]);
-//   const [isLoading, setIsLoading] = useState(false);
-//   const [error, setError] = useState('');
-//   const [showForm, setShowForm] = useState(false);
-//   const [editingId, setEditingId] = useState<number | null>(null);
-//   const [searchTerm, setSearchTerm] = useState('');
-
-//   const formContainerRef = useRef<HTMLDivElement>(null);
-
-//   useEffect(() => {
-//     console.log('ClassASTab mounted, fetching systems...');
-//     fetchSystems();
-//   }, []);
-
-//   const fetchSystems = async () => {
-//     try {
-//       setIsLoading(true);
-//       setError('');
-//       console.log('Fetching from /api/objects/class_a_systems');
-
-//       const response = await fetch('/api/objects/class_a_systems');
-
-//       console.log('Response status:', response.status);
-
-//       if (!response.ok) {
-//         throw new Error(`HTTP error! status: ${response.status}`);
-//       }
-
-//       const data = await response.json();
-//       console.log('Received data:', data);
-//       setSystems(data);
-//     } catch (err) {
-//       console.error('Fetch error:', err);
-//       setError(`Помилка завантаження: ${(err as Error).message}`);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const handleSubmit = async (data: ClassASData) => {
-//     try {
-//       setIsLoading(true);
-//       setError('');
-
-//       const url = editingId
-//         ? `/api/objects/class_a_systems/${editingId}`
-//         : '/api/objects/class_a_systems';
-//       const method = editingId ? 'PUT' : 'POST';
-
-//       console.log('=== SUBMIT START ===');
-//       console.log('URL:', url);
-//       console.log('Method:', method);
-//       console.log('Data:', data);
-
-//       const response = await fetch(url, {
-//         method,
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(data),
-//       });
-
-//       console.log('Response status:', response.status);
-
-//       if (!response.ok) {
-//         const errorData = await response.json();
-//         console.error('Error response:', errorData);
-//         throw new Error(
-//           errorData.error || `HTTP error! status: ${response.status}`,
-//         );
-//       }
-
-//       const result = await response.json();
-//       console.log('Success response:', result);
-
-//       await fetchSystems();
-//       setShowForm(false);
-//       setEditingId(null);
-//       console.log('=== SUBMIT END (SUCCESS) ===');
-//     } catch (err) {
-//       console.error('=== SUBMIT ERROR ===', err);
-//       setError(`Помилка збереження: ${(err as Error).message}`);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const handleDelete = async (id: number) => {
-//     try {
-//       setIsLoading(true);
-//       setError('');
-
-//       console.log('Deleting system:', id);
-
-//       const response = await fetch(`/api/objects/class_a_systems/${id}`, {
-//         method: 'DELETE',
-//       });
-
-//       if (!response.ok) {
-//         throw new Error('Помилка видалення');
-//       }
-
-//       console.log('System deleted successfully');
-//       await fetchSystems();
-//     } catch (err) {
-//       console.error('Delete error:', err);
-//       setError(`Помилка видалення: ${(err as Error).message}`);
-//     } finally {
-//       setIsLoading(false);
-//     }
-//   };
-
-//   const handleEdit = (system: ClassASData) => {
-//     console.log('=== EDIT START ===');
-//     console.log('System data:', system);
-//     setEditingId(system.id || null);
-//     setShowForm(true);
-
-//     setTimeout(() => {
-//       if (formContainerRef.current) {
-//         formContainerRef.current.scrollIntoView({
-//           behavior: 'smooth',
-//           block: 'start',
-//         });
-//       }
-//     }, 100);
-
-//     console.log('=== EDIT END ===');
-//   };
-
-//   const handleCloseForm = () => {
-//     setShowForm(false);
-//     setEditingId(null);
-//   };
-
-//   const handleFormSubmit = (data: any) => {
-//     handleSubmit({ ...data, id: editingId || 0 });
-//   };
-
-//   return (
-//     <div className='tab-content-wrapper'>
-//       {error && (
-//         <div className='error-message'>
-//           <span>{error}</span>
-//           <button onClick={() => setError('')}>✕</button>
-//         </div>
-//       )}
-
-//       <div className='content-controls'>
-//         <input
-//           type='text'
-//           className='search-input'
-//           placeholder='Пошук по адресі, назві підрозділу, назві АС...'
-//           value={searchTerm}
-//           onChange={(e) => setSearchTerm(e.target.value)}
-//         />
-//         {!showForm && (
-//           <button
-//             className='btn-primary'
-//             onClick={() => {
-//               setEditingId(null);
-//               setShowForm(true);
-//               setTimeout(() => {
-//                 if (formContainerRef.current) {
-//                   formContainerRef.current.scrollIntoView({
-//                     behavior: 'smooth',
-//                     block: 'start',
-//                   });
-//                 }
-//               }, 100);
-//             }}
-//           >
-//             + Додати АС
-//           </button>
-//         )}
-//       </div>
-
-//       {showForm && (
-//         <div className='form-container' ref={formContainerRef}>
-//           <ClassASForm
-//             onSubmit={handleFormSubmit}
-//             initialData={
-//               editingId ? systems.find((s) => s.id === editingId) : undefined
-//             }
-//             isLoading={isLoading}
-//             onClose={handleCloseForm}
-//           />
-//         </div>
-//       )}
-
-//       <ClassASList
-//         systems={systems}
-//         searchTerm={searchTerm}
-//         onEdit={handleEdit}
-//         onDelete={handleDelete}
-//         isLoading={isLoading}
-//       />
-//     </div>
-//   );
-// }

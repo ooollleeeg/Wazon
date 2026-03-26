@@ -126,6 +126,7 @@ function initializeDatabase() {
         systemId INTEGER NOT NULL,
         name TEXT,
         serialNumber TEXT,
+        invertarNumber TEXT,
         releaseYear INTEGER,
         certificateInfo TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -139,6 +140,96 @@ function initializeDatabase() {
         systemId INTEGER NOT NULL,
         name TEXT,
         version TEXT,
+        manufacturer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(
+      `
+      CREATE TABLE IF NOT EXISTS class_a_systems_categorization (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        categorizationActDate TEXT,
+        categorizationActNumber TEXT,
+        categorizationRank TEXT,
+        foreignCriticalArea TEXT,
+        hightInformationRank TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `,
+    );
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_technical_task (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        taskDate TEXT,
+        taskNumber TEXT,
+        taskClearance TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_instrumental_control (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        controlNumber TEXT,
+        controlDate TEXT,
+        controlTermin TEXT,
+        controlPerformer TEXT,
+        permissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_special_check (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        checkNumber TEXT,
+        checkDate TEXT,
+        checkPerformer TEXT,
+        checkPermissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_atestation (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        attestationRegNumber TEXT,
+        attestationRegDate TEXT,
+        attestationDsszziDate TEXT,
+        attestationDsszziNumber TEXT,
+        attestationValidUntil TEXT,
+        atestationPerformer TEXT,
+        atestationPermissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_compliance_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        documentType TEXT,
+        dsszzіNumber TEXT,
+        dsszzіDate TEXT,
+        validUntil TEXT,
+        expertOpinionNumber TEXT,
+        expertOpinionDate TEXT,
+        inclusionDate TEXT,
+        serialNumberInList TEXT,
+        nextAuthorizationDeadline TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
       )

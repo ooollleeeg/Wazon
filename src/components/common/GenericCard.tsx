@@ -21,7 +21,7 @@ export interface NestedCardSection {
   fields: {
     label: string;
     value: string; // Field name in nested item
-    format?: 'date' | 'text';
+    format?: 'date' | 'text' | 'badge' | 'link';
   }[];
 }
 
@@ -56,35 +56,47 @@ export default function GenericCard({
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const formatValue = (value: any, format?: string) => {
-    if (!value) return '-';
-
-    // ✅ Підсвічуємо текст якщо є searchTerm
-    const displayValue =
-      typeof value === 'string' ? highlightText(value, searchTerm) : value;
+    if (!value && value !== 0) return '-';
 
     switch (format) {
-      case 'date':
-        return new Date(value).toLocaleDateString('uk-UA');
-      case 'link':
-        if (value.includes('@')) {
+      case 'date': {
+        const formattedDate = new Date(value).toLocaleDateString('uk-UA');
+        // ✅ Підсвічуємо дату якщо є searchTerm
+        return highlightText(formattedDate, searchTerm);
+      }
+      case 'link': {
+        // ✅ Підсвічуємо текст якщо є searchTerm
+        const stringValue = String(value);
+        const displayValue = highlightText(stringValue, searchTerm);
+        if (stringValue.includes('@')) {
           return (
-            <a href={`mailto:${value}`} className='value link'>
+            <a href={`mailto:${stringValue}`} className='value link'>
               {displayValue}
             </a>
           );
         }
-        if (value.startsWith('+') || value.startsWith('0')) {
+        if (stringValue.startsWith('+') || stringValue.startsWith('0')) {
           return (
-            <a href={`tel:${value}`} className='value link'>
+            <a href={`tel:${stringValue}`} className='value link'>
               {displayValue}
             </a>
           );
         }
         return displayValue;
-      case 'badge':
+      }
+      case 'badge': {
+        // ✅ Підсвічуємо текст якщо є searchTerm
+        const stringValue = String(value);
+        const displayValue = highlightText(stringValue, searchTerm);
         return <span className='value badge'>{displayValue}</span>;
-      default:
+      }
+      default: {
+        // ✅ Підсвічуємо текст якщо є searchTerm
+        // Перевертаємо число на строку для підсвічування
+        const stringValue = String(value);
+        const displayValue = highlightText(stringValue, searchTerm);
         return displayValue;
+      }
     }
   };
 

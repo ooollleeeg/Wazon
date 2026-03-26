@@ -159,17 +159,78 @@ export const objectTypes = {
     icon: '🖥️',
     mainFields: ['subdivisionName', 'systemClass', 'systemName'],
     nestedTables: {
-      documents: {
-        table: 'class_a_systems_documents',
-        fields: ['docType', 'date', 'number'],
+      categorization: {
+        table: 'class_a_systems_categorization',
+        fields: [
+          'categorizationActDate',
+          'categorizationActNumber',
+          'categorizationRank',
+          'foreignCriticalArea',
+          'hightInformationRank',
+        ],
+      },
+      technicalTask: {
+        table: 'class_a_systems_technical_task',
+        fields: ['taskDate', 'taskNumber', 'taskClearance'],
+      },
+      instrumentalControl: {
+        table: 'class_a_systems_instrumental_control',
+        fields: [
+          'controlNumber',
+          'controlDate',
+          'controlTermin',
+          'controlPerformer',
+          'permissionPerformer',
+        ],
+      },
+      specialCheck: {
+        table: 'class_a_systems_special_check',
+        fields: [
+          'checkNumber',
+          'checkDate',
+          'checkPerformer',
+          'checkPermissionPerformer',
+        ],
+      },
+      atestation: {
+        table: 'class_a_systems_atestation',
+        fields: [
+          'attestationRegNumber',
+          'attestationRegDate',
+          'attestationDsszziDate',
+          'attestationDsszziNumber',
+          'attestationValidUntil',
+          'atestationPerformer',
+          'atestationPermissionPerformer',
+        ],
+      },
+      complianceDocuments: {
+        table: 'class_a_systems_compliance_documents',
+        fields: [
+          'documentType',
+          'dsszzіNumber',
+          'dsszzіDate',
+          'validUntil',
+          'expertOpinionNumber',
+          'expertOpinionDate',
+          'inclusionDate',
+          'serialNumberInList',
+          'nextAuthorizationDeadline',
+        ],
       },
       protectionMeans: {
         table: 'class_a_systems_protection_means',
-        fields: ['name', 'serialNumber', 'releaseYear', 'certificateInfo'],
+        fields: [
+          'name',
+          'serialNumber',
+          'invertarNumber',
+          'releaseYear',
+          'certificateInfo',
+        ],
       },
       software: {
         table: 'class_a_systems_software',
-        fields: ['name', 'version'],
+        fields: ['name', 'version', 'manufacturer'],
       },
       orders: {
         table: 'class_a_systems_orders',

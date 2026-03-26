@@ -13,6 +13,10 @@ export interface FormField {
   max?: string | number;
   options?: { value: string; label: string }[]; // For select fields
   fullWidth?: boolean;
+  visibleWhen?: {
+    field: string;
+    values: string[];
+  };
 }
 
 export interface FormSection {
@@ -248,7 +252,18 @@ export default function GenericForm({
     value: any,
     nestedName: string,
     itemIndex: number,
+    item: any,
   ) => {
+    // Перевіряємо умову видимості
+    if (field.visibleWhen) {
+      const { field: conditionField, values: conditionValues } =
+        field.visibleWhen;
+      const fieldValue = item[conditionField];
+      if (!conditionValues.includes(fieldValue)) {
+        return null; // Не показуємо поле
+      }
+    }
+
     const fieldClass = field.fullWidth ? 'full-width' : '';
 
     if (field.type === 'select') {
@@ -395,6 +410,7 @@ export default function GenericForm({
                         item[field.name],
                         nestedConfig.name,
                         itemIdx,
+                        item,
                       ),
                     )}
                   </div>
