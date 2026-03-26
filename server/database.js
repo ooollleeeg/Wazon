@@ -76,6 +76,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS class_a_systems (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         address TEXT,
+        premisesNumber TEXT,
         subdivisionName TEXT NOT NULL,
         subdivisionType TEXT,
         serviceName TEXT,

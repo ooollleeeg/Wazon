@@ -6,10 +6,11 @@ import { searchInObject } from '../../utils/searchUtils';
 export interface ListConfig {
   searchFields: string[]; // ['fullName', 'position', 'email']
   sortFunction?: (items: any[]) => any[]; // Optional custom sort function
-  CardComponent: React.ComponentType<any>;
   CompactCardComponent: React.ComponentType<any>;
+  CardComponent: React.ComponentType<any>;
   emptyMessage: string; // 'Немає даних'
   noResultsMessage: string; // 'Результатів не знайдено'
+  compactThreshold?: number; // Show compact view when items >= this number (default: 1)
 }
 
 interface GenericListProps {
@@ -74,10 +75,11 @@ export default function GenericList({
   }
 
   // Логіка відображення:
-  // - Якщо 1 карточка: повний вид без кнопки закриття
-  // - Якщо 2+ карточки: компактний вид з можливістю розгортання
-  const isSingleCard = filteredItems.length === 1;
-  const useCompactMode = filteredItems.length >= 2;
+  // - Якщо менше за compactThreshold записів: повний вид без кнопки закриття
+  // - Якщо compactThreshold або більше: компактний вид з можливістю розгортання
+  const compactThreshold = config.compactThreshold ?? 1;
+  const isSingleCard = filteredItems.length < compactThreshold;
+  const useCompactMode = filteredItems.length >= compactThreshold;
 
   return (
     <div className='generic-list'>

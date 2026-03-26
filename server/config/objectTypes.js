@@ -240,6 +240,7 @@ export const objectTypes = {
     foreignKeyName: 'systemId',
     fields: [
       'address',
+      'premisesNumber',
       'subdivisionName',
       'subdivisionType',
       'serviceName',

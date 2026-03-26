@@ -19,8 +19,14 @@ const classASFormConfig: FormConfig = {
           fullWidth: true,
         },
         {
+          name: 'premisesNumber',
+          label: 'Номер приміщення, в якому розміщується АС',
+          type: 'text',
+          placeholder: 'Наприклад: 101',
+        },
+        {
           name: 'subdivisionName',
-          label: 'Назва підрозділу *',
+          label: 'Назва підрозділу',
           type: 'text',
           required: true,
           placeholder: 'Наприклад: УОТЗ',
@@ -46,7 +52,7 @@ const classASFormConfig: FormConfig = {
         },
         {
           name: 'systemClass',
-          label: 'Клас системи *',
+          label: 'Клас системи',
           type: 'select',
           required: true,
           options: [
@@ -96,7 +102,7 @@ const classASFormConfig: FormConfig = {
         {
           name: 'antivirusOpinionDate',
           label: 'Дата видачі експертного висновку',
-          type: 'text',
+          type: 'date',
         },
       ],
     },
@@ -598,6 +604,7 @@ const classASCardConfig: CardConfig = {
       title: '🏢 Основна інформація',
       fields: [
         { label: 'Адреса', value: 'address' },
+        { label: 'Номер приміщення', value: 'premisesNumber' },
         {
           label: 'Назва підрозділу',
           value: 'subdivisionName',
@@ -785,8 +792,8 @@ const classASListConfig: ListConfig = {
     'subdivisionName',
     'systemClass',
     'serviceName',
-    'systemName',
-    'systemClass',
+    'address',
+    'premisesNumber',
   ],
   compactThreshold: 2,
   CardComponent: (props) => (
@@ -800,7 +807,7 @@ const classASListConfig: ListConfig = {
 
 // ===== TAB CONFIG =====
 const classASTabConfig: TabConfig = {
-  apiEndpoint: '/api/objects/class-a-systems',
+  apiEndpoint: '/api/objects/class_a_systems',
   displayName: 'АС класу 1, 2, 3',
   searchPlaceholder: 'Пошук по назві системи, підрозділу, класу...',
   addButtonLabel: '+ Додати автоматизовану систему',
