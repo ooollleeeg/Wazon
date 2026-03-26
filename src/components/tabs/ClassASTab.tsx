@@ -785,21 +785,10 @@ const classASListConfig: ListConfig = {
     'subdivisionName',
     'systemClass',
     'serviceName',
-    'address',
+    'systemName',
+    'systemClass',
   ],
-  sortFunction: (items: any[]) => {
-    return items.sort((a, b) => {
-      // Пріоритет за класом системи
-      const classOrder = { 'АС класу 1': 0, 'АС класу 2': 1, 'АС класу 3': 2 };
-      const classA =
-        classOrder[a.systemClass as keyof typeof classOrder] ?? 999;
-      const classB =
-        classOrder[b.systemClass as keyof typeof classOrder] ?? 999;
-      if (classA !== classB) return classA - classB;
-      // Потім за назвою системи
-      return (a.systemName || '').localeCompare(b.systemName || '');
-    });
-  },
+  compactThreshold: 2,
   CardComponent: (props) => (
     <GenericCard config={classASCardConfig} data={props} {...props} />
   ),
