@@ -78,11 +78,13 @@ const classASFormConfig: FormConfig = {
           name: 'kzzName',
           label: 'Назва КЗЗ',
           type: 'text',
+          placeholder: 'Наприклад: Гриф версії 5',
         },
         {
           name: 'kzzSerial',
           label: 'Серійний номер КЗЗ',
           type: 'text',
+          placeholder: 'Наприклад: 001',
         },
       ],
     },
@@ -93,11 +95,13 @@ const classASFormConfig: FormConfig = {
           name: 'antivirus',
           label: 'Назва антивірусного ПЗ',
           type: 'text',
+          placeholder: 'Наприклад: Zillya Antivirus для бізнесу',
         },
         {
           name: 'antivirusOpinionNumber',
           label: 'Номер експертного висновку',
           type: 'text',
+          placeholder: 'Наприклад: 12345',
         },
         {
           name: 'antivirusOpinionDate',
@@ -114,6 +118,7 @@ const classASFormConfig: FormConfig = {
           name: 'formulaNumber',
           label: 'Реєстраційний номер',
           type: 'text',
+          placeholder: 'Наприклад: 16/2-71дск',
         },
         {
           name: 'formulaDate',
@@ -130,6 +135,7 @@ const classASFormConfig: FormConfig = {
           name: 'passportNumber',
           label: 'Реєстраційний номер',
           type: 'text',
+          placeholder: 'Наприклад: 16/2-66т',
         },
         {
           name: 'passportDate',
@@ -161,6 +167,7 @@ const classASFormConfig: FormConfig = {
           name: 'categorizationActNumber',
           label: 'Номер акта категоріювання',
           type: 'text',
+          placeholder: 'Наприклад: 16/2-11дск',
         },
         {
           name: 'categorizationRank',
@@ -186,6 +193,7 @@ const classASFormConfig: FormConfig = {
         {
           name: 'hightInformationRank',
           label: 'Вищий ступінь обмеження доступу до інформації',
+          fullWidth: true,
           type: 'select',
           options: [
             { value: 'цілком таємно', label: 'цілком таємно' },
@@ -217,6 +225,7 @@ const classASFormConfig: FormConfig = {
           name: 'taskNumber',
           label: 'Реєстраційний номер технічного завдання',
           type: 'text',
+          placeholder: 'Наприклад: 16/2-55т',
         },
         {
           name: 'taskClearance',
@@ -242,6 +251,7 @@ const classASFormConfig: FormConfig = {
           name: 'controlNumber',
           label: 'Реєстраційний номер протокола',
           type: 'text',
+          placeholder: 'Наприклад: 7/1-71т',
         },
         {
           name: 'controlDate',
@@ -258,11 +268,15 @@ const classASFormConfig: FormConfig = {
           name: 'controlPerformer',
           label: 'Виконавець робіт з ТЗІ',
           type: 'text',
+          placeholder: 'Наприклад: ДРТЗІ НПУ',
         },
         {
           name: 'permissionPerformer',
           label: 'Реквізити Дозволу (ліцензії) на проведення робіт',
           type: 'text',
+          fullWidth: true,
+          placeholder:
+            'Наприклад: Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
         },
       ],
     },
@@ -282,6 +296,7 @@ const classASFormConfig: FormConfig = {
           name: 'checkNumber',
           label: 'Реєстраційний номер акта',
           type: 'text',
+          placeholder: 'Наприклад: 16/2-71т',
         },
         {
           name: 'checkDate',
@@ -293,11 +308,15 @@ const classASFormConfig: FormConfig = {
           name: 'checkPerformer',
           label: 'Виконавець робіт з ТЗІ',
           type: 'text',
+          placeholder: 'Наприклад: ДРТЗІ НПУ',
         },
         {
           name: 'checkPermissionPerformer',
           label: 'Реквізити Дозволу (ліцензії) на проведення робіт',
           type: 'text',
+          fullWidth: true,
+          placeholder:
+            'Наприклад: Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
         },
       ],
     },
@@ -320,6 +339,7 @@ const classASFormConfig: FormConfig = {
           name: 'attestationRegNumber',
           label: 'Реєстраційний номер акта атестації',
           type: 'text',
+          placeholder: 'Наприклад: 16/2-71т',
         },
         {
           name: 'attestationRegDate',
@@ -336,6 +356,7 @@ const classASFormConfig: FormConfig = {
           name: 'attestationDsszziNumber',
           label: 'Реєстраційний номер акта в ДССЗЗІ',
           type: 'text',
+          placeholder: 'Наприклад: 2226',
         },
         {
           name: 'attestationValidUntil',
@@ -346,11 +367,15 @@ const classASFormConfig: FormConfig = {
           name: 'atestationPerformer',
           label: 'Виконавець робіт з атестації комплексу ТЗІ',
           type: 'text',
+          placeholder: 'Наприклад: ДРТЗІ НПУ',
         },
         {
           name: 'atestationPermissionPerformer',
           label: 'Реквізити Дозволу (ліцензії) на проведення робіт',
           type: 'text',
+          fullWidth: true,
+          placeholder:
+            'Наприклад: Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
         },
       ],
     },
@@ -376,7 +401,7 @@ const classASFormConfig: FormConfig = {
       fields: [
         {
           name: 'documentType',
-          label: 'Тип документа *',
+          label: 'Тип документа',
           type: 'select',
           required: true,
           options: [
@@ -527,8 +552,8 @@ const classASFormConfig: FormConfig = {
         },
         {
           name: 'releaseYear',
-          label: 'Рік випуску засобу',
-          type: 'number',
+          label: 'Дата виготовлення засобу (DD.MM.YYYY)',
+          type: 'date',
         },
         {
           name: 'certificateInfo',
@@ -550,16 +575,19 @@ const classASFormConfig: FormConfig = {
           type: 'text',
           required: true,
           fullWidth: true,
+          placeholder: 'Наприклад: Libra Office',
         },
         {
           name: 'version',
           label: 'Версія',
           type: 'text',
+          placeholder: 'Наприклад: 1.0.0',
         },
         {
           name: 'manufacturer',
           label: 'Найменування виробника та його національна приналежність',
           type: 'text',
+          placeholder: 'Наприклад: ABC Corp, США',
         },
       ],
     },
@@ -573,6 +601,8 @@ const classASFormConfig: FormConfig = {
           name: 'orderType',
           label: 'Короткий зміст наказу',
           type: 'text',
+          placeholder:
+            'Наприклад: Про введення в експлуатацію автоматизованиої системи класу 1 в РСС АБВГД ГУНП',
         },
         {
           name: 'number',
@@ -674,7 +704,10 @@ const classASCardConfig: CardConfig = {
           label: 'Іноземні організації в критичній зоні',
           value: 'foreignCriticalArea',
         },
-        { label: 'Ступінь таємності', value: 'hightInformationRank' },
+        {
+          label: 'Вищий ступінь обмеження доступу до інформації',
+          value: 'hightInformationRank',
+        },
       ],
     },
     {
@@ -698,6 +731,7 @@ const classASCardConfig: CardConfig = {
         { label: 'Дата реєстрації', value: 'controlDate', format: 'date' },
         { label: 'Термін дії', value: 'controlTermin', format: 'date' },
         { label: 'Виконавець', value: 'controlPerformer' },
+        { label: 'Реквізити Дозволу (ліцензії)', value: 'permissionPerformer' },
       ],
     },
     {
@@ -709,6 +743,10 @@ const classASCardConfig: CardConfig = {
         { label: 'Реєстраційний номер', value: 'checkNumber' },
         { label: 'Дата реєстрації', value: 'checkDate', format: 'date' },
         { label: 'Виконавець', value: 'checkPerformer' },
+        {
+          label: 'Реквізити Дозволу (ліцензії)',
+          value: 'checkPermissionPerformer',
+        },
       ],
     },
     {
@@ -730,6 +768,11 @@ const classASCardConfig: CardConfig = {
         },
         { label: 'Номер ДССЗЗІ', value: 'attestationDsszziNumber' },
         { label: 'Дійсний до', value: 'attestationValidUntil', format: 'date' },
+        { label: 'Виконавець робіт', value: 'atestationPerformer' },
+        {
+          label: 'Реквізити Дозволу (ліцензії)',
+          value: 'atestationPermissionPerformer',
+        },
       ],
     },
     {
@@ -754,7 +797,8 @@ const classASCardConfig: CardConfig = {
         { label: 'Назва', value: 'name' },
         { label: 'Серійний номер', value: 'serialNumber' },
         { label: 'Інвентарний номер', value: 'invertarNumber' },
-        { label: 'Рік випуску', value: 'releaseYear' },
+        { label: 'Дата виготовлення', value: 'releaseYear', format: 'date' },
+        { label: 'Дані експертного висновку', value: 'certificateInfo' },
       ],
     },
     {

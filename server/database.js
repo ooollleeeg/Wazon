@@ -88,6 +88,7 @@ function initializeDatabase() {
         kzzSerial TEXT,
         antivirus TEXT,
         antivirusOpinionNumber TEXT,
+        antivirusOpinionDate TEXT,
         ttCreateDate TEXT,
         ttCreateNumber TEXT,
         formulaDate TEXT,

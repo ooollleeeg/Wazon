@@ -252,6 +252,7 @@ export const objectTypes = {
       'kzzSerial',
       'antivirus',
       'antivirusOpinionNumber',
+      'antivirusOpinionDate',
       'ttCreateDate',
       'ttCreateNumber',
       'formulaDate',
