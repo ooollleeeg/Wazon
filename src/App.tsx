@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './styles/App.css';
 import PersonnelTab from './components/tabs/PersonnelTab';
 import ClassASTab from './components/tabs/ClassASTab';
@@ -127,6 +127,23 @@ const TABS: Tab[] = [
 function App() {
   const [currentTab, setCurrentTab] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   const CurrentComponent = TABS[currentTab].component;
   const currentTabData = TABS[currentTab];
@@ -139,10 +156,30 @@ function App() {
           background: `linear-gradient(135deg, ${currentTabData.color} 0%, ${currentTabData.color}dd 100%)`,
         }}
       >
+        {/* Left emblem - National Police of Ukraine */}
+        <div className='header-emblem header-emblem-left'>
+          <img
+            src='/npu.png'
+            alt='Емблема Національної поліції України'
+            className='emblem-image'
+          />
+        </div>
+
+        {/* Center content */}
         <div className='header-content'>
           <h1>📋 Інформаційно-пошукова система "ВАЗОН"</h1>
           <p className='subtitle'>Технічний захист інформації</p>
         </div>
+
+        {/* Right vase decoration */}
+        <div className='header-emblem header-emblem-right'>
+          <img
+            src='/vazon.png'
+            alt='Вазончик із рослиною'
+            className='emblem-image'
+          />
+        </div>
+
         <button
           className='menu-toggle'
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -183,6 +220,17 @@ function App() {
         </div>
         <CurrentComponent />
       </main>
+
+      {showScrollTop && (
+        <button
+          className='scroll-to-top'
+          onClick={scrollToTop}
+          title='Вгору'
+          aria-label='Повернутися у верхню частину сторінки'
+        >
+          ⬆️
+        </button>
+      )}
     </div>
   );
 }

@@ -22,6 +22,7 @@ export interface NestedCardSection {
     label: string;
     value: string; // Field name in nested item
     format?: 'date' | 'text' | 'badge' | 'link';
+    fullWidth?: boolean; // Make field span full width
   }[];
 }
 
@@ -206,7 +207,10 @@ export default function GenericCard({
                           if (!value && value !== 0) return null;
 
                           return (
-                            <p key={fieldIdx}>
+                            <p
+                              key={fieldIdx}
+                              className={field.fullWidth ? 'full-width' : ''}
+                            >
                               <strong>{field.label}:</strong>{' '}
                               {formatValue(value, field.format)}
                             </p>

@@ -410,3 +410,13 @@
     font-size: 0.9rem;
   }
 }
+
+/* ============================================================================
+   FULL WIDTH FIELDS IN NESTED ITEMS
+   ============================================================================ */
+
+.nested-item-content p.full-width {
+  grid-column: 1 / -1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}

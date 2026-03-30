@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="vaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#D4A574;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A0826D;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Vase Body - wider at middle -->
+  <path d="M 28 35 Q 22 42 22 58 Q 22 78 35 88 L 65 88 Q 78 78 78 58 Q 78 42 72 35 Z" 
+        fill="url(#vaseGradient)" stroke="#8B6F47" stroke-width="1.5"/>
+  
+  <!-- Vase Rim -->
+  <ellipse cx="50" cy="35" rx="22" ry="6" fill="#A68968" stroke="#8B6F47" stroke-width="1"/>
+  
+  <!-- Vase Rim Top -->
+  <ellipse cx="50" cy="34" rx="22" ry="5" fill="#B8956F" stroke="#8B6F47" stroke-width="0.5"/>
+  
+  <!-- Soil visible inside -->
+  <ellipse cx="50" cy="68" rx="18" ry="5" fill="#8B7355" opacity="0.7"/>
+  
+  <!-- Main stem from pot -->
+  <path d="M 50 35 Q 48 20 48 5" stroke="#3D5A1F" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Left branch -->
+  <path d="M 48 20 Q 35 15 28 12" stroke="#2D4A1F" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  
+  <!-- Right branch -->
+  <path d="M 48 20 Q 61 15 72 12" stroke="#2D4A1F" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  
+  <!-- Left-left branch -->
+  <path d="M 48 12 Q 42 8 38 4" stroke="#2D4A1F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Right-right branch -->
+  <path d="M 48 12 Q 56 8 62 4" stroke="#2D4A1F" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Leaves - Large ficus-like leaves -->
+  
+  <!-- Bottom left leaves -->
+  <ellipse cx="32" cy="18" rx="5.5" ry="9" fill="#4AAF3F" transform="rotate(-50 32 18)" opacity="0.95" stroke="#3D7D2F" stroke-width="0.5"/>
+  <ellipse cx="28" cy="22" rx="5" ry="8.5" fill="#5DBE4D" transform="rotate(-60 28 22)" opacity="0.9" stroke="#3D7D2F" stroke-width="0.5"/>
+  
+  <!-- Top left leaves -->
+  <ellipse cx="42" cy="8" rx="5" ry="8.5" fill="#4AAF3F" transform="rotate(-35 42 8)" opacity="0.92" stroke="#3D7D2F" stroke-width="0.5"/>
+  <ellipse cx="38" cy="3" rx="4.5" ry="7.5" fill="#5DBE4D" transform="rotate(-45 38 3)" opacity="0.88" stroke="#3D7D2F" stroke-width="0.5"/>
+  
+  <!-- Center top leaves -->
+  <ellipse cx="48" cy="2" rx="4" ry="7" fill="#4AAF3F" transform="rotate(-15 48 2)" opacity="0.9" stroke="#3D7D2F" stroke-width="0.5"/>
+  <ellipse cx="52" cy="2" rx="4" ry="7" fill="#5DBE4D" transform="rotate(15 52 2)" opacity="0.9" stroke="#3D7D2F" stroke-width="0.5"/>
+  
+  <!-- Top right leaves -->
+  <ellipse cx="58" cy="3" rx="4.5" ry="7.5" fill="#4AAF3F" transform="rotate(45 58 3)" opacity="0.88" stroke="#3D7D2F" stroke-width="0.5"/>
+  <ellipse cx="62" cy="8" rx="5" ry="8.5" fill="#5DBE4D" transform="rotate(35 62 8)" opacity="0.92" stroke="#3D7D2F" stroke-width="0.5"/>
+  
+  <!-- Bottom right leaves -->
+  <ellipse cx="72" cy="22" rx="5" ry="8.5" fill="#4AAF3F" transform="rotate(60 72 22)" opacity="0.9" stroke="#3D7D2F" stroke-width="0.5"/>
+  <ellipse cx="68" cy="18" rx="5.5" ry="9" fill="#5DBE4D" transform="rotate(50 68 18)" opacity="0.95" stroke="#3D7D2F" stroke-width="0.5"/>
+</svg>

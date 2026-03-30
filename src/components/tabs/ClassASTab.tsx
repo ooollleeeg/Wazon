@@ -731,7 +731,11 @@ const classASCardConfig: CardConfig = {
         { label: 'Дата реєстрації', value: 'controlDate', format: 'date' },
         { label: 'Термін дії', value: 'controlTermin', format: 'date' },
         { label: 'Виконавець', value: 'controlPerformer' },
-        { label: 'Реквізити Дозволу (ліцензії)', value: 'permissionPerformer' },
+        {
+          label: 'Реквізити Дозволу (ліцензії)',
+          value: 'permissionPerformer',
+          fullWidth: true,
+        },
       ],
     },
     {
@@ -746,6 +750,7 @@ const classASCardConfig: CardConfig = {
         {
           label: 'Реквізити Дозволу (ліцензії)',
           value: 'checkPermissionPerformer',
+          fullWidth: true,
         },
       ],
     },
@@ -772,6 +777,7 @@ const classASCardConfig: CardConfig = {
         {
           label: 'Реквізити Дозволу (ліцензії)',
           value: 'atestationPermissionPerformer',
+          fullWidth: true,
         },
       ],
     },
