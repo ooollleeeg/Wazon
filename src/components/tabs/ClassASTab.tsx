@@ -68,6 +68,16 @@ const classASFormConfig: FormConfig = {
           placeholder: 'Назва АС',
           required: true,
         },
+        {
+          name: 'objectType',
+          label: "Тип об'єкта інформаційної діяльності",
+          type: 'select',
+          required: true,
+          options: [
+            { value: "об'єкт ЕОТ", label: "об'єкт ЕОТ" },
+            { value: 'комбінований ОІД', label: 'комбінований ОІД' },
+          ],
+        },
       ],
     },
 

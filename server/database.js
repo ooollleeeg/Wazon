@@ -82,6 +82,7 @@ function initializeDatabase() {
         serviceName TEXT,
         systemClass TEXT NOT NULL,
         systemName TEXT,
+        objectType TEXT,
         categorizationActDate TEXT,
         categorizationActNumber TEXT,
         kzzName TEXT,

@@ -152,12 +152,12 @@ export const objectTypes = {
     },
   },
 
-  // АС класу 1 2 3
+  // АС класу 1 2 3 / Комбіновані ОІД
   class_a_systems: {
     table: 'class_a_systems',
-    displayName: 'АС класу 1, 2, 3',
+    displayName: 'АС класу 1, 2, 3 / Комбіновані ОІД',
     icon: '🖥️',
-    mainFields: ['subdivisionName', 'systemClass', 'systemName'],
+    mainFields: ['subdivisionName', 'systemClass', 'systemName', 'objectType'],
     nestedTables: {
       categorization: {
         table: 'class_a_systems_categorization',
@@ -246,6 +246,7 @@ export const objectTypes = {
       'serviceName',
       'systemClass',
       'systemName',
+      'objectType',
       'categorizationActDate',
       'categorizationActNumber',
       'kzzName',

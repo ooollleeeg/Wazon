@@ -3,7 +3,6 @@ import './styles/App.css';
 import PersonnelTab from './components/tabs/PersonnelTab';
 import ClassASTab from './components/tabs/ClassASTab';
 import ServicePremisesTab from './components/tabs/ServicePremisesTab';
-import CombinedOIDTab from './components/tabs/CombinedOIDTab';
 import KRTTab from './components/tabs/KRTTab';
 import IKSTab from './components/tabs/IKSTab';
 import TZIToolsTab from './components/tabs/TZIToolsTab';
@@ -44,13 +43,6 @@ const TABS: Tab[] = [
     icon: '🏠',
     component: ServicePremisesTab,
     color: '#f093fb',
-  },
-  {
-    id: 'combined-oid',
-    label: 'Комбіновані ОІД',
-    icon: '🔗',
-    component: CombinedOIDTab,
-    color: '#4facfe',
   },
   {
     id: 'krt',
