@@ -115,6 +115,19 @@
   color: #e06ed2;
 }
 
+.class-as-compact-object-type {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #667eea;
+  letter-spacing: 0.3px;
+  transition: color 0.3s ease;
+}
+
+.class-as-compact-card:hover .class-as-compact-object-type {
+  color: #5568d3;
+}
+
 .class-as-compact-address {
   margin: 0;
   font-size: 0.75rem;
