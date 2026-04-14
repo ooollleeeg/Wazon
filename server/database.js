@@ -238,6 +238,127 @@ function initializeDatabase() {
       )
     `);
 
+    // Таблиці для service_premises
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        address TEXT,
+        premisesNumber TEXT,
+        subdivisionName TEXT NOT NULL,
+        subdivisionType TEXT,
+        serviceName TEXT,
+        passportNumber TEXT,
+        passportDate TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises_categorization (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        categorizationActDate TEXT,
+        categorizationActNumber TEXT,
+        categorizationRank TEXT,
+        foreignCriticalArea TEXT,
+        hightInformationRank TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises_technical_task (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        taskDate TEXT,
+        taskNumber TEXT,
+        taskClearance TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises_instrumental_control (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        controlNumber TEXT,
+        controlDate TEXT,
+        controlTermin TEXT,
+        controlPerformer TEXT,
+        permissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises_special_check (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        checkNumber TEXT,
+        checkDate TEXT,
+        checkPerformer TEXT,
+        checkPermissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises_atestation (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        attestationRegNumber TEXT,
+        attestationRegDate TEXT,
+        attestationDsszziDate TEXT,
+        attestationDsszziNumber TEXT,
+        attestationValidUntil TEXT,
+        atestationPerformer TEXT,
+        atestationPermissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises_protection_means (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        name TEXT,
+        serialNumber TEXT,
+        invertarNumber TEXT,
+        releaseYear INTEGER,
+        certificateInfo TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(
+      `
+      CREATE TABLE IF NOT EXISTS service_premises_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        orderType TEXT,
+        number TEXT,
+        date TEXT,
+        publisher TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `,
+      (err) => {
+        if (err) {
+          console.error('❌ Database initialization error:', err.message);
+        } else {
+          console.log('✅ Database tables initialized');
+        }
+      },
+    );
+
     db.run(
       `
       CREATE TABLE IF NOT EXISTS class_a_systems_orders (

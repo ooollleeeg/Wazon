@@ -273,15 +273,83 @@ export const objectTypes = {
     ],
   },
 
-  'service-premises': {
+  service_premises: {
     table: 'service_premises',
-    label: 'Службові приміщення',
+    displayName: 'Службові приміщення',
     icon: '🏠',
+    mainFields: ['subdivisionName', 'premisesNumber', 'address'],
+    nestedTables: {
+      categorization: {
+        table: 'service_premises_categorization',
+        fields: [
+          'categorizationActDate',
+          'categorizationActNumber',
+          'categorizationRank',
+          'foreignCriticalArea',
+          'hightInformationRank',
+        ],
+      },
+      technicalTask: {
+        table: 'service_premises_technical_task',
+        fields: ['taskDate', 'taskNumber', 'taskClearance'],
+      },
+      instrumentalControl: {
+        table: 'service_premises_instrumental_control',
+        fields: [
+          'controlNumber',
+          'controlDate',
+          'controlTermin',
+          'controlPerformer',
+          'permissionPerformer',
+        ],
+      },
+      specialCheck: {
+        table: 'service_premises_special_check',
+        fields: [
+          'checkNumber',
+          'checkDate',
+          'checkPerformer',
+          'checkPermissionPerformer',
+        ],
+      },
+      atestation: {
+        table: 'service_premises_atestation',
+        fields: [
+          'attestationRegNumber',
+          'attestationRegDate',
+          'attestationDsszziDate',
+          'attestationDsszziNumber',
+          'attestationValidUntil',
+          'atestationPerformer',
+          'atestationPermissionPerformer',
+        ],
+      },
+      protectionMeans: {
+        table: 'service_premises_protection_means',
+        fields: [
+          'name',
+          'serialNumber',
+          'invertarNumber',
+          'releaseYear',
+          'certificateInfo',
+        ],
+      },
+      orders: {
+        table: 'service_premises_orders',
+        fields: ['orderType', 'number', 'date', 'publisher'],
+      },
+    },
+    foreignKeyName: 'premisesId',
     fields: [
-      { name: 'name', label: 'Назва', type: 'text', required: true },
-      { name: 'address', label: 'Адреса', type: 'text', required: true },
-      { name: 'area', label: 'Площа (м²)', type: 'number', required: false },
-      { name: 'notes', label: 'Примітки', type: 'textarea', required: false },
+      'address',
+      'premisesNumber',
+      'subdivisionName',
+      'subdivisionType',
+      'serviceName',
+      'passportNumber',
+      'passportDate',
+      'categorizationActDate',
+      'categorizationActNumber',
     ],
   },
   krt: {

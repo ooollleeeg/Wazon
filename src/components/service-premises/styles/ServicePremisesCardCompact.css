@@ -1,0 +1,210 @@
+/* ============================================================================
+   SERVICE PREMISES COMPACT CARD - Modern, Clean, Professional Design
+   ============================================================================ */
+
+.service-premises-compact-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e8eef7;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative gradient background on hover */
+.service-premises-compact-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(240, 147, 251, 0.03) 0%,
+    rgba(245, 87, 108, 0.03) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.service-premises-compact-card:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 6px 20px rgba(240, 147, 251, 0.12);
+  transform: translateY(-2px);
+}
+
+.service-premises-compact-card:hover::before {
+  opacity: 1;
+}
+
+.service-premises-compact-card:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+   AVATAR SECTION
+   ============================================================================ */
+
+.service-premises-compact-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-radius: 10px;
+  font-size: 1.5rem;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.25);
+  transition: all 0.3s ease;
+}
+
+.service-premises-compact-card:hover .service-premises-compact-avatar {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(245, 87, 108, 0.35);
+}
+
+/* ============================================================================
+   CONTENT SECTION
+   ============================================================================ */
+
+.service-premises-compact-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.service-premises-compact-subdivision {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d3748;
+  line-height: 1.3;
+  word-break: break-word;
+  transition: color 0.3s ease;
+}
+
+.service-premises-compact-card:hover .service-premises-compact-subdivision {
+  color: #f5576c;
+}
+
+.service-premises-compact-premises {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f093fb;
+  letter-spacing: 0.3px;
+  transition: color 0.3s ease;
+}
+
+.service-premises-compact-card:hover .service-premises-compact-premises {
+  color: #e06ed2;
+}
+
+.service-premises-compact-address {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #718096;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+.service-premises-compact-card:hover .service-premises-compact-address {
+  color: #4a5568;
+}
+
+/* ============================================================================
+   ARROW SECTION (Right chevron)
+   ============================================================================ */
+
+.service-premises-compact-arrow {
+  font-size: 1.5rem;
+  color: #cbd5e0;
+  font-weight: 300;
+  min-width: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.service-premises-compact-card:hover .service-premises-compact-arrow {
+  color: #f5576c;
+  transform: translateX(4px);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .service-premises-compact-card {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .service-premises-compact-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .service-premises-compact-subdivision {
+    font-size: 0.9rem;
+  }
+
+  .service-premises-compact-premises {
+    font-size: 0.75rem;
+  }
+
+  .service-premises-compact-address {
+    font-size: 0.7rem;
+  }
+
+  .service-premises-compact-arrow {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .service-premises-compact-card {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .service-premises-compact-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    border-radius: 8px;
+  }
+
+  .service-premises-compact-subdivision {
+    font-size: 0.85rem;
+  }
+
+  .service-premises-compact-premises {
+    font-size: 0.7rem;
+  }
+
+  .service-premises-compact-address {
+    font-size: 0.65rem;
+  }
+}
