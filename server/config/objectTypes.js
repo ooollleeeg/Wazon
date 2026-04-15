@@ -334,6 +334,10 @@ export const objectTypes = {
           'certificateInfo',
         ],
       },
+      governmentalCommunicationMeans: {
+        table: 'service_premises_governmental_communication_means',
+        fields: ['subscriberDeviceName', 'subscriberDeviceSerialNumber'],
+      },
       orders: {
         table: 'service_premises_orders',
         fields: ['orderType', 'number', 'date', 'publisher'],

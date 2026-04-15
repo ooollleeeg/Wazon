@@ -343,6 +343,29 @@ const servicePremisesFormConfig: FormConfig = {
       ],
     },
     {
+      name: 'governmentalCommunicationMeans',
+      title: "Засоби урядового зв'язку",
+      icon: '📡',
+      defaultItem: {
+        subscriberDeviceName: '',
+        subscriberDeviceSerialNumber: '',
+      },
+      fields: [
+        {
+          name: 'subscriberDeviceName',
+          label: 'Назва абонентського пристрою',
+          type: 'text',
+          placeholder: 'Наприклад: Абонентська станція',
+        },
+        {
+          name: 'subscriberDeviceSerialNumber',
+          label: 'Серійний номер абонентського пристрою',
+          type: 'text',
+          placeholder: 'Наприклад: SN12345678',
+        },
+      ],
+    },
+    {
       name: 'orders',
       title: 'Наказ про введення в експлуатацію та інші розпорядчі документи',
       icon: '📑',
@@ -534,6 +557,16 @@ const servicePremisesCardConfig: CardConfig = {
         { label: 'Інвентарний номер', value: 'invertarNumber' },
         { label: 'Дата виготовлення', value: 'releaseYear', format: 'date' },
         { label: 'Дані експертного висновку', value: 'certificateInfo' },
+      ],
+    },
+    {
+      name: 'governmentalCommunicationMeans',
+      title: "Засоби урядового зв'язку",
+      icon: '📡',
+      itemTitle: 'subscriberDeviceName',
+      fields: [
+        { label: 'Назва пристрою', value: 'subscriberDeviceName' },
+        { label: 'Серійний номер', value: 'subscriberDeviceSerialNumber' },
       ],
     },
     {

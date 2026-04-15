@@ -337,6 +337,17 @@ function initializeDatabase() {
       )
     `);
 
+    db.run(`
+      CREATE TABLE IF NOT EXISTS service_premises_governmental_communication_means (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        premisesId INTEGER NOT NULL,
+        subscriberDeviceName TEXT,
+        subscriberDeviceSerialNumber TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
+      )
+    `);
+
     db.run(
       `
       CREATE TABLE IF NOT EXISTS service_premises_orders (
