@@ -5,15 +5,17 @@ interface KRTCardCompactProps {
   subdivisionName?: string;
   premisesNumber?: string;
   address?: string;
+  onClick?: () => void;
 }
 
 const KRTCardCompact: React.FC<KRTCardCompactProps> = ({
   subdivisionName = '',
   premisesNumber = '',
   address = '',
+  onClick,
 }) => {
   return (
-    <div className='krt-compact-card'>
+    <div className='krt-compact-card' onClick={onClick}>
       <div className='krt-compact-avatar'>
         <span className='krt-compact-icon'>🖨️</span>
       </div>

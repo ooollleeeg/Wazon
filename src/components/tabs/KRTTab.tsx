@@ -6,7 +6,7 @@ import KRTCardCompact from '../krt/KRTCardCompact';
 
 // ===== FORM CONFIG =====
 const krtFormConfig: FormConfig = {
-  title: 'КРТ (Копіювально-розмножувальна техніка)',
+  title: 'КРТ',
   sections: [
     {
       title: '🏢 Основна інформація',

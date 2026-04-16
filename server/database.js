@@ -476,6 +476,112 @@ function initializeDatabase() {
         FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
       )
     `,
+    );
+
+    // Таблиці для iks
+    db.run(`
+      CREATE TABLE IF NOT EXISTS iks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemClass TEXT NOT NULL,
+        systemName TEXT NOT NULL,
+        accessMode TEXT,
+        kzzName TEXT,
+        kzzSerial TEXT,
+        antivirus TEXT,
+        antivirusOpinionNumber TEXT,
+        antivirusOpinionDate TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS iks_categorization (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        iksId INTEGER NOT NULL,
+        categorizationActDate TEXT,
+        categorizationActNumber TEXT,
+        categorizationRank TEXT,
+        foreignCriticalArea TEXT,
+        hightInformationRank TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS iks_computer_equipment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        iksId INTEGER NOT NULL,
+        serversCount INTEGER,
+        workstationsCount INTEGER,
+        networkEquipmentCount INTEGER,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS iks_atestation (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        iksId INTEGER NOT NULL,
+        attestationRegNumber TEXT,
+        attestationRegDate TEXT,
+        attestationDsszziDate TEXT,
+        attestationDsszziNumber TEXT,
+        attestationValidUntil TEXT,
+        atestationPerformer TEXT,
+        atestationPermissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS iks_compliance_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        iksId INTEGER NOT NULL,
+        documentType TEXT,
+        dsszzіNumber TEXT,
+        dsszzіDate TEXT,
+        validUntil TEXT,
+        expertOpinionNumber TEXT,
+        expertOpinionDate TEXT,
+        inclusionDate TEXT,
+        serialNumberInList TEXT,
+        nextAuthorizationDeadline TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS iks_protection_means (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        iksId INTEGER NOT NULL,
+        name TEXT,
+        serialNumber TEXT,
+        invertarNumber TEXT,
+        releaseYear INTEGER,
+        certificateInfo TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(
+      `
+      CREATE TABLE IF NOT EXISTS iks_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        iksId INTEGER NOT NULL,
+        orderType TEXT,
+        number TEXT,
+        date TEXT,
+        publisher TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
+      )
+    `,
       (err) => {
         if (err) {
           console.error('❌ Database initialization error:', err.message);
