@@ -361,6 +361,121 @@ function initializeDatabase() {
         FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
       )
     `,
+    );
+
+    // Таблиці для krt
+    db.run(`
+      CREATE TABLE IF NOT EXISTS krt (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        address TEXT,
+        premisesNumber TEXT,
+        subdivisionName TEXT NOT NULL,
+        subdivisionType TEXT,
+        serviceName TEXT,
+        systemName TEXT NOT NULL,
+        passportNumber TEXT,
+        passportDate TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS krt_categorization (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        krtId INTEGER NOT NULL,
+        categorizationActDate TEXT,
+        categorizationActNumber TEXT,
+        categorizationRank TEXT,
+        foreignCriticalArea TEXT,
+        hightInformationRank TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS krt_technical_task (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        krtId INTEGER NOT NULL,
+        taskDate TEXT,
+        taskNumber TEXT,
+        taskClearance TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS krt_instrumental_control (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        krtId INTEGER NOT NULL,
+        controlNumber TEXT,
+        controlDate TEXT,
+        controlTermin TEXT,
+        controlPerformer TEXT,
+        permissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS krt_special_check (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        krtId INTEGER NOT NULL,
+        checkNumber TEXT,
+        checkDate TEXT,
+        checkPerformer TEXT,
+        checkPermissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS krt_atestation (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        krtId INTEGER NOT NULL,
+        attestationRegNumber TEXT,
+        attestationRegDate TEXT,
+        attestationDsszziDate TEXT,
+        attestationDsszziNumber TEXT,
+        attestationValidUntil TEXT,
+        atestationPerformer TEXT,
+        atestationPermissionPerformer TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS krt_protection_means (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        krtId INTEGER NOT NULL,
+        name TEXT,
+        serialNumber TEXT,
+        invertarNumber TEXT,
+        releaseYear INTEGER,
+        certificateInfo TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(
+      `
+      CREATE TABLE IF NOT EXISTS krt_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        krtId INTEGER NOT NULL,
+        orderType TEXT,
+        number TEXT,
+        date TEXT,
+        publisher TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
+      )
+    `,
       (err) => {
         if (err) {
           console.error('❌ Database initialization error:', err.message);

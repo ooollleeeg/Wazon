@@ -358,18 +358,82 @@ export const objectTypes = {
   },
   krt: {
     table: 'krt',
-    label: 'КРТ',
-    icon: '📞',
-    fields: [
-      { name: 'name', label: 'Назва', type: 'text', required: true },
-      { name: 'model', label: 'Модель', type: 'text', required: true },
-      {
-        name: 'serialNumber',
-        label: 'Серійний номер',
-        type: 'text',
-        required: false,
+    displayName: 'КРТ (Копіювально-розмножувальна техніка)',
+    icon: '🖨️',
+    mainFields: ['subdivisionName', 'premisesNumber', 'address'],
+    nestedTables: {
+      categorization: {
+        table: 'krt_categorization',
+        fields: [
+          'categorizationActDate',
+          'categorizationActNumber',
+          'categorizationRank',
+          'foreignCriticalArea',
+          'hightInformationRank',
+        ],
       },
-      { name: 'notes', label: 'Примітки', type: 'textarea', required: false },
+      technicalTask: {
+        table: 'krt_technical_task',
+        fields: ['taskDate', 'taskNumber', 'taskClearance'],
+      },
+      instrumentalControl: {
+        table: 'krt_instrumental_control',
+        fields: [
+          'controlNumber',
+          'controlDate',
+          'controlTermin',
+          'controlPerformer',
+          'permissionPerformer',
+        ],
+      },
+      specialCheck: {
+        table: 'krt_special_check',
+        fields: [
+          'checkNumber',
+          'checkDate',
+          'checkPerformer',
+          'checkPermissionPerformer',
+        ],
+      },
+      atestation: {
+        table: 'krt_atestation',
+        fields: [
+          'attestationRegNumber',
+          'attestationRegDate',
+          'attestationDsszziDate',
+          'attestationDsszziNumber',
+          'attestationValidUntil',
+          'atestationPerformer',
+          'atestationPermissionPerformer',
+        ],
+      },
+      protectionMeans: {
+        table: 'krt_protection_means',
+        fields: [
+          'name',
+          'serialNumber',
+          'invertarNumber',
+          'releaseYear',
+          'certificateInfo',
+        ],
+      },
+      orders: {
+        table: 'krt_orders',
+        fields: ['orderType', 'number', 'date', 'publisher'],
+      },
+    },
+    foreignKeyName: 'krtId',
+    fields: [
+      'address',
+      'premisesNumber',
+      'subdivisionName',
+      'subdivisionType',
+      'serviceName',
+      'systemName',
+      'passportNumber',
+      'passportDate',
+      'categorizationActDate',
+      'categorizationActNumber',
     ],
   },
   'search-control-equipment': {

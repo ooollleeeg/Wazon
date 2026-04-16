@@ -13,11 +13,13 @@ import RadioMonitoringTab from './components/tabs/RadioMonitoringTab';
 import GUNPResearchTab from './components/tabs/GUNPResearchTab';
 import NPUResearchTab from './components/tabs/NPUResearchTab';
 import DocumentsTab from './components/tabs/DocumentsTab';
+import ComputerIcon from './components/icons/ComputerIcon';
+import CopierIcon from './components/icons/CopierIcon';
 
 interface Tab {
   id: string;
   label: string;
-  icon: string;
+  icon: string | React.FC<{ size?: number; color?: string }>;
   component: React.FC;
   color: string;
 }
@@ -33,7 +35,7 @@ const TABS: Tab[] = [
   {
     id: 'class-a',
     label: 'АС класу 1,2,3',
-    icon: '📡',
+    icon: ComputerIcon,
     component: ClassASTab,
     color: '#764ba2',
   },
@@ -47,9 +49,9 @@ const TABS: Tab[] = [
   {
     id: 'krt',
     label: 'КРТ',
-    icon: '📞',
+    icon: CopierIcon,
     component: KRTTab,
-    color: '#43e97b',
+    color: '#667eea',
   },
   {
     id: 'iks',
@@ -115,6 +117,18 @@ const TABS: Tab[] = [
     color: '#dfe6e9',
   },
 ];
+
+const renderIcon = (
+  icon: string | React.FC<{ size?: number; color?: string }>,
+  color?: string,
+  size: number = 20,
+) => {
+  if (typeof icon === 'string') {
+    return icon;
+  }
+  const IconComponent = icon;
+  return <IconComponent size={size} color={color} />;
+};
 
 function App() {
   const [currentTab, setCurrentTab] = useState(0);
@@ -196,7 +210,13 @@ function App() {
               }}
               title={tab.label}
             >
-              <span className='tab-icon'>{tab.icon}</span>
+              <span className='tab-icon'>
+                {renderIcon(
+                  tab.icon,
+                  currentTab === index ? tab.color : '#666',
+                  20,
+                )}
+              </span>
               <span className='tab-label'>{tab.label}</span>
               <span className='tab-number'>{index + 1}</span>
             </button>
@@ -207,7 +227,8 @@ function App() {
       <main className='tab-content'>
         <div className='tab-header'>
           <h2>
-            {currentTabData.icon} {currentTabData.label}
+            {renderIcon(currentTabData.icon, currentTabData.color, 28)}{' '}
+            {currentTabData.label}
           </h2>
         </div>
         <CurrentComponent />
