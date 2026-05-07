@@ -1,0 +1,119 @@
+
+> vazon@0.0.1 start
+> concurrently "npm run dev" "npm run server"
+
+(node:11236) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[0] 
+[0] > vazon@0.0.1 dev
+[0] > vite
+[0] 
+[1] 
+[1] > vazon@0.0.1 server
+[1] > node server/index.js
+[1] 
+[1] ✓ Сервер запущен на http://localhost:3001
+[1] ✓ Система реєстру об'єктів інформаційної діяльності активна
+[1] ✅ Database connected at: C:\Users\Администратор\OneDrive\Документи\GitHub\vazon\data\vazon.db
+[1] ✅ Database tables initialized
+[1] ✅ Database tables initialized
+[0] 
+[0]   [32m[1mVITE[22m v4.5.14[39m  [2mready in [0m[1m1403[22m[2m[0m ms[22m
+[0] 
+[0]   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3000[22m/[39m
+[0] [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[0] (node:3948) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+[0] (Use `node --trace-deprecation ...` to show where the warning was created)
+[1] 📥 GET /api/objects/personnel
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/personnel
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/personnel
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/personnel
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/class_a_systems
+[1] ✅ Retrieved 3 objects with nested data
+[1] 📥 GET /api/objects/class_a_systems
+[1] ✅ Retrieved 3 objects with nested data
+[1] 📥 GET /api/objects/service_premises
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/service_premises
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/class_a_systems
+[1] ✅ Retrieved 3 objects with nested data
+[1] 📥 GET /api/objects/class_a_systems
+[1] ✅ Retrieved 3 objects with nested data
+[0] [2m11:14:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/ClassASTab.tsx[22m
+[0] [2m11:14:44[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/ClassASTab.tsx[22m
+[0] [2m11:15:28[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/common/GenericForm.tsx[22m
+[0] [2m11:15:33[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/ClassASTab.tsx[22m
+[0] [2m11:15:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/common/GenericForm.tsx[22m
+[0] [2m11:16:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/common/GenericForm.tsx[22m
+[0] [2m11:16:15[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/ServicePremisesTab.tsx[22m
+[0] [2m11:16:25[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/ServicePremisesTab.tsx[22m
+[0] [2m11:16:46[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/KRTTab.tsx[22m
+[0] [2m11:18:14[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/KRTTab.tsx[22m
+[0] [2m11:18:25[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/IKSTab.tsx[22m
+[0] [2m11:18:31[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/IKSTab.tsx[22m
+/c/Program Files/nodejs/npm: line 65:  1304 Killed                  "$NODE_EXE" "$NPM_CLI_JS" "$@"
+[0] [2m11:22:14[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m11:22:15[22m [36m[1m[vite][22m[39m server restarted.
+[1] 📥 GET /api/objects/personnel
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/personnel
+[1] ✅ Retrieved 2 objects with nested data
+[1] 📥 GET /api/objects/personnel
+[1] ✅ Retrieved 2 objects with nested data
+[0] [2m11:23:31[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m11:23:32[22m [36m[1m[vite][22m[39m server restarted.
+[0] [2m11:23:37[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)
+[0] [2m11:23:37[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)
+[0] [2m11:27:29[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/IKSTab.tsx[22m
+[0] [2m11:27:29[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m11:27:29[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/IKSTab.tsx[22m
+[0] [2m11:27:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/common/GenericForm.tsx[22m
+[0] [2m11:27:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/ServicePremisesTab.tsx[22m
+[0] [2m11:27:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/KRTTab.tsx[22m
+[0] [2m11:27:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/tabs/ClassASTab.tsx[22m
+[0] [2m11:27:30[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/components/common/GenericForm.tsx[22m
+[0] [2m11:27:31[22m [36m[1m[vite][22m[39m server restarted.
+[0] [2m11:45:11[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m11:45:12[22m [36m[1m[vite][22m[39m server restarted.
+[0] [2m11:45:14[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m11:45:15[22m [36m[1m[vite][22m[39m server restarted.
+[0] [2m11:45:23[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)
+[0] [2m11:45:23[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)
+[0] [2m12:17:01[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m12:17:03[22m [36m[1m[vite][22m[39m server restarted.
+[0] [2m12:17:15[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)
+[0] [2m12:17:15[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)
+[0] [2m12:17:29[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m12:17:29[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[0] [2m12:17:30[22m [36m[1m[vite][22m[39m server restarted.
+[0] [2m12:17:36[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)
+[0] [2m12:17:36[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/objects/personnel:[39m
+[0] AggregateError [ECONNREFUSED]: 
+[0]     at internalConnectMultiple (node:net:1134:18)
+[0]     at afterConnectMultiple (node:net:1715:7)

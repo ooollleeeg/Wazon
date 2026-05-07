@@ -17,6 +17,8 @@ export interface FormField {
     field: string;
     values: string[];
   };
+  helperText?: string; // Допоміжний текст під полем
+  calculateFrom?: { field: string; years: number }; // Для автоматичного розрахунку (додавити N років до дати)
 }
 
 export interface FormSection {
@@ -105,6 +107,62 @@ export default function GenericForm({
     const { name, value } = e.target;
     setFormData((prev: any) => {
       const updated = { ...prev, [name]: value };
+
+      // Знаходимо поле конфігурації для розрахунку (для вложених полів)
+      const findFieldConfig = (fieldName: string) => {
+        // Шукаємо в основних полях форми
+        for (const section of config.sections) {
+          const field = section.fields.find((f) => f.name === fieldName);
+          if (field) return field;
+        }
+
+        // Шукаємо в вложених полях
+        for (const nested of config.nestedFields || []) {
+          const field = nested.fields.find((f) => f.name === fieldName);
+          if (field) return field;
+        }
+
+        return null;
+      };
+
+      // Перевіряємо чи це поле дати з розрахунком
+      const fieldConfig = findFieldConfig(name);
+      if (
+        fieldConfig &&
+        'calculateFrom' in fieldConfig &&
+        fieldConfig.calculateFrom
+      ) {
+        // Знаходимо поле, від якого робити розрахунок
+        const sourceFieldName = fieldConfig.calculateFrom.field;
+        const years = fieldConfig.calculateFrom.years;
+
+        // Якщо ми змінюємо вихідне поле (наприклад, categorizationActDate)
+        if (name === sourceFieldName && value) {
+          try {
+            const sourceDate = new Date(value);
+            const resultDate = new Date(sourceDate);
+            resultDate.setFullYear(resultDate.getFullYear() + years);
+
+            // Форматуємо дату як YYYY-MM-DD
+            const resultDateStr = resultDate.toISOString().split('T')[0];
+
+            // Знаходимо поле, яке потребує розрахунку
+            const targetFieldName = Object.keys(updated).find((key) => {
+              const cf = findFieldConfig(key);
+              return (
+                cf && 'calculateFrom' in cf && cf.calculateFrom?.field === name
+              );
+            });
+
+            if (targetFieldName) {
+              updated[targetFieldName] = resultDateStr;
+            }
+          } catch (err) {
+            console.error('Error calculating date:', err);
+          }
+        }
+      }
+
       console.log('Input changed:', name, '=', value);
       return updated;
     });
@@ -157,6 +215,51 @@ export default function GenericForm({
     setFormData((prev: { [x: string]: any }) => {
       const newItems = [...prev[nestedName]];
       newItems[index] = { ...newItems[index], [field]: value };
+
+      // Перевіряємо чи потребується розрахунок для цього вложеного поля
+      const nestedConfig = config.nestedFields?.find(
+        (n) => n.name === nestedName,
+      );
+      if (nestedConfig) {
+        const fieldConfig = nestedConfig.fields.find((f) => f.name === field);
+
+        // Якщо змінюємо вихідне поле (наприклад, categorizationActDate)
+        if (fieldConfig && value) {
+          // Шукаємо поле з розрахунком
+          const targetField = nestedConfig.fields.find((f) => {
+            return (
+              'calculateFrom' in f &&
+              f.calculateFrom &&
+              f.calculateFrom.field === field
+            );
+          });
+
+          if (
+            targetField &&
+            'calculateFrom' in targetField &&
+            targetField.calculateFrom
+          ) {
+            try {
+              const sourceDate = new Date(value);
+              const resultDate = new Date(sourceDate);
+              resultDate.setFullYear(
+                resultDate.getFullYear() + targetField.calculateFrom.years,
+              );
+
+              // Форматуємо дату як YYYY-MM-DD
+              const resultDateStr = resultDate.toISOString().split('T')[0];
+
+              newItems[index] = {
+                ...newItems[index],
+                [targetField.name]: resultDateStr,
+              };
+            } catch (err) {
+              console.error('Error calculating date:', err);
+            }
+          }
+        }
+      }
+
       return { ...prev, [nestedName]: newItems };
     });
   };

@@ -87,6 +87,7 @@ const krtFormConfig: FormConfig = {
         categorizationActDate: '',
         categorizationActNumber: '',
         categorizationRank: '',
+        categorizationValidUntil: '',
         foreignCriticalArea: '',
         hightInformationRank: '',
       },
@@ -112,6 +113,13 @@ const krtFormConfig: FormConfig = {
             { value: 'III', label: 'III' },
             { value: 'IV', label: 'IV' },
           ],
+        },
+        {
+          name: 'categorizationValidUntil',
+          label: 'Термін дії категоріювання',
+          type: 'date',
+          calculateFrom: { field: 'categorizationActDate', years: 5 },
+          helperText: 'Розраховується автоматично як дата реєстрації + 5 років',
         },
         {
           name: 'foreignCriticalArea',
@@ -433,6 +441,11 @@ const krtCardConfig: CardConfig = {
         },
         { label: 'Номер акта', value: 'categorizationActNumber' },
         { label: 'Категорія', value: 'categorizationRank', format: 'badge' },
+        {
+          label: 'Термін дії акта',
+          value: 'categorizationValidUntil',
+          format: 'date',
+        },
         {
           label: 'Іноземні організації в критичній зоні',
           value: 'foreignCriticalArea',
