@@ -439,6 +439,7 @@ const krtCardConfig: CardConfig = {
       icon: '📋',
       itemTitle: 'categorizationRank',
       dateField: 'categorizationActDate',
+      showPreviousVersions: true,
       fields: [
         {
           label: 'Дата реєстрації акта',
@@ -468,6 +469,7 @@ const krtCardConfig: CardConfig = {
       icon: '🛠️',
       itemTitle: 'taskNumber',
       dateField: 'taskDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Дата реєстрації', value: 'taskDate', format: 'date' },
         { label: 'Реєстраційний номер', value: 'taskNumber' },
@@ -480,6 +482,7 @@ const krtCardConfig: CardConfig = {
       icon: '🔍',
       itemTitle: 'controlNumber',
       dateField: 'controlDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Реєстраційний номер', value: 'controlNumber' },
         { label: 'Дата реєстрації', value: 'controlDate', format: 'date' },
@@ -498,6 +501,7 @@ const krtCardConfig: CardConfig = {
       icon: '🔍',
       itemTitle: 'checkNumber',
       dateField: 'checkDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Реєстраційний номер', value: 'checkNumber' },
         { label: 'Дата реєстрації', value: 'checkDate', format: 'date' },
@@ -515,6 +519,7 @@ const krtCardConfig: CardConfig = {
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       dateField: 'attestationRegDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Реєстраційний номер', value: 'attestationRegNumber' },
         {

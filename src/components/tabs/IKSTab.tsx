@@ -519,8 +519,7 @@ const iksCardConfig: CardConfig = {
       title: 'Категоріювання',
       icon: '📋',
       itemTitle: 'categorizationRank',
-      dateField: 'categorizationActDate',
-      fields: [
+      dateField: 'categorizationActDate',      showPreviousVersions: true,      fields: [
         {
           label: 'Дата реєстрації акта',
           value: 'categorizationActDate',
@@ -563,6 +562,7 @@ const iksCardConfig: CardConfig = {
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       dateField: 'attestationRegDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Реєстраційний номер', value: 'attestationRegNumber' },
         {

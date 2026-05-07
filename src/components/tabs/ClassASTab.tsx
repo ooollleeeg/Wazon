@@ -722,6 +722,7 @@ const classASCardConfig: CardConfig = {
       icon: '📋',
       itemTitle: 'categorizationRank',
       dateField: 'categorizationActDate',
+      showPreviousVersions: true,
       fields: [
         {
           label: 'Дата реєстрації акта',
@@ -751,6 +752,7 @@ const classASCardConfig: CardConfig = {
       icon: '🛠️',
       itemTitle: 'taskNumber',
       dateField: 'taskDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Дата реєстрації', value: 'taskDate', format: 'date' },
         { label: 'Реєстраційний номер', value: 'taskNumber' },
@@ -763,6 +765,7 @@ const classASCardConfig: CardConfig = {
       icon: '🔍',
       itemTitle: 'controlNumber',
       dateField: 'controlDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Реєстраційний номер', value: 'controlNumber' },
         { label: 'Дата реєстрації', value: 'controlDate', format: 'date' },
@@ -781,6 +784,7 @@ const classASCardConfig: CardConfig = {
       icon: '🔍',
       itemTitle: 'checkNumber',
       dateField: 'checkDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Реєстраційний номер', value: 'checkNumber' },
         { label: 'Дата реєстрації', value: 'checkDate', format: 'date' },
@@ -798,6 +802,7 @@ const classASCardConfig: CardConfig = {
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       dateField: 'attestationRegDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Реєстраційний номер', value: 'attestationRegNumber' },
         {
@@ -826,6 +831,7 @@ const classASCardConfig: CardConfig = {
       icon: '📜',
       itemTitle: 'documentType',
       dateField: 'dsszzіDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Тип документа', value: 'documentType', format: 'badge' },
         { label: 'Номер ДССЗЗІ', value: 'dsszzіNumber' },

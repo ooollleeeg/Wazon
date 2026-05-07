@@ -19,6 +19,7 @@ export interface NestedCardSection {
   icon?: string; // '📚'
   itemTitle: string; // Field to use as title (e.g., 'institution')
   dateField?: string; // Field for sorting (newer first)
+  showPreviousVersions?: boolean; // Show "View previous" button
   fields: {
     label: string;
     value: string; // Field name in nested item
@@ -56,6 +57,9 @@ export default function GenericCard({
   showCloseButton = true,
 }: GenericCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   const formatValue = (value: any, format?: string) => {
     if (!value && value !== 0) return '-';
@@ -139,6 +143,13 @@ export default function GenericCard({
     onDelete();
   };
 
+  const toggleExpandSection = (sectionName: string) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [sectionName]: !prev[sectionName],
+    }));
+  };
+
   const title = getFieldValue(config.title);
   const subtitle = config.subtitle ? getFieldValue(config.subtitle) : null;
 
@@ -207,39 +218,67 @@ export default function GenericCard({
             const items = sortByDate(data[nested.name] || [], nested.dateField);
             if (!items || items.length === 0) return null;
 
+            const isExpanded = expandedSections[nested.name];
+            const displayItems = isExpanded ? items : items.slice(0, 1);
+            const hasPreviousVersions =
+              nested.showPreviousVersions && items.length > 1;
+
             return (
               <section key={idx} className='card-section nested-section'>
                 <h4 className='section-title'>
                   {nested.icon} {nested.title} ({items.length})
                 </h4>
                 <div className='nested-list'>
-                  {items.map((item: any, itemIdx: number) => (
-                    <div key={itemIdx} className='nested-item'>
-                      <div className='nested-item-header'>
-                        <span className='item-number'>{itemIdx + 1}.</span>
-                        <span className='item-title'>
-                          {item[nested.itemTitle]}
-                        </span>
-                      </div>
-                      <div className='nested-item-content'>
-                        {nested.fields.map((field, fieldIdx) => {
-                          const value = item[field.value];
-                          if (!value && value !== 0) return null;
+                  {displayItems.map((item: any, itemIdx: number) => {
+                    const isCurrentVersion = itemIdx === 0;
+                    const isPreviousVersion = itemIdx > 0;
 
-                          return (
-                            <p
-                              key={fieldIdx}
-                              className={field.fullWidth ? 'full-width' : ''}
-                            >
-                              <strong>{field.label}:</strong>{' '}
-                              {formatValue(value, field.format)}
-                            </p>
-                          );
-                        })}
+                    return (
+                      <div
+                        key={itemIdx}
+                        className={`nested-item ${
+                          isPreviousVersion ? 'previous-version' : ''
+                        }`}
+                      >
+                        <div className='nested-item-header'>
+                          <span className='item-number'>{itemIdx + 1}.</span>
+                          <span className='item-title'>
+                            {item[nested.itemTitle]}
+                          </span>
+                          {isCurrentVersion && hasPreviousVersions && (
+                            <span className='badge-current'>Поточний</span>
+                          )}
+                        </div>
+                        <div className='nested-item-content'>
+                          {nested.fields.map((field, fieldIdx) => {
+                            const value = item[field.value];
+                            if (!value && value !== 0) return null;
+
+                            return (
+                              <p
+                                key={fieldIdx}
+                                className={field.fullWidth ? 'full-width' : ''}
+                              >
+                                <strong>{field.label}:</strong>{' '}
+                                {formatValue(value, field.format)}
+                              </p>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+                {hasPreviousVersions && (
+                  <button
+                    className='btn-toggle-previous'
+                    onClick={() => toggleExpandSection(nested.name)}
+                  >
+                    {isExpanded
+                      ? '← Приховати попередні'
+                      : `↓ Переглянути попередні (${items.length - 1})`}
+                  </button>
+                )}
               </section>
             );
           })}

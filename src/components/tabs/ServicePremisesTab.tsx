@@ -450,6 +450,7 @@ const servicePremisesCardConfig: CardConfig = {
       icon: '📋',
       itemTitle: 'categorizationRank',
       dateField: 'categorizationActDate',
+      showPreviousVersions: true,
       fields: [
         {
           label: 'Дата реєстрації акта',
@@ -524,6 +525,7 @@ const servicePremisesCardConfig: CardConfig = {
       icon: '🔍',
       itemTitle: 'checkNumber',
       dateField: 'checkDate',
+      showPreviousVersions: true,
       fields: [
         {
           label: 'Номер акта',
