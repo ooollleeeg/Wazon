@@ -13,6 +13,7 @@ import RadioMonitoringTab from './components/tabs/RadioMonitoringTab';
 import GUNPResearchTab from './components/tabs/GUNPResearchTab';
 import NPUResearchTab from './components/tabs/NPUResearchTab';
 import DocumentsTab from './components/tabs/DocumentsTab';
+import ExpirationMonitoringTab from './components/tabs/ExpirationMonitoringTab';
 import ComputerIcon from './components/icons/ComputerIcon';
 import CopierIcon from './components/icons/CopierIcon';
 
@@ -25,6 +26,13 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
+  {
+    id: 'expiration-monitoring',
+    label: 'Моніторинг термінів',
+    icon: '⏰',
+    component: ExpirationMonitoringTab,
+    color: '#e67e22',
+  },
   {
     id: 'personnel',
     label: 'Особовий склад',
