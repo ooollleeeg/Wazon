@@ -18,6 +18,7 @@ export interface NestedCardSection {
   title: string; // 'Освіта'
   icon?: string; // '📚'
   itemTitle: string; // Field to use as title (e.g., 'institution')
+  dateField?: string; // Field for sorting (newer first)
   fields: {
     label: string;
     value: string; // Field name in nested item
@@ -110,6 +111,25 @@ export default function GenericCard({
     return value;
   };
 
+  // Функція для сортування nested items за датою (новіші першими)
+  const sortByDate = (items: any[], dateField?: string) => {
+    if (!dateField) return items;
+
+    // Розділяємо на items з датою і без
+    const itemsWithDate = items.filter((item) => item[dateField]);
+    const itemsWithoutDate = items.filter((item) => !item[dateField]);
+
+    // Сортуємо за датою (новіші першими)
+    itemsWithDate.sort((a, b) => {
+      const dateA = new Date(a[dateField]).getTime();
+      const dateB = new Date(b[dateField]).getTime();
+      return dateB - dateA; // Спадаючий порядок
+    });
+
+    // Повертаємо: спочатку з датою (новіші), потім без дати
+    return [...itemsWithDate, ...itemsWithoutDate];
+  };
+
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   };
@@ -184,7 +204,7 @@ export default function GenericCard({
 
           {/* Вложённые секции */}
           {config.nestedSections?.map((nested, idx) => {
-            const items = data[nested.name];
+            const items = sortByDate(data[nested.name] || [], nested.dateField);
             if (!items || items.length === 0) return null;
 
             return (

@@ -160,6 +160,7 @@ const classASFormConfig: FormConfig = {
       name: 'categorization',
       title: 'Категоріювання ОІД (ОЕОТ)',
       icon: '📋',
+      dateField: 'categorizationActDate',
       defaultItem: {
         categorizationActDate: '',
         categorizationActNumber: '',
@@ -232,6 +233,7 @@ const classASFormConfig: FormConfig = {
       name: 'technicalTask',
       title: 'Технічне завдання на створення комплексу ТЗІ',
       icon: '🛠️',
+      dateField: 'taskDate',
       defaultItem: { taskDate: '', taskNumber: '', taskClearance: '' },
       fields: [
         {
@@ -302,6 +304,7 @@ const classASFormConfig: FormConfig = {
       name: 'specialCheck',
       title: 'Акт комплексної спеціальної перевірки',
       icon: '🔍',
+      dateField: 'checkDate',
       defaultItem: {
         checkNumber: '',
         checkDate: '',
@@ -342,6 +345,7 @@ const classASFormConfig: FormConfig = {
       name: 'atestation',
       title: 'Атестація комплексу технічного захисту інформації',
       icon: '✅',
+      dateField: 'attestationRegDate',
       defaultItem: {
         attestationRegNumber: '',
         attestationRegDate: '',
@@ -405,6 +409,7 @@ const classASFormConfig: FormConfig = {
       name: 'complianceDocuments',
       title: 'Документи про відповідність та сертифікацію',
       icon: '📜',
+      dateField: 'dsszzіDate',
       defaultItem: {
         documentType: '',
         dsszzіNumber: '',
@@ -544,6 +549,7 @@ const classASFormConfig: FormConfig = {
       name: 'protectionMeans',
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
+      dateField: 'protectionDate',
       defaultItem: {
         name: '',
         serialNumber: '',
@@ -715,6 +721,7 @@ const classASCardConfig: CardConfig = {
       title: 'Категоріювання ОІД (ОЕОТ)',
       icon: '📋',
       itemTitle: 'categorizationRank',
+      dateField: 'categorizationActDate',
       fields: [
         {
           label: 'Дата реєстрації акта',
@@ -743,6 +750,7 @@ const classASCardConfig: CardConfig = {
       title: 'Технічне завдання на створення комплексу ТЗІ',
       icon: '🛠️',
       itemTitle: 'taskNumber',
+      dateField: 'taskDate',
       fields: [
         { label: 'Дата реєстрації', value: 'taskDate', format: 'date' },
         { label: 'Реєстраційний номер', value: 'taskNumber' },
@@ -754,6 +762,7 @@ const classASCardConfig: CardConfig = {
       title: 'Протокол інструментального контролю',
       icon: '🔍',
       itemTitle: 'controlNumber',
+      dateField: 'controlDate',
       fields: [
         { label: 'Реєстраційний номер', value: 'controlNumber' },
         { label: 'Дата реєстрації', value: 'controlDate', format: 'date' },
@@ -771,6 +780,7 @@ const classASCardConfig: CardConfig = {
       title: 'Акт комплексної спеціальної перевірки',
       icon: '🔍',
       itemTitle: 'checkNumber',
+      dateField: 'checkDate',
       fields: [
         { label: 'Реєстраційний номер', value: 'checkNumber' },
         { label: 'Дата реєстрації', value: 'checkDate', format: 'date' },
@@ -787,6 +797,7 @@ const classASCardConfig: CardConfig = {
       title: 'Атестація комплексу технічного захисту інформації',
       icon: '✅',
       itemTitle: 'attestationRegNumber',
+      dateField: 'attestationRegDate',
       fields: [
         { label: 'Реєстраційний номер', value: 'attestationRegNumber' },
         {
@@ -814,6 +825,7 @@ const classASCardConfig: CardConfig = {
       title: 'Документи про відповідність та сертифікацію',
       icon: '📜',
       itemTitle: 'documentType',
+      dateField: 'dsszzіDate',
       fields: [
         { label: 'Тип документа', value: 'documentType', format: 'badge' },
         { label: 'Номер ДССЗЗІ', value: 'dsszzіNumber' },
@@ -827,6 +839,7 @@ const classASCardConfig: CardConfig = {
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
       itemTitle: 'name',
+      dateField: 'meanDate',
       fields: [
         { label: 'Назва', value: 'name' },
         { label: 'Серійний номер', value: 'serialNumber' },

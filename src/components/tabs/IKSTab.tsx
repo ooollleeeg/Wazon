@@ -98,6 +98,7 @@ const iksFormConfig: FormConfig = {
       name: 'categorization',
       title: 'Категоріювання',
       icon: '📋',
+      dateField: 'categorizationActDate',
       defaultItem: {
         categorizationActDate: '',
         categorizationActNumber: '',
@@ -201,6 +202,7 @@ const iksFormConfig: FormConfig = {
       name: 'atestation',
       title: 'Атестація комплексу технічного захисту інформації',
       icon: '✅',
+      dateField: 'attestationRegDate',
       defaultItem: {
         attestationRegNumber: '',
         attestationRegDate: '',
@@ -399,6 +401,7 @@ const iksFormConfig: FormConfig = {
       name: 'protectionMeans',
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
+      dateField: 'protectionDate',
       defaultItem: {
         name: '',
         serialNumber: '',
@@ -516,6 +519,7 @@ const iksCardConfig: CardConfig = {
       title: 'Категоріювання',
       icon: '📋',
       itemTitle: 'categorizationRank',
+      dateField: 'categorizationActDate',
       fields: [
         {
           label: 'Дата реєстрації акта',
@@ -558,6 +562,7 @@ const iksCardConfig: CardConfig = {
       title: 'Атестація комплексу технічного захисту інформації',
       icon: '✅',
       itemTitle: 'attestationRegNumber',
+      dateField: 'attestationRegDate',
       fields: [
         { label: 'Реєстраційний номер', value: 'attestationRegNumber' },
         {
@@ -592,6 +597,7 @@ const iksCardConfig: CardConfig = {
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
       itemTitle: 'name',
+      dateField: 'meanDate',
       fields: [
         { label: 'Назва', value: 'name' },
         { label: 'Серійний номер', value: 'serialNumber' },

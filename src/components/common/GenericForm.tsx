@@ -31,6 +31,7 @@ export interface NestedFieldConfig {
   name: string; // 'education', 'documents'
   title: string; // 'Освіта'
   icon?: string; // '📚'
+  dateField?: string; // Field for sorting (newer first)
   defaultItem: Record<string, any>;
   fields: FormField[];
 }
@@ -98,6 +99,25 @@ export default function GenericForm({
 
     return emptyForm;
   });
+
+  // Функція для сортування nested items за датою (новіші першими)
+  const sortByDate = (items: any[], dateField?: string) => {
+    if (!dateField) return items;
+
+    // Розділяємо на items з датою і без
+    const itemsWithDate = items.filter((item) => item[dateField]);
+    const itemsWithoutDate = items.filter((item) => !item[dateField]);
+
+    // Сортуємо за датою (новіші першими)
+    itemsWithDate.sort((a, b) => {
+      const dateA = new Date(a[dateField]).getTime();
+      const dateB = new Date(b[dateField]).getTime();
+      return dateB - dateA; // Спадаючий порядок
+    });
+
+    // Повертаємо: спочатку з датою (новіші), потім без дати
+    return [...itemsWithDate, ...itemsWithoutDate];
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -289,12 +309,16 @@ export default function GenericForm({
 
     config.nestedFields?.forEach((nestedConfig) => {
       if (cleanedData[nestedConfig.name]) {
-        cleanedData[nestedConfig.name] = cleanedData[nestedConfig.name].map(
-          (item: any) => {
-            const { __isNew, ...cleanItem } = item;
-            return cleanItem;
-          },
-        );
+        // Очищуємо від __isNew
+        let items = cleanedData[nestedConfig.name].map((item: any) => {
+          const { __isNew, ...cleanItem } = item;
+          return cleanItem;
+        });
+
+        // Сортуємо за датою (новіші першими) перед відправкою
+        items = sortByDate(items, nestedConfig.dateField);
+
+        cleanedData[nestedConfig.name] = items;
       }
     });
 
@@ -470,77 +494,79 @@ export default function GenericForm({
           </div>
 
           <div className='nested-items'>
-            {formData[nestedConfig.name]?.map((item: any, itemIdx: number) => {
-              const refKey = `${nestedConfig.name}-${itemIdx}`;
-              const isNewlyAdded =
-                newlyAddedItem?.nested === nestedConfig.name &&
-                newlyAddedItem?.index === itemIdx;
+            {(formData[nestedConfig.name] || [])?.map(
+              (item: any, itemIdx: number) => {
+                const refKey = `${nestedConfig.name}-${itemIdx}`;
+                const isNewlyAdded =
+                  newlyAddedItem?.nested === nestedConfig.name &&
+                  newlyAddedItem?.index === itemIdx;
 
-              return (
-                <div
-                  key={itemIdx}
-                  ref={(el) => {
-                    if (el) {
-                      nestedItemRefs.current[refKey] = el;
-                    }
-                  }}
-                  className={`nested-item ${isNewlyAdded ? 'newly-added' : ''}`}
-                >
-                  <div className='nested-header'>
-                    <span className='item-number'>
-                      {nestedConfig.title} {itemIdx + 1}
-                    </span>
-                    {/* ✅ ХРЕСТИК ТІЛЬКИ ДЛЯ НОВИХ ЗАПИСІВ */}
-                    {item.__isNew && (
-                      <button
-                        type='button'
-                        className='btn-remove-new'
-                        onClick={() =>
-                          removeNestedItem(nestedConfig.name, itemIdx)
-                        }
-                        title='Видалити поле без збереження'
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  <div className='form-grid'>
-                    {nestedConfig.fields.map((field) =>
-                      // ✅ ВИКОРИСТОВУЄМО renderNestedField ЗІ ЗВИЧАЙНОЇ ФУНКЦІЇ
-                      renderNestedField(
-                        field,
-                        item[field.name],
-                        nestedConfig.name,
-                        itemIdx,
-                        item,
-                      ),
-                    )}
-                  </div>
-
-                  {/* ✅ КНОПКА ВИДАЛЕННЯ ТІЛЬКИ ДЛЯ ІСНУЮЧИХ ЗАПИСІВ */}
-                  {!item.__isNew && (
-                    <div className='nested-footer'>
-                      <button
-                        type='button'
-                        className='btn-delete-nested'
-                        onClick={() =>
-                          openDeleteConfirm(
-                            nestedConfig.name,
-                            itemIdx,
-                            item[nestedConfig.fields[0].name] ||
-                              `${nestedConfig.title} ${itemIdx + 1}`,
-                          )
-                        }
-                        title='Видалити запис'
-                      >
-                        🗑️ Видалити запис
-                      </button>
+                return (
+                  <div
+                    key={itemIdx}
+                    ref={(el) => {
+                      if (el) {
+                        nestedItemRefs.current[refKey] = el;
+                      }
+                    }}
+                    className={`nested-item ${isNewlyAdded ? 'newly-added' : ''}`}
+                  >
+                    <div className='nested-header'>
+                      <span className='item-number'>
+                        {nestedConfig.title} {itemIdx + 1}
+                      </span>
+                      {/* ✅ ХРЕСТИК ТІЛЬКИ ДЛЯ НОВИХ ЗАПИСІВ */}
+                      {item.__isNew && (
+                        <button
+                          type='button'
+                          className='btn-remove-new'
+                          onClick={() =>
+                            removeNestedItem(nestedConfig.name, itemIdx)
+                          }
+                          title='Видалити поле без збереження'
+                        >
+                          ✕
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+
+                    <div className='form-grid'>
+                      {nestedConfig.fields.map((field) =>
+                        // ✅ ВИКОРИСТОВУЄМО renderNestedField ЗІ ЗВИЧАЙНОЇ ФУНКЦІЇ
+                        renderNestedField(
+                          field,
+                          item[field.name],
+                          nestedConfig.name,
+                          itemIdx,
+                          item,
+                        ),
+                      )}
+                    </div>
+
+                    {/* ✅ КНОПКА ВИДАЛЕННЯ ТІЛЬКИ ДЛЯ ІСНУЮЧИХ ЗАПИСІВ */}
+                    {!item.__isNew && (
+                      <div className='nested-footer'>
+                        <button
+                          type='button'
+                          className='btn-delete-nested'
+                          onClick={() =>
+                            openDeleteConfirm(
+                              nestedConfig.name,
+                              itemIdx,
+                              item[nestedConfig.fields[0].name] ||
+                                `${nestedConfig.title} ${itemIdx + 1}`,
+                            )
+                          }
+                          title='Видалити запис'
+                        >
+                          🗑️ Видалити запис
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              },
+            )}
           </div>
         </section>
       ))}

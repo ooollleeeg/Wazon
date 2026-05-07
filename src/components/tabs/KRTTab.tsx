@@ -83,6 +83,7 @@ const krtFormConfig: FormConfig = {
       name: 'categorization',
       title: 'Категоріювання ОІД',
       icon: '📋',
+      dateField: 'categorizationActDate',
       defaultItem: {
         categorizationActDate: '',
         categorizationActNumber: '',
@@ -155,6 +156,7 @@ const krtFormConfig: FormConfig = {
       name: 'technicalTask',
       title: 'Технічне завдання на створення комплексу ТЗІ',
       icon: '🛠️',
+      dateField: 'taskDate',
       defaultItem: { taskDate: '', taskNumber: '', taskClearance: '' },
       fields: [
         {
@@ -225,6 +227,7 @@ const krtFormConfig: FormConfig = {
       name: 'specialCheck',
       title: 'Акт комплексної спеціальної перевірки',
       icon: '🔍',
+      dateField: 'checkDate',
       defaultItem: {
         checkNumber: '',
         checkDate: '',
@@ -265,6 +268,7 @@ const krtFormConfig: FormConfig = {
       name: 'atestation',
       title: 'Атестація комплексу технічного захисту інформації',
       icon: '✅',
+      dateField: 'attestationRegDate',
       defaultItem: {
         attestationRegNumber: '',
         attestationRegDate: '',
@@ -324,6 +328,7 @@ const krtFormConfig: FormConfig = {
       name: 'protectionMeans',
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
+      dateField: 'protectionDate',
       defaultItem: {
         name: '',
         serialNumber: '',
@@ -433,6 +438,7 @@ const krtCardConfig: CardConfig = {
       title: 'Категоріювання ОІД',
       icon: '📋',
       itemTitle: 'categorizationRank',
+      dateField: 'categorizationActDate',
       fields: [
         {
           label: 'Дата реєстрації акта',
@@ -461,6 +467,7 @@ const krtCardConfig: CardConfig = {
       title: 'Технічне завдання на створення комплексу ТЗІ',
       icon: '🛠️',
       itemTitle: 'taskNumber',
+      dateField: 'taskDate',
       fields: [
         { label: 'Дата реєстрації', value: 'taskDate', format: 'date' },
         { label: 'Реєстраційний номер', value: 'taskNumber' },
@@ -472,6 +479,7 @@ const krtCardConfig: CardConfig = {
       title: 'Протокол інструментального контролю',
       icon: '🔍',
       itemTitle: 'controlNumber',
+      dateField: 'controlDate',
       fields: [
         { label: 'Реєстраційний номер', value: 'controlNumber' },
         { label: 'Дата реєстрації', value: 'controlDate', format: 'date' },
@@ -489,6 +497,7 @@ const krtCardConfig: CardConfig = {
       title: 'Акт комплексної спеціальної перевірки',
       icon: '🔍',
       itemTitle: 'checkNumber',
+      dateField: 'checkDate',
       fields: [
         { label: 'Реєстраційний номер', value: 'checkNumber' },
         { label: 'Дата реєстрації', value: 'checkDate', format: 'date' },
@@ -505,6 +514,7 @@ const krtCardConfig: CardConfig = {
       title: 'Атестація комплексу технічного захисту інформації',
       icon: '✅',
       itemTitle: 'attestationRegNumber',
+      dateField: 'attestationRegDate',
       fields: [
         { label: 'Реєстраційний номер', value: 'attestationRegNumber' },
         {
@@ -532,6 +542,7 @@ const krtCardConfig: CardConfig = {
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
       itemTitle: 'name',
+      dateField: 'meanDate',
       fields: [
         { label: 'Назва', value: 'name' },
         { label: 'Серійний номер', value: 'serialNumber' },

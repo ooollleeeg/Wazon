@@ -75,6 +75,7 @@ const servicePremisesFormConfig: FormConfig = {
       name: 'categorization',
       title: 'Категоріювання ОІД',
       icon: '📋',
+      dateField: 'categorizationActDate',
       defaultItem: {
         categorizationActDate: '',
         categorizationActNumber: '',
@@ -147,6 +148,7 @@ const servicePremisesFormConfig: FormConfig = {
       name: 'technicalTask',
       title: 'Технічне завдання на створення комплексу ТЗІ',
       icon: '🛠️',
+      dateField: 'taskDate',
       defaultItem: { taskDate: '', taskNumber: '', taskClearance: '' },
       fields: [
         {
@@ -216,6 +218,7 @@ const servicePremisesFormConfig: FormConfig = {
       name: 'specialCheck',
       title: 'Акт комплексної спеціальної перевірки',
       icon: '🔍',
+      dateField: 'checkDate',
       defaultItem: {
         checkNumber: '',
         checkDate: '',
@@ -255,6 +258,7 @@ const servicePremisesFormConfig: FormConfig = {
       name: 'atestation',
       title: 'Атестація комплексу технічного захисту інформації',
       icon: '✅',
+      dateField: 'attestationRegDate',
       defaultItem: {
         attestationRegNumber: '',
         attestationRegDate: '',
@@ -313,6 +317,7 @@ const servicePremisesFormConfig: FormConfig = {
       name: 'protectionMeans',
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
+      dateField: 'protectionDate',
       defaultItem: {
         name: '',
         serialNumber: '',
@@ -444,6 +449,7 @@ const servicePremisesCardConfig: CardConfig = {
       title: 'Категоріювання ОІД',
       icon: '📋',
       itemTitle: 'categorizationRank',
+      dateField: 'categorizationActDate',
       fields: [
         {
           label: 'Дата реєстрації акта',
@@ -517,6 +523,7 @@ const servicePremisesCardConfig: CardConfig = {
       title: 'Акт спеціальної перевірки',
       icon: '🔍',
       itemTitle: 'checkNumber',
+      dateField: 'checkDate',
       fields: [
         {
           label: 'Номер акта',
