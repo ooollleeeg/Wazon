@@ -220,12 +220,12 @@ export default function GenericCard({
             if (!items || items.length === 0) return null;
 
             const isExpanded = expandedSections[nested.name];
-            
+
             // Determine display behavior based on configuration
             let displayItems: any[] = [];
             let showToggleButton = false;
             let buttonLabel = '';
-            
+
             if (nested.hideAllByDefault) {
               // Hide all by default, show expand button
               displayItems = isExpanded ? items : [];
@@ -234,7 +234,8 @@ export default function GenericCard({
             } else {
               // Show current version by default (existing behavior)
               displayItems = isExpanded ? items : items.slice(0, 1);
-              const hasPreviousVersions = nested.showPreviousVersions && items.length > 1;
+              const hasPreviousVersions =
+                nested.showPreviousVersions && items.length > 1;
               showToggleButton = hasPreviousVersions;
               buttonLabel = isExpanded
                 ? '← Приховати попередні'
@@ -248,8 +249,10 @@ export default function GenericCard({
                 </h4>
                 <div className='nested-list'>
                   {displayItems.map((item: any, itemIdx: number) => {
-                    const isCurrentVersion = itemIdx === 0 && !nested.hideAllByDefault;
-                    const isPreviousVersion = itemIdx > 0 && !nested.hideAllByDefault;
+                    const isCurrentVersion =
+                      itemIdx === 0 && !nested.hideAllByDefault;
+                    const isPreviousVersion =
+                      itemIdx > 0 && !nested.hideAllByDefault;
 
                     return (
                       <div
@@ -287,14 +290,12 @@ export default function GenericCard({
                     );
                   })}
                 </div>
-                {hasPreviousVersions && (
+                {showToggleButton && (
                   <button
                     className='btn-toggle-previous'
                     onClick={() => toggleExpandSection(nested.name)}
                   >
-                    {isExpanded
-                      ? '← Приховати попередні'
-                      : `↓ Переглянути попередні (${items.length - 1})`}
+                    {buttonLabel}
                   </button>
                 )}
               </section>
