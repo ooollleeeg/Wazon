@@ -32,6 +32,7 @@ export interface NestedFieldConfig {
   title: string; // 'Освіта'
   icon?: string; // '📚'
   dateField?: string; // Field for sorting (newer first)
+  hideAllByDefault?: boolean; // Hide all records by default in form view
   defaultItem: Record<string, any>;
   fields: FormField[];
 }
@@ -70,6 +71,11 @@ export default function GenericForm({
     nested: string;
     index: number;
   } | null>(null);
+
+  // State для отслеживания развернутых nested sections с hideAllByDefault
+  const [expandedNestedSections, setExpandedNestedSections] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   // Refs для прокрутки к новому элементу
   const nestedItemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -223,6 +229,13 @@ export default function GenericForm({
         [nestedName]: newItems,
       };
     });
+  };
+
+  const toggleExpandNestedSection = (nestedName: string) => {
+    setExpandedNestedSections((prev) => ({
+      ...prev,
+      [nestedName]: !prev[nestedName],
+    }));
   };
 
   const updateNestedItem = (
@@ -478,24 +491,45 @@ export default function GenericForm({
       ))}
 
       {/* ВЛОЖЁННЫЕ ПОЛЯ */}
-      {config.nestedFields?.map((nestedConfig, idx) => (
-        <section key={idx} className='form-section nested-section'>
-          <div className='section-header'>
-            <h3>
-              {nestedConfig.icon} {nestedConfig.title}
-            </h3>
-            <button
-              type='button'
-              className='btn-add'
-              onClick={() => addNestedItem(nestedConfig.name, nestedConfig)}
-            >
-              + Додати
-            </button>
-          </div>
+      {config.nestedFields?.map((nestedConfig, idx) => {
+        const items = formData[nestedConfig.name] || [];
+        const isExpanded = expandedNestedSections[nestedConfig.name];
+        const shouldHideByDefault = nestedConfig.hideAllByDefault;
+        const displayItems = shouldHideByDefault
+          ? isExpanded
+            ? items
+            : []
+          : items;
+        const showToggleButton = shouldHideByDefault && items.length > 0;
 
-          <div className='nested-items'>
-            {(formData[nestedConfig.name] || [])?.map(
-              (item: any, itemIdx: number) => {
+        return (
+          <section key={idx} className='form-section nested-section'>
+            <div className='section-header'>
+              <h3>
+                {nestedConfig.icon} {nestedConfig.title}
+                {items.length > 0 && ` (${items.length})`}
+              </h3>
+              <button
+                type='button'
+                className='btn-add'
+                onClick={() => addNestedItem(nestedConfig.name, nestedConfig)}
+              >
+                + Додати
+              </button>
+            </div>
+
+            {showToggleButton && (
+              <button
+                type='button'
+                className='btn-toggle-nested-form'
+                onClick={() => toggleExpandNestedSection(nestedConfig.name)}
+              >
+                {isExpanded ? '← Приховати' : `↓ Переглянути (${items.length})`}
+              </button>
+            )}
+
+            <div className='nested-items'>
+              {displayItems?.map((item: any, itemIdx: number) => {
                 const refKey = `${nestedConfig.name}-${itemIdx}`;
                 const isNewlyAdded =
                   newlyAddedItem?.nested === nestedConfig.name &&
@@ -565,11 +599,11 @@ export default function GenericForm({
                     )}
                   </div>
                 );
-              },
-            )}
-          </div>
-        </section>
-      ))}
+              })}
+            </div>
+          </section>
+        );
+      })}
 
       {/* КНОПКИ */}
       {isLoading && (

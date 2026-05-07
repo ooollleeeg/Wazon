@@ -220,6 +220,32 @@ mark {
   flex: 1;
 }
 
+.btn-toggle-nested-form {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #f0f4ff;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.btn-toggle-nested-form:hover {
+  background: #e6edff;
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+.btn-toggle-nested-form:active {
+  transform: translateY(1px);
+}
+
 /* ============================================================================
    NESTED ITEMS
    ============================================================================ */

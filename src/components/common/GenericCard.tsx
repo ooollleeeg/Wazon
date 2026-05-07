@@ -19,7 +19,8 @@ export interface NestedCardSection {
   icon?: string; // '📚'
   itemTitle: string; // Field to use as title (e.g., 'institution')
   dateField?: string; // Field for sorting (newer first)
-  showPreviousVersions?: boolean; // Show "View previous" button
+  showPreviousVersions?: boolean; // Show "View previous" button with current version first
+  hideAllByDefault?: boolean; // Hide all records by default, show only expand button
   fields: {
     label: string;
     value: string; // Field name in nested item
@@ -219,9 +220,26 @@ export default function GenericCard({
             if (!items || items.length === 0) return null;
 
             const isExpanded = expandedSections[nested.name];
-            const displayItems = isExpanded ? items : items.slice(0, 1);
-            const hasPreviousVersions =
-              nested.showPreviousVersions && items.length > 1;
+            
+            // Determine display behavior based on configuration
+            let displayItems: any[] = [];
+            let showToggleButton = false;
+            let buttonLabel = '';
+            
+            if (nested.hideAllByDefault) {
+              // Hide all by default, show expand button
+              displayItems = isExpanded ? items : [];
+              showToggleButton = items.length > 0;
+              buttonLabel = isExpanded ? 'Приховати' : 'Переглянути';
+            } else {
+              // Show current version by default (existing behavior)
+              displayItems = isExpanded ? items : items.slice(0, 1);
+              const hasPreviousVersions = nested.showPreviousVersions && items.length > 1;
+              showToggleButton = hasPreviousVersions;
+              buttonLabel = isExpanded
+                ? '← Приховати попередні'
+                : `↓ Переглянути попередні (${items.length - 1})`;
+            }
 
             return (
               <section key={idx} className='card-section nested-section'>
@@ -230,8 +248,8 @@ export default function GenericCard({
                 </h4>
                 <div className='nested-list'>
                   {displayItems.map((item: any, itemIdx: number) => {
-                    const isCurrentVersion = itemIdx === 0;
-                    const isPreviousVersion = itemIdx > 0;
+                    const isCurrentVersion = itemIdx === 0 && !nested.hideAllByDefault;
+                    const isPreviousVersion = itemIdx > 0 && !nested.hideAllByDefault;
 
                     return (
                       <div
@@ -245,7 +263,7 @@ export default function GenericCard({
                           <span className='item-title'>
                             {item[nested.itemTitle]}
                           </span>
-                          {isCurrentVersion && hasPreviousVersions && (
+                          {isCurrentVersion && nested.showPreviousVersions && (
                             <span className='badge-current'>Поточний</span>
                           )}
                         </div>

@@ -591,6 +591,7 @@ const classASFormConfig: FormConfig = {
       name: 'software',
       title: 'Програмне забезпечення',
       icon: '💾',
+      hideAllByDefault: true,
       defaultItem: { name: '', version: '', manufacturer: '' },
       fields: [
         {
@@ -859,6 +860,7 @@ const classASCardConfig: CardConfig = {
       title: 'Програмне забезпечення',
       icon: '💾',
       itemTitle: 'name',
+      hideAllByDefault: true,
       fields: [
         { label: 'Найменування', value: 'name' },
         { label: 'Версія', value: 'version' },
