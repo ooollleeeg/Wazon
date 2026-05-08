@@ -133,70 +133,77 @@ function ExpirationMonitoringTab() {
 
         if (Array.isArray(data)) {
           data.forEach((item: any) => {
-            // Process main date fields
-            DATE_FIELDS.forEach((dateField) => {
-              if (item[dateField.field]) {
-                const { status, days } = getStatus(item[dateField.field]);
-                allDocs.push({
-                  id: item.id,
-                  parentId: item.id,
-                  parentName: item.systemName || item.name || 'Без назви',
-                  tabId: config.tabId,
-                  tabLabel: config.label,
-                  documentType: dateField.type,
-                  fieldName: dateField.field,
-                  fieldLabel: dateField.label,
-                  expirationDate: item[dateField.field],
-                  status,
-                  daysUntilExpiration: days,
+            // Define which nested sections to check for each tab
+            const nestedFieldsToCheck: {
+              [key: string]: { [key: string]: string[] };
+            } = {
+              'class-a': {
+                categorization: ['categorizationValidUntil'],
+                instrumentalControl: ['controlTermin'],
+                atestation: ['attestationValidUntil'],
+                complianceDocuments: ['validUntil'],
+              },
+              'service-premises': {
+                categorization: ['categorizationValidUntil'],
+                instrumentalControl: ['controlTermin'],
+                atestation: ['attestationValidUntil'],
+              },
+              krt: {
+                categorization: ['categorizationValidUntil'],
+                instrumentalControl: ['controlTermin'],
+                atestation: ['attestationValidUntil'],
+              },
+              iks: {
+                categorization: ['categorizationValidUntil'],
+                instrumentalControl: ['controlTermin'],
+                atestation: ['attestationValidUntil'],
+              },
+            };
+
+            const fieldsToCheck = nestedFieldsToCheck[config.tabId] || {};
+
+            // Check nested fields - only take the FIRST (current) record
+            Object.entries(fieldsToCheck).forEach(([nestedName, fields]) => {
+              if (
+                Array.isArray(item[nestedName]) &&
+                item[nestedName].length > 0
+              ) {
+                // Take only the first record (idx = 0) which is the "current" version
+                const nested = item[nestedName][0];
+
+                fields.forEach((nestedField) => {
+                  if (nested[nestedField]) {
+                    const { status, days } = getStatus(nested[nestedField]);
+
+                    // Map nested field names to display labels
+                    const fieldLabelMap: { [key: string]: string } = {
+                      categorizationValidUntil: 'Акт категоріювання дійсний до',
+                      controlTermin: 'Протокол контролю дійсний до',
+                      attestationValidUntil: 'Атестація дійсна до',
+                      validUntil: 'Документ про відповідність дійсний до',
+                    };
+
+                    allDocs.push({
+                      id: `${item.id}-${nestedName}-0`,
+                      parentId: item.id,
+                      parentName:
+                        item.systemName ||
+                        item.subdivisionName ||
+                        item.name ||
+                        'Без назви',
+                      tabId: config.tabId,
+                      tabLabel: config.label,
+                      documentType: nestedName,
+                      fieldName: nestedField,
+                      fieldLabel: fieldLabelMap[nestedField] || nestedField,
+                      expirationDate: nested[nestedField],
+                      status,
+                      daysUntilExpiration: days,
+                    });
+                  }
                 });
               }
             });
-
-            // Process nested fields separately (only once per item)
-            const nestedFieldMappings: { [key: string]: string[] } = {
-              complianceDocuments: ['validUntil', 'nextAuthorizationDeadline'],
-              atestation: ['attestationValidUntil'],
-              protectionMeans: [],
-              orders: [],
-            };
-
-            Object.entries(nestedFieldMappings).forEach(
-              ([nestedName, fields]) => {
-                if (Array.isArray(item[nestedName])) {
-                  item[nestedName].forEach((nested: any, idx: number) => {
-                    fields.forEach((nestedField) => {
-                      if (nested[nestedField]) {
-                        const { status, days } = getStatus(nested[nestedField]);
-
-                        // Find matching DATE_FIELD label
-                        const matchingDateField = DATE_FIELDS.find(
-                          (df) => df.field === nestedField,
-                        );
-
-                        allDocs.push({
-                          id: `${item.id}-${nestedName}-${idx}`,
-                          parentId: item.id,
-                          parentName:
-                            item.systemName || item.name || 'Без назви',
-                          tabId: config.tabId,
-                          tabLabel: config.label,
-                          documentType:
-                            nested.documentType ||
-                            nested.orderType ||
-                            nestedName,
-                          fieldName: nestedField,
-                          fieldLabel: matchingDateField?.label || nestedField,
-                          expirationDate: nested[nestedField],
-                          status,
-                          daysUntilExpiration: days,
-                        });
-                      }
-                    });
-                  });
-                }
-              },
-            );
           });
         }
       } catch (error) {

@@ -617,7 +617,7 @@ const servicePremisesListConfig: ListConfig = {
     <GenericCard config={servicePremisesCardConfig} data={props} {...props} />
   ),
   CompactCardComponent: ServicePremisesCardCompact,
-  emptyMessage: 'Немає записів про службові приміщення. Додайте першу запис.',
+  emptyMessage: 'Немає записів про службові приміщення. Додайте перший запис.',
   noResultsMessage: 'Результатів не знайдено за заданими критеріями пошуку',
 };
 
