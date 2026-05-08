@@ -101,6 +101,16 @@ const getStatusLabel = (
   }
 };
 
+const getDocumentTypeLabel = (documentType: string): string => {
+  const translations: { [key: string]: string } = {
+    categorization: 'Категоріювання',
+    instrumentalControl: 'Інструментальний контроль',
+    atestation: 'Атестація',
+    complianceDocuments: 'Документ про відповідність вимогам ТЗІ',
+  };
+  return translations[documentType] || documentType;
+};
+
 function ExpirationMonitoringTab() {
   const [documents, setDocuments] = useState<ExpirationDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -376,8 +386,9 @@ function ExpirationMonitoringTab() {
                     </span>
                   </td>
                   <td>
-                    <div className='doc-type'>{doc.documentType}</div>
-                    <div className='doc-field'>{doc.fieldLabel}</div>
+                    <div className='doc-type'>
+                      {getDocumentTypeLabel(doc.documentType)}
+                    </div>
                   </td>
                   <td className='parent-name'>{doc.parentName}</td>
                   <td>
