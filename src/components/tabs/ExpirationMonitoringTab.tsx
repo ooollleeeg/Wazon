@@ -306,6 +306,7 @@ function ExpirationMonitoringTab() {
       {/* Statistics Cards */}
       <div className='stats-grid'>
         <div className='stat-card stat-total'>
+          <div className='stat-icon'>⚪</div>
           <div className='stat-number'>{stats.total}</div>
           <div className='stat-label'>Всього документів</div>
         </div>
