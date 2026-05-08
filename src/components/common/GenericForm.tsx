@@ -229,6 +229,14 @@ export default function GenericForm({
         [nestedName]: newItems,
       };
     });
+
+    // ✅ РОЗГОРНУТИ СЕКЦІЮ ЯКЩО ВОНА МА hideAllByDefault
+    if (config.hideAllByDefault) {
+      setExpandedNestedSections((prev) => ({
+        ...prev,
+        [nestedName]: true,
+      }));
+    }
   };
 
   const toggleExpandNestedSection = (nestedName: string) => {
@@ -493,6 +501,7 @@ export default function GenericForm({
       {/* ВЛОЖЁННЫЕ ПОЛЯ */}
       {config.nestedFields?.map((nestedConfig, idx) => {
         const items = formData[nestedConfig.name] || [];
+        const savedItems = items.filter((item: any) => !item.__isNew); // Лічимо тільки збережені
         const isExpanded = expandedNestedSections[nestedConfig.name];
         const shouldHideByDefault = nestedConfig.hideAllByDefault;
         const displayItems = shouldHideByDefault
@@ -507,7 +516,7 @@ export default function GenericForm({
             <div className='section-header'>
               <h3>
                 {nestedConfig.icon} {nestedConfig.title}
-                {items.length > 0 && ` (${items.length})`}
+                {savedItems.length > 0 && ` (${savedItems.length})`}
               </h3>
               <button
                 type='button'
@@ -524,7 +533,9 @@ export default function GenericForm({
                 className='btn-toggle-nested-form'
                 onClick={() => toggleExpandNestedSection(nestedConfig.name)}
               >
-                {isExpanded ? '← Приховати' : `↓ Переглянути (${items.length})`}
+                {isExpanded
+                  ? '← Приховати'
+                  : `↓ Переглянути${savedItems.length > 0 ? ` (${savedItems.length})` : ''}`}
               </button>
             )}
 
