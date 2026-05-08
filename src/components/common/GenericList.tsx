@@ -21,6 +21,7 @@ interface GenericListProps {
   onDelete: (id: number) => void;
   isLoading: boolean;
   isSaving?: boolean;
+  expandedItemId?: number | null;
 }
 
 export default function GenericList({
@@ -31,9 +32,19 @@ export default function GenericList({
   onDelete,
   isLoading,
   isSaving = false,
+  expandedItemId,
 }: GenericListProps) {
   const [filteredItems, setFilteredItems] = useState<any[]>([]);
-  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(
+    expandedItemId ?? null,
+  );
+
+  // Update expandedId when expandedItemId prop changes
+  useEffect(() => {
+    if (expandedItemId) {
+      setExpandedId(expandedItemId);
+    }
+  }, [expandedItemId]);
 
   useEffect(() => {
     console.log(`Filtering ${items.length} items with term: "${searchTerm}"`);

@@ -12,9 +12,13 @@ export interface TabConfig {
 
 interface GenericTabProps {
   config: TabConfig;
+  expandedItemId?: number | null;
 }
 
-export default function GenericTab({ config }: GenericTabProps) {
+export default function GenericTab({
+  config,
+  expandedItemId,
+}: GenericTabProps) {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -211,6 +215,7 @@ export default function GenericTab({ config }: GenericTabProps) {
         onDelete={handleDelete}
         isLoading={isLoading}
         isSaving={isSaving}
+        expandedItemId={expandedItemId}
       />
     </div>
   );

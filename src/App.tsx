@@ -142,6 +142,37 @@ function App() {
   const [currentTab, setCurrentTab] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [expandedItemId, setExpandedItemId] = useState<number | null>(null);
+
+  // Handle hash navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1); // Remove '#'
+      if (!hash) return;
+
+      // Parse hash format: "tabId" or "tabId:itemId"
+      const [tabId, itemIdStr] = hash.split(':');
+      const itemId = itemIdStr ? parseInt(itemIdStr, 10) : null;
+
+      // Find tab index by tabId
+      const tabIndex = TABS.findIndex((tab) => tab.id === tabId);
+      if (tabIndex !== -1) {
+        setCurrentTab(tabIndex);
+        setExpandedItemId(itemId);
+
+        // Scroll to top to show expanded card
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 100);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // Handle initial hash on page load
+    handleHashChange();
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -239,7 +270,7 @@ function App() {
             {currentTabData.label}
           </h2>
         </div>
-        <CurrentComponent />
+        <CurrentComponent expandedItemId={expandedItemId} />
       </main>
 
       {showScrollTop && (

@@ -106,7 +106,7 @@ const getDocumentTypeLabel = (documentType: string): string => {
     categorization: 'Категоріювання',
     instrumentalControl: 'Інструментальний контроль',
     atestation: 'Атестація',
-    complianceDocuments: 'Документ про відповідність вимогам ТЗІ',
+    complianceDocuments: 'Підтвердження відповідності вимогам ТЗІ',
   };
   return translations[documentType] || documentType;
 };
@@ -367,12 +367,12 @@ function ExpirationMonitoringTab() {
             <thead>
               <tr>
                 <th>Статус</th>
-                <th>Документ</th>
+                <th>Проведений захід</th>
                 <th>Об'єкт</th>
-                <th>Вкладка</th>
+                <th>Тип об'єкта</th>
                 <th>Дата закінчення</th>
                 <th>Днів залишилось</th>
-                <th>Дія</th>
+                <th>Картка об'єкта</th>
               </tr>
             </thead>
             <tbody>
@@ -408,7 +408,10 @@ function ExpirationMonitoringTab() {
                     </strong>
                   </td>
                   <td>
-                    <a href={`#${doc.tabId}`} className='nav-link'>
+                    <a
+                      href={`#${doc.tabId}:${doc.parentId}`}
+                      className='nav-link'
+                    >
                       → Перейти
                     </a>
                   </td>
