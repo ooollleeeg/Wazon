@@ -178,8 +178,37 @@ function ExpirationMonitoringTab() {
                 Array.isArray(item[nestedName]) &&
                 item[nestedName].length > 0
               ) {
-                // Take only the first record (idx = 0) which is the "current" version
-                const nested = item[nestedName][0];
+                // IMPORTANT: Sort by dateField first to ensure newest is at index 0
+                let nestedItems = [...item[nestedName]];
+
+                // Determine which dateField to use for this nested section
+                const dateFieldMap: { [key: string]: string } = {
+                  categorization: 'categorizationActDate',
+                  technicalTask: 'taskDate',
+                  instrumentalControl: 'controlDate',
+                  specialCheck: 'checkDate',
+                  atestation: 'attestationRegDate',
+                  protectionMeans: 'meanDate',
+                  orders: 'orderDate',
+                  complianceDocuments: 'dsszzіDate',
+                };
+
+                const dateField = dateFieldMap[nestedName];
+                if (dateField) {
+                  // Sort by dateField descending (newest first)
+                  nestedItems.sort((a, b) => {
+                    const dateA = a[dateField]
+                      ? new Date(a[dateField]).getTime()
+                      : 0;
+                    const dateB = b[dateField]
+                      ? new Date(b[dateField]).getTime()
+                      : 0;
+                    return dateB - dateA; // Descending
+                  });
+                }
+
+                // Take only the first record (idx = 0) which is now the "current" (newest) version
+                const nested = nestedItems[0];
 
                 fields.forEach((nestedField) => {
                   if (nested[nestedField]) {
@@ -224,37 +253,37 @@ function ExpirationMonitoringTab() {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    // Also fetch documents
-    try {
-      const response = await fetch('/api/documents', {
-        signal: AbortSignal.timeout(10000),
-      });
-      if (response.ok) {
-        const docsData = await response.json();
-        if (Array.isArray(docsData)) {
-          docsData.forEach((doc: any) => {
-            if (doc.expirationDate) {
-              const { status, days } = getStatus(doc.expirationDate);
-              allDocs.push({
-                id: doc.id,
-                parentId: doc.id,
-                parentName: doc.name || 'Документ',
-                tabId: 'documents',
-                tabLabel: 'Документи',
-                documentType: doc.type || 'Документ',
-                fieldName: 'expirationDate',
-                fieldLabel: 'Дата закінчення',
-                expirationDate: doc.expirationDate,
-                status,
-                daysUntilExpiration: days,
-              });
-            }
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-    }
+    // NOTE: /api/documents endpoint does not exist yet - commenting out for now
+    // try {
+    //   const response = await fetch('/api/documents', {
+    //     signal: AbortSignal.timeout(10000),
+    //   });
+    //   if (response.ok) {
+    //     const docsData = await response.json();
+    //     if (Array.isArray(docsData)) {
+    //       docsData.forEach((doc: any) => {
+    //         if (doc.expirationDate) {
+    //           const { status, days } = getStatus(doc.expirationDate);
+    //           allDocs.push({
+    //             id: doc.id,
+    //             parentId: doc.id,
+    //             parentName: doc.name || 'Документ',
+    //             tabId: 'documents',
+    //             tabLabel: 'Документи',
+    //             documentType: doc.type || 'Документ',
+    //             fieldName: 'expirationDate',
+    //             fieldLabel: 'Дата закінчення',
+    //             expirationDate: doc.expirationDate,
+    //             status,
+    //             daysUntilExpiration: days,
+    //           });
+    //         }
+    //       });
+    //     }
+    //   }
+    // } catch (error) {
+    //   console.error('Error fetching documents:', error);
+    // }
 
     setDocuments(allDocs);
     setLoading(false);
