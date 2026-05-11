@@ -167,6 +167,7 @@ function ExpirationMonitoringTab() {
                 categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
                 atestation: ['attestationValidUntil'],
+                complianceDocuments: ['validUntil'],
               },
             };
 
@@ -399,8 +400,8 @@ function ExpirationMonitoringTab() {
                 <th>Проведений захід</th>
                 <th>Об'єкт</th>
                 <th>Тип об'єкта</th>
-                <th>Дата закінчення</th>
-                <th>Днів залишилось</th>
+                <th>Дійсне до</th>
+                <th>Залишилось</th>
                 <th>Картка об'єкта</th>
               </tr>
             </thead>

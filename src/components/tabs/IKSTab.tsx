@@ -516,7 +516,7 @@ const iksCardConfig: CardConfig = {
   nestedSections: [
     {
       name: 'categorization',
-      title: 'Категоріювання',
+      title: 'Акт категоріювання',
       icon: '📋',
       itemTitle: 'categorizationRank',
       dateField: 'categorizationActDate',
@@ -560,7 +560,7 @@ const iksCardConfig: CardConfig = {
     },
     {
       name: 'atestation',
-      title: 'Атестація комплексу технічного захисту інформації',
+      title: 'Акт атестації комплекса ТЗІ',
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       dateField: 'attestationRegDate',
