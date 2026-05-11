@@ -132,6 +132,7 @@ function initializeDatabase() {
         invertarNumber TEXT,
         releaseYear INTEGER,
         certificateInfo TEXT,
+        toolType TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
       )
@@ -334,6 +335,7 @@ function initializeDatabase() {
         invertarNumber TEXT,
         releaseYear INTEGER,
         certificateInfo TEXT,
+        toolType TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
       )
@@ -461,6 +463,7 @@ function initializeDatabase() {
         invertarNumber TEXT,
         releaseYear INTEGER,
         certificateInfo TEXT,
+        toolType TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
       )
@@ -568,6 +571,7 @@ function initializeDatabase() {
         invertarNumber TEXT,
         releaseYear INTEGER,
         certificateInfo TEXT,
+        toolType TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
       )
@@ -613,55 +617,6 @@ function initializeDatabase() {
           console.error('❌ Database initialization error:', err.message);
         } else {
           console.log('✅ Database tables initialized');
-        }
-      },
-    );
-
-    // Додаємо стовпець toolType до таблиць захисних засобів (якщо ще не існує)
-    db.run(
-      `ALTER TABLE class_a_systems_protection_means ADD COLUMN toolType TEXT`,
-      (err) => {
-        if (err && !err.message.includes('duplicate column')) {
-          console.error(
-            '⚠️ Could not add toolType to class_a_systems_protection_means:',
-            err.message,
-          );
-        }
-      },
-    );
-
-    db.run(
-      `ALTER TABLE service_premises_protection_means ADD COLUMN toolType TEXT`,
-      (err) => {
-        if (err && !err.message.includes('duplicate column')) {
-          console.error(
-            '⚠️ Could not add toolType to service_premises_protection_means:',
-            err.message,
-          );
-        }
-      },
-    );
-
-    db.run(
-      `ALTER TABLE krt_protection_means ADD COLUMN toolType TEXT`,
-      (err) => {
-        if (err && !err.message.includes('duplicate column')) {
-          console.error(
-            '⚠️ Could not add toolType to krt_protection_means:',
-            err.message,
-          );
-        }
-      },
-    );
-
-    db.run(
-      `ALTER TABLE iks_protection_means ADD COLUMN toolType TEXT`,
-      (err) => {
-        if (err && !err.message.includes('duplicate column')) {
-          console.error(
-            '⚠️ Could not add toolType to iks_protection_means:',
-            err.message,
-          );
         }
       },
     );
