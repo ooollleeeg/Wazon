@@ -596,6 +596,10 @@ const krtTabConfig: TabConfig = {
   ListComponent: (props) => <GenericList config={krtListConfig} {...props} />,
 };
 
-export default function KRTTab() {
-  return <GenericTab config={krtTabConfig} />;
+export default function KRTTab({
+  expandedItemId,
+}: {
+  expandedItemId?: number | null;
+}) {
+  return <GenericTab config={krtTabConfig} expandedItemId={expandedItemId} />;
 }

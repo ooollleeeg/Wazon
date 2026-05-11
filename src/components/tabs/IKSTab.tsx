@@ -650,6 +650,10 @@ const iksTabConfig: TabConfig = {
 };
 
 // ===== COMPONENT =====
-export default function IKSTab() {
-  return <GenericTab config={iksTabConfig} />;
+export default function IKSTab({
+  expandedItemId,
+}: {
+  expandedItemId?: number | null;
+}) {
+  return <GenericTab config={iksTabConfig} expandedItemId={expandedItemId} />;
 }

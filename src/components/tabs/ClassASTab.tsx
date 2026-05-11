@@ -919,6 +919,12 @@ const classASTabConfig: TabConfig = {
 };
 
 // ===== COMPONENT =====
-export default function ClassASTab() {
-  return <GenericTab config={classASTabConfig} />;
+export default function ClassASTab({
+  expandedItemId,
+}: {
+  expandedItemId?: number | null;
+}) {
+  return (
+    <GenericTab config={classASTabConfig} expandedItemId={expandedItemId} />
+  );
 }

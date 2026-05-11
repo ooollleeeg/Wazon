@@ -641,6 +641,15 @@ const servicePremisesTabConfig: TabConfig = {
   ),
 };
 
-export default function ServicePremisesTab() {
-  return <GenericTab config={servicePremisesTabConfig} />;
+export default function ServicePremisesTab({
+  expandedItemId,
+}: {
+  expandedItemId?: number | null;
+}) {
+  return (
+    <GenericTab
+      config={servicePremisesTabConfig}
+      expandedItemId={expandedItemId}
+    />
+  );
 }

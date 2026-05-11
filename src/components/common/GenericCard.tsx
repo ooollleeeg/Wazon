@@ -46,6 +46,7 @@ interface GenericCardProps {
   onDelete: () => void;
   onClose?: () => void;
   showCloseButton?: boolean;
+  shouldExpandAll?: boolean; // Expand all nested sections on mount
 }
 
 export default function GenericCard({
@@ -56,11 +57,17 @@ export default function GenericCard({
   onDelete,
   onClose,
   showCloseButton = true,
+  shouldExpandAll = false,
 }: GenericCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<{
+  // Controls visibility of previous versions (toggle button)
+  const [expandedPreviousVersions, setExpandedPreviousVersions] = useState<{
     [key: string]: boolean;
   }>({});
+  // Controls whether sections are expanded when shouldExpandAll is true
+  const [sectionsExpanded, setSectionsExpanded] = useState(
+    shouldExpandAll ? true : false,
+  );
 
   const formatValue = (value: any, format?: string) => {
     if (!value && value !== 0) return '-';
@@ -145,7 +152,7 @@ export default function GenericCard({
   };
 
   const toggleExpandSection = (sectionName: string) => {
-    setExpandedSections((prev) => ({
+    setExpandedPreviousVersions((prev) => ({
       ...prev,
       [sectionName]: !prev[sectionName],
     }));
@@ -219,7 +226,8 @@ export default function GenericCard({
             const items = sortByDate(data[nested.name] || [], nested.dateField);
             if (!items || items.length === 0) return null;
 
-            const isExpanded = expandedSections[nested.name];
+            const isShowingPreviousVersions =
+              expandedPreviousVersions[nested.name];
 
             // Determine display behavior based on configuration
             let displayItems: any[] = [];
@@ -228,16 +236,20 @@ export default function GenericCard({
 
             if (nested.hideAllByDefault) {
               // Hide all by default, show expand button
-              displayItems = isExpanded ? items : [];
+              displayItems = isShowingPreviousVersions ? items : [];
               showToggleButton = items.length > 0;
-              buttonLabel = isExpanded ? 'Приховати' : 'Переглянути';
+              buttonLabel = isShowingPreviousVersions
+                ? 'Приховати'
+                : 'Переглянути';
             } else {
               // Show current version by default (existing behavior)
-              displayItems = isExpanded ? items : items.slice(0, 1);
+              displayItems = isShowingPreviousVersions
+                ? items
+                : items.slice(0, 1);
               const hasPreviousVersions =
                 nested.showPreviousVersions && items.length > 1;
               showToggleButton = hasPreviousVersions;
-              buttonLabel = isExpanded
+              buttonLabel = isShowingPreviousVersions
                 ? '← Приховати попередні'
                 : `↓ Переглянути попередні (${items.length - 1})`;
             }

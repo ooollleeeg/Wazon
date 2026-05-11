@@ -136,6 +136,7 @@ export default function GenericList({
                         }}
                         onClose={() => setExpandedId(null)}
                         showCloseButton={true}
+                        shouldExpandAll={true}
                       />
                     ))}
                 </div>

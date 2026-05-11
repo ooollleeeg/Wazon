@@ -141,6 +141,11 @@ function ExpirationMonitoringTab() {
     'all' | 'expired' | 'critical' | 'warning' | 'ok'
   >('all');
 
+  const handleNavigateToCard = (tabId: string, parentId: number) => {
+    // Set hash to trigger navigation in App.tsx
+    window.location.hash = `${tabId}:${parentId}`;
+  };
+
   useEffect(() => {
     // Add initial delay to ensure Express server is fully ready
     const timer = setTimeout(() => {
@@ -458,12 +463,14 @@ function ExpirationMonitoringTab() {
                     </strong>
                   </td>
                   <td>
-                    <a
-                      href={`#${doc.tabId}:${doc.parentId}`}
+                    <button
                       className='nav-link'
+                      onClick={() =>
+                        handleNavigateToCard(doc.tabId, doc.parentId)
+                      }
                     >
                       → Перейти
-                    </a>
+                    </button>
                   </td>
                 </tr>
               ))}
