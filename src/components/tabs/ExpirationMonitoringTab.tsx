@@ -111,6 +111,28 @@ const getDocumentTypeLabel = (documentType: string): string => {
   return translations[documentType] || documentType;
 };
 
+const getUkrainianDayForm = (days: number): string => {
+  const absDay = Math.abs(days);
+  const remainder = absDay % 10;
+  const remainder100 = absDay % 100;
+
+  // Числа 11-19 всегда "днів"
+  if (remainder100 >= 11 && remainder100 <= 19) {
+    return 'днів';
+  }
+
+  switch (remainder) {
+    case 1:
+      return 'день';
+    case 2:
+    case 3:
+    case 4:
+      return 'дні';
+    default:
+      return 'днів';
+  }
+};
+
 function ExpirationMonitoringTab() {
   const [documents, setDocuments] = useState<ExpirationDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -431,10 +453,8 @@ function ExpirationMonitoringTab() {
                   <td className='days-remaining'>
                     <strong className={`days-${doc.status}`}>
                       {doc.daysUntilExpiration < 0
-                        ? `${Math.abs(doc.daysUntilExpiration)} днів тому`
-                        : doc.daysUntilExpiration === 0
-                          ? 'Сьогодні'
-                          : `${doc.daysUntilExpiration} днів`}
+                        ? `${Math.abs(doc.daysUntilExpiration)} ${getUkrainianDayForm(doc.daysUntilExpiration)} тому`
+                        : `${doc.daysUntilExpiration} ${getUkrainianDayForm(doc.daysUntilExpiration)}`}
                     </strong>
                   </td>
                   <td>

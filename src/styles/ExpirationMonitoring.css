@@ -177,6 +177,10 @@
   white-space: nowrap;
 }
 
+.monitoring-table th:nth-child(6) {
+  text-align: center;
+}
+
 .monitoring-table tbody tr {
   border-bottom: 1px solid #ecf0f1;
   transition: all 0.2s ease;
