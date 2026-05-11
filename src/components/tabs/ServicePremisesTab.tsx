@@ -446,7 +446,7 @@ const servicePremisesCardConfig: CardConfig = {
   nestedSections: [
     {
       name: 'categorization',
-      title: 'Категоріювання ОІД',
+      title: 'Акт категоріювання ОІД',
       icon: '📋',
       itemTitle: 'categorizationRank',
       dateField: 'categorizationActDate',
@@ -476,9 +476,11 @@ const servicePremisesCardConfig: CardConfig = {
     },
     {
       name: 'technicalTask',
-      title: 'Технічне завдання',
+      title: 'Технічне завдання на створення комплекса ТЗІ',
       icon: '🛠️',
       itemTitle: 'taskNumber',
+      dateField: 'taskDate',
+      showPreviousVersions: true,
       fields: [
         {
           label: 'Дата реєстрації',
@@ -495,9 +497,11 @@ const servicePremisesCardConfig: CardConfig = {
     },
     {
       name: 'instrumentalControl',
-      title: 'Протокол контролю',
+      title: 'Протокол інструментального контролю',
       icon: '🔍',
       itemTitle: 'controlNumber',
+      dateField: 'controlDate',
+      showPreviousVersions: true,
       fields: [
         {
           label: 'Номер протокола',
@@ -521,7 +525,7 @@ const servicePremisesCardConfig: CardConfig = {
     },
     {
       name: 'specialCheck',
-      title: 'Акт спеціальної перевірки',
+      title: 'Акт комплексної спеціальної перевірки',
       icon: '🔍',
       itemTitle: 'checkNumber',
       dateField: 'checkDate',
@@ -544,7 +548,9 @@ const servicePremisesCardConfig: CardConfig = {
     },
     {
       name: 'atestation',
-      title: 'Атестація',
+      title: 'Акт атестації комплекса ТЗІ',
+      dateField: 'attestationRegDate',
+      showPreviousVersions: true,
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       fields: [

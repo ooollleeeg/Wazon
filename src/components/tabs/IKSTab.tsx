@@ -96,7 +96,7 @@ const iksFormConfig: FormConfig = {
   nestedFields: [
     {
       name: 'categorization',
-      title: 'Категоріювання',
+      title: 'Акт категоріювання',
       icon: '📋',
       dateField: 'categorizationActDate',
       defaultItem: {
@@ -200,7 +200,7 @@ const iksFormConfig: FormConfig = {
     },
     {
       name: 'atestation',
-      title: 'Атестація комплексу технічного захисту інформації',
+      title: 'Акт атестації комплекса ТЗІ',
       icon: '✅',
       dateField: 'attestationRegDate',
       defaultItem: {
@@ -244,7 +244,7 @@ const iksFormConfig: FormConfig = {
         },
         {
           name: 'atestationPerformer',
-          label: 'Виконавець робіт з атестації комплексу ТЗІ',
+          label: 'Виконавець робіт з атестації комплекса ТЗІ',
           type: 'text',
           placeholder: 'Наприклад: ДРТЗІ НПУ',
         },
@@ -519,7 +519,9 @@ const iksCardConfig: CardConfig = {
       title: 'Категоріювання',
       icon: '📋',
       itemTitle: 'categorizationRank',
-      dateField: 'categorizationActDate',      showPreviousVersions: true,      fields: [
+      dateField: 'categorizationActDate',
+      showPreviousVersions: true,
+      fields: [
         {
           label: 'Дата реєстрації акта',
           value: 'categorizationActDate',
@@ -585,6 +587,8 @@ const iksCardConfig: CardConfig = {
       title: 'Документи про відповідність та сертифікацію',
       icon: '📜',
       itemTitle: 'documentType',
+      dateField: 'dsszzіDate',
+      showPreviousVersions: true,
       fields: [
         { label: 'Тип документа', value: 'documentType', format: 'badge' },
         { label: 'Номер ДССЗЗІ', value: 'dsszzіNumber' },

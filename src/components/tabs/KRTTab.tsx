@@ -81,7 +81,7 @@ const krtFormConfig: FormConfig = {
   nestedFields: [
     {
       name: 'categorization',
-      title: 'Категоріювання ОІД',
+      title: 'Акт категоріювання ОІД',
       icon: '📋',
       dateField: 'categorizationActDate',
       defaultItem: {
@@ -154,7 +154,7 @@ const krtFormConfig: FormConfig = {
     },
     {
       name: 'technicalTask',
-      title: 'Технічне завдання на створення комплексу ТЗІ',
+      title: 'Технічне завдання на створення комплекса ТЗІ',
       icon: '🛠️',
       dateField: 'taskDate',
       defaultItem: { taskDate: '', taskNumber: '', taskClearance: '' },
@@ -179,7 +179,7 @@ const krtFormConfig: FormConfig = {
     },
     {
       name: 'instrumentalControl',
-      title: 'Протокол інструментального контролю захищеності інформації',
+      title: 'Протокол інструментального контролю',
       icon: '🔍',
       defaultItem: {
         controlNumber: '',
@@ -266,7 +266,7 @@ const krtFormConfig: FormConfig = {
     },
     {
       name: 'atestation',
-      title: 'Атестація комплексу технічного захисту інформації',
+      title: 'Акт атестації комплекса ТЗІ',
       icon: '✅',
       dateField: 'attestationRegDate',
       defaultItem: {
@@ -310,7 +310,7 @@ const krtFormConfig: FormConfig = {
         },
         {
           name: 'atestationPerformer',
-          label: 'Виконавець робіт з атестації комплексу ТЗІ',
+          label: 'Виконавець робіт з атестації комплекса ТЗІ',
           type: 'text',
           placeholder: 'Наприклад: ДРТЗІ НПУ',
         },
