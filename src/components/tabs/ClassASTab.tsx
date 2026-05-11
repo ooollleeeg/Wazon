@@ -551,6 +551,7 @@ const classASFormConfig: FormConfig = {
       icon: '🛡️',
       dateField: 'protectionDate',
       defaultItem: {
+        toolType: '',
         name: '',
         serialNumber: '',
         invertarNumber: '',
@@ -559,10 +560,41 @@ const classASFormConfig: FormConfig = {
       },
       fields: [
         {
+          name: 'toolType',
+          label: 'Вид засобу ТЗІ',
+          type: 'select',
+          required: true,
+          options: [
+            {
+              value: 'Генератор радіочастотного зашумлення',
+              label: 'Генератор радіочастотного зашумлення',
+            },
+            {
+              value: 'Фільтр електроживлення',
+              label: 'Фільтр електроживлення',
+            },
+            {
+              value: 'Мережевий трансформатор',
+              label: 'Мережевий трансформатор',
+            },
+            {
+              value: 'Генератор акустичного зашумлення',
+              label: 'Генератор акустичного зашумлення',
+            },
+            { value: 'Віброперетворювач', label: 'Віброперетворювач' },
+            {
+              value: 'Акустичний випромінювач',
+              label: 'Акустичний випромінювач',
+            },
+            { value: 'Виріб типу "SRC-300"', label: 'Виріб типу "SRC-300"' },
+            { value: 'Інше', label: 'Інше' },
+          ],
+        },
+        {
           name: 'name',
           label: 'Назва',
           type: 'text',
-          placeholder: 'Наприклад: Базальт-5ГЕШ"',
+          placeholder: 'Наприклад: Базальт-5ГЕШ',
         },
         {
           name: 'serialNumber',
@@ -719,7 +751,7 @@ const classASCardConfig: CardConfig = {
   nestedSections: [
     {
       name: 'categorization',
-      title: 'Категоріювання ОІД (ОЕОТ)',
+      title: 'Акт категоріювання ОІД (ОЕОТ)',
       icon: '📋',
       itemTitle: 'categorizationRank',
       dateField: 'categorizationActDate',
@@ -799,7 +831,7 @@ const classASCardConfig: CardConfig = {
     },
     {
       name: 'atestation',
-      title: 'Атестація комплексу технічного захисту інформації',
+      title: 'Акт атестації комплекса ТЗІ',
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       dateField: 'attestationRegDate',
@@ -848,6 +880,7 @@ const classASCardConfig: CardConfig = {
       itemTitle: 'name',
       dateField: 'meanDate',
       fields: [
+        { label: 'Вид засобу ТЗІ', value: 'toolType' },
         { label: 'Назва', value: 'name' },
         { label: 'Серійний номер', value: 'serialNumber' },
         { label: 'Інвентарний номер', value: 'invertarNumber' },

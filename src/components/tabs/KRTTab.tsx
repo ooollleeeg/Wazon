@@ -330,6 +330,7 @@ const krtFormConfig: FormConfig = {
       icon: '🛡️',
       dateField: 'protectionDate',
       defaultItem: {
+        toolType: '',
         name: '',
         serialNumber: '',
         invertarNumber: '',
@@ -337,6 +338,37 @@ const krtFormConfig: FormConfig = {
         certificateInfo: '',
       },
       fields: [
+        {
+          name: 'toolType',
+          label: 'Вид засобу ТЗІ',
+          type: 'select',
+          required: true,
+          options: [
+            {
+              value: 'Генератор радіочастотного зашумлення',
+              label: 'Генератор радіочастотного зашумлення',
+            },
+            {
+              value: 'Фільтр електроживлення',
+              label: 'Фільтр електроживлення',
+            },
+            {
+              value: 'Мережевий трансформатор',
+              label: 'Мережевий трансформатор',
+            },
+            {
+              value: 'Генератор акустичного зашумлення',
+              label: 'Генератор акустичного зашумлення',
+            },
+            { value: 'Віброперетворювач', label: 'Віброперетворювач' },
+            {
+              value: 'Акустичний випромінювач',
+              label: 'Акустичний випромінювач',
+            },
+            { value: 'Виріб типу "SRC-300"', label: 'Виріб типу "SRC-300"' },
+            { value: 'Інше', label: 'Інше' },
+          ],
+        },
         {
           name: 'name',
           label: 'Назва',
@@ -549,6 +581,7 @@ const krtCardConfig: CardConfig = {
       itemTitle: 'name',
       dateField: 'meanDate',
       fields: [
+        { label: 'Вид засобу ТЗІ', value: 'toolType' },
         { label: 'Назва', value: 'name' },
         { label: 'Серійний номер', value: 'serialNumber' },
         { label: 'Інвентарний номер', value: 'invertarNumber' },
