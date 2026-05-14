@@ -276,7 +276,7 @@ export default function GenericCard({
                     const isCurrentVersion =
                       itemIdx === 0 && !nested.hideAllByDefault;
                     const isPreviousVersion =
-                      itemIdx > 0 && !nested.hideAllByDefault;
+                      itemIdx > 0 && !nested.hideAllByDefault && !nested.showAllByDefault;
 
                     return (
                       <div
