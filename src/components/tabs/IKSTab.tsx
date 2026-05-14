@@ -13,7 +13,7 @@ const iksFormConfig: FormConfig = {
       fields: [
         {
           name: 'systemClass',
-          label: 'Клас автоматизованої системи',
+          label: 'Клас системи',
           type: 'select',
           required: true,
           options: [
