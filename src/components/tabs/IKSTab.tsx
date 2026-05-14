@@ -50,6 +50,24 @@ const iksFormConfig: FormConfig = {
             },
           ],
         },
+        {
+          name: 'serversCount',
+          label: 'Кількість серверів',
+          type: 'number',
+          placeholder: 'Наприклад: 5',
+        },
+        {
+          name: 'workstationsCount',
+          label: 'Кількість автоматизованих робочих місць',
+          type: 'number',
+          placeholder: 'Наприклад: 25',
+        },
+        {
+          name: 'networkEquipmentCount',
+          label: 'Кількість одиниць мережевого обладнання',
+          type: 'number',
+          placeholder: 'Наприклад: 10',
+        },
       ],
     },
 
@@ -164,37 +182,6 @@ const iksFormConfig: FormConfig = {
               label: 'конфіденційна інформація',
             },
           ],
-        },
-      ],
-    },
-    {
-      name: 'computerEquipment',
-      title:
-        "Кількість одиниць комп'ютерної техніки та комутаційного обладнання",
-      icon: '🖥️',
-      defaultItem: {
-        serversCount: '',
-        workstationsCount: '',
-        networkEquipmentCount: '',
-      },
-      fields: [
-        {
-          name: 'serversCount',
-          label: 'Кількість серверів',
-          type: 'number',
-          placeholder: 'Наприклад: 5',
-        },
-        {
-          name: 'workstationsCount',
-          label: 'Кількість автоматизованих робочих місць',
-          type: 'number',
-          placeholder: 'Наприклад: 25',
-        },
-        {
-          name: 'networkEquipmentCount',
-          label: 'Кількість одиниць мережевого обладнання',
-          type: 'number',
-          placeholder: 'Наприклад: 10',
         },
       ],
     },
@@ -520,6 +507,12 @@ const iksCardConfig: CardConfig = {
           value: 'accessMode',
           format: 'badge',
         },
+        { label: 'Кількість серверів', value: 'serversCount' },
+        { label: 'Кількість робочих місць', value: 'workstationsCount' },
+        {
+          label: 'Кількість мережевого обладнання',
+          value: 'networkEquipmentCount',
+        },
       ],
     },
     {
@@ -573,20 +566,6 @@ const iksCardConfig: CardConfig = {
         {
           label: 'Вищий ступінь обмеження доступу до інформації',
           value: 'hightInformationRank',
-        },
-      ],
-    },
-    {
-      name: 'computerEquipment',
-      title: "Комп'ютерна техніка та комутаційне обладнання",
-      icon: '🖥️',
-      itemTitle: 'serversCount',
-      fields: [
-        { label: 'Кількість серверів', value: 'serversCount' },
-        { label: 'Кількість робочих місць', value: 'workstationsCount' },
-        {
-          label: 'Кількість мережевого обладнання',
-          value: 'networkEquipmentCount',
         },
       ],
     },
