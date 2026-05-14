@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 // @ts-ignore
 import '../../styles/ExpirationMonitoring.css';
 
 interface ExpirationDocument {
-  id: number;
+  id: string | number;
   parentId: number;
   parentName: string;
   tabId: string;
@@ -29,26 +29,6 @@ const TABS_CONFIG = [
   },
   { apiEndpoint: '/api/objects/krt', label: 'КРТ', tabId: 'krt' },
   { apiEndpoint: '/api/objects/iks', label: 'ІКС', tabId: 'iks' },
-];
-
-const DATE_FIELDS = [
-  {
-    field: 'protocolValidUntil',
-    label: 'Протокол дійсний до',
-    type: 'protocol',
-  },
-  { field: 'controlTermin', label: 'Контроль дійсний до', type: 'control' },
-  {
-    field: 'attestationValidUntil',
-    label: 'Атестація дійсна до',
-    type: 'atestation',
-  },
-  { field: 'validUntil', label: 'Документ дійсний до', type: 'compliance' },
-  {
-    field: 'nextAuthorizationDeadline',
-    label: 'Авторизація дійсна до',
-    type: 'authorization',
-  },
 ];
 
 const getStatus = (
