@@ -633,7 +633,7 @@ const iksCardConfig: CardConfig = {
       title: 'Застосовані засоби технічного захисту інформації',
       icon: '🛡️',
       itemTitle: 'name',
-      showPreviousVersions: false,
+      showAllByDefault: true,
       fields: [
         { label: 'Вид засобу ТЗІ', value: 'toolType' },
         { label: 'Назва', value: 'name' },

@@ -21,6 +21,7 @@ export interface NestedCardSection {
   itemTitle: string; // Field to use as title (e.g., 'institution')
   dateField?: string; // Field for sorting (newer first)
   showPreviousVersions?: boolean; // Show "View previous" button with current version first
+  showAllByDefault?: boolean; // Show all records by default (no toggle button)
   hideAllByDefault?: boolean; // Hide all records by default, show only expand button
   fields: {
     label: string;
@@ -248,6 +249,10 @@ export default function GenericCard({
               buttonLabel = isShowingPreviousVersions
                 ? 'Приховати'
                 : 'Переглянути';
+            } else if (nested.showAllByDefault) {
+              // Show all records by default, no toggle button
+              displayItems = items;
+              showToggleButton = false;
             } else {
               // Show current version by default (existing behavior)
               displayItems = isShowingPreviousVersions

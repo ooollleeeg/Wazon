@@ -611,6 +611,7 @@ const servicePremisesCardConfig: CardConfig = {
       title: 'Засоби ТЗІ',
       icon: '🛡️',
       itemTitle: 'name',
+      showAllByDefault: true,
       fields: [
         { label: 'Вид засобу ТЗІ', value: 'toolType' },
         { label: 'Назва', value: 'name' },
