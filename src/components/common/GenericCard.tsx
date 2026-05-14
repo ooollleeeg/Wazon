@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import { highlightText } from '../../utils/searchUtils';
+// @ts-ignore
 import './GenericCard.css';
 
 export interface CardSection {
@@ -63,11 +64,17 @@ export default function GenericCard({
   // Controls visibility of previous versions (toggle button)
   const [expandedPreviousVersions, setExpandedPreviousVersions] = useState<{
     [key: string]: boolean;
-  }>({});
-  // Controls whether sections are expanded when shouldExpandAll is true
-  const [sectionsExpanded, setSectionsExpanded] = useState(
-    shouldExpandAll ? true : false,
-  );
+  }>(() => {
+    // If shouldExpandAll is true, expand all nested sections by default
+    if (shouldExpandAll && config.nestedSections) {
+      const initialExpanded: { [key: string]: boolean } = {};
+      config.nestedSections.forEach((section) => {
+        initialExpanded[section.name] = true;
+      });
+      return initialExpanded;
+    }
+    return {};
+  });
 
   const formatValue = (value: any, format?: string) => {
     if (!value && value !== 0) return '-';
@@ -247,7 +254,7 @@ export default function GenericCard({
                 ? items
                 : items.slice(0, 1);
               const hasPreviousVersions =
-                nested.showPreviousVersions && items.length > 1;
+                (nested.showPreviousVersions ?? false) && items.length > 1;
               showToggleButton = hasPreviousVersions;
               buttonLabel = isShowingPreviousVersions
                 ? '← Приховати попередні'
