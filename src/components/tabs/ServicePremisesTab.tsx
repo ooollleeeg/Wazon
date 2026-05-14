@@ -626,6 +626,7 @@ const servicePremisesCardConfig: CardConfig = {
       title: "Засоби урядового зв'язку",
       icon: '📡',
       itemTitle: 'subscriberDeviceName',
+      showAllByDefault: true,
       fields: [
         { label: 'Назва пристрою', value: 'subscriberDeviceName' },
         { label: 'Серійний номер', value: 'subscriberDeviceSerialNumber' },
