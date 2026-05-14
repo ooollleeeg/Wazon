@@ -496,6 +496,9 @@ function initializeDatabase() {
         antivirus TEXT,
         antivirusOpinionNumber TEXT,
         antivirusOpinionDate TEXT,
+        serversCount INTEGER,
+        workstationsCount INTEGER,
+        networkEquipmentCount INTEGER,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
