@@ -291,6 +291,8 @@ const servicePremisesFormConfig: FormConfig = {
         attestationDsszziNumber: '',
         attestationValidUntil: '',
         atestationPerformer: 'УРТЗІ ГУНП',
+        attestationWorkStartDate: '',
+        attestationWorkEndDate: '',
         atestationPermissionPerformer:
           'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
       },
@@ -327,6 +329,19 @@ const servicePremisesFormConfig: FormConfig = {
           label: 'Виконавець робіт з атестації комплексу ТЗІ',
           type: 'text',
           placeholder: 'Наприклад: ДРТЗІ НПУ',
+        },
+        {
+          name: 'attestationWorkStartDate',
+          label: 'Дата початку проведення робіт',
+          type: 'date',
+          required: true,
+        },
+        {
+          name: 'attestationWorkEndDate',
+          label: 'Дата закінчення робіт',
+          type: 'date',
+          required: true,
+          calculateFrom: { field: 'attestationWorkStartDate', days: 3 },
         },
         {
           name: 'atestationPermissionPerformer',
@@ -638,6 +653,20 @@ const servicePremisesCardConfig: CardConfig = {
         {
           label: 'Дійсний до',
           value: 'attestationValidUntil',
+          format: 'date',
+        },
+        {
+          label: 'Виконавець робіт',
+          value: 'atestationPerformer',
+        },
+        {
+          label: 'Дата початку робіт',
+          value: 'attestationWorkStartDate',
+          format: 'date',
+        },
+        {
+          label: 'Дата закінчення робіт',
+          value: 'attestationWorkEndDate',
           format: 'date',
         },
       ],

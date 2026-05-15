@@ -18,7 +18,7 @@ export interface FormField {
     values: string[];
   };
   helperText?: string; // Допоміжний текст під полем
-  calculateFrom?: { field: string; years: number }; // Для автоматичного розрахунку (додавити N років до дати)
+  calculateFrom?: { field: string; years?: number; days?: number }; // Для автоматичного розрахунку (додавити N років/днів до дати)
 }
 
 export interface FormSection {
@@ -283,9 +283,20 @@ export default function GenericForm({
             try {
               const sourceDate = new Date(value);
               const resultDate = new Date(sourceDate);
-              resultDate.setFullYear(
-                resultDate.getFullYear() + targetField.calculateFrom.years,
-              );
+
+              // Додаємо роки, якщо вказано
+              if (targetField.calculateFrom.years) {
+                resultDate.setFullYear(
+                  resultDate.getFullYear() + targetField.calculateFrom.years,
+                );
+              }
+
+              // Додаємо дні, якщо вказано
+              if (targetField.calculateFrom.days) {
+                resultDate.setDate(
+                  resultDate.getDate() + targetField.calculateFrom.days,
+                );
+              }
 
               // Форматуємо дату як YYYY-MM-DD
               const resultDateStr = resultDate.toISOString().split('T')[0];

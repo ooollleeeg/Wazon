@@ -222,6 +222,8 @@ function initializeDatabase() {
         attestationDsszziNumber TEXT,
         attestationValidUntil TEXT,
         atestationPerformer TEXT,
+        attestationWorkStartDate TEXT,
+        attestationWorkEndDate TEXT,
         atestationPermissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
@@ -329,6 +331,8 @@ function initializeDatabase() {
         attestationDsszziNumber TEXT,
         attestationValidUntil TEXT,
         atestationPerformer TEXT,
+        attestationWorkStartDate TEXT,
+        attestationWorkEndDate TEXT,
         atestationPermissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
@@ -460,6 +464,8 @@ function initializeDatabase() {
         attestationDsszziNumber TEXT,
         attestationValidUntil TEXT,
         atestationPerformer TEXT,
+        attestationWorkStartDate TEXT,
+        attestationWorkEndDate TEXT,
         atestationPermissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
@@ -557,6 +563,8 @@ function initializeDatabase() {
         attestationDsszziNumber TEXT,
         attestationValidUntil TEXT,
         atestationPerformer TEXT,
+        attestationWorkStartDate TEXT,
+        attestationWorkEndDate TEXT,
         atestationPermissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
