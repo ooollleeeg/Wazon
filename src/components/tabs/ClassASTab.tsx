@@ -729,9 +729,20 @@ const classASCardConfig: CardConfig = {
       fields: [
         { label: 'Назва КЗЗ', value: 'kzzName' },
         { label: 'Серійний номер КЗЗ', value: 'kzzSerial' },
-        { label: 'Номер експертного висновку', value: 'kzzExpertOpinionNumber' },
-        { label: 'Дата видачі висновку', value: 'kzzExpertOpinionDate', format: 'date' },
-        { label: 'Термін експлуатації', value: 'kzzManufacturerExploitationTerm', format: 'date' },
+        {
+          label: 'Номер експертного висновку',
+          value: 'kzzExpertOpinionNumber',
+        },
+        {
+          label: 'Дата видачі висновку',
+          value: 'kzzExpertOpinionDate',
+          format: 'date',
+        },
+        {
+          label: 'Термін експлуатації',
+          value: 'kzzManufacturerExploitationTerm',
+          format: 'date',
+        },
       ],
     },
     {
