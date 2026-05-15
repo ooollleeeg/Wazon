@@ -198,7 +198,7 @@ function App() {
       <header
         className='app-header'
         style={{
-          background: `linear-gradient(135deg, ${currentTabData.color} 0%, ${currentTabData.color}dd 100%)`,
+          background: `linear-gradient(135deg, #667eea 0%, #667eedd 100%)`,
         }}
       >
         {/* Left emblem - National Police of Ukraine */}
