@@ -96,6 +96,22 @@ const classASFormConfig: FormConfig = {
           type: 'text',
           placeholder: 'Наприклад: 001',
         },
+        {
+          name: 'kzzExpertOpinionNumber',
+          label: 'Номер експертного висновку',
+          type: 'text',
+          placeholder: 'Наприклад: 12345',
+        },
+        {
+          name: 'kzzExpertOpinionDate',
+          label: 'Дата видачі експертного висновку',
+          type: 'date',
+        },
+        {
+          name: 'kzzManufacturerExploitationTerm',
+          label: 'Встановлений виробником термін експлуатації',
+          type: 'date',
+        },
       ],
     },
     {
@@ -264,7 +280,7 @@ const classASFormConfig: FormConfig = {
         controlTermin: '',
         controlPerformer: 'УРТЗІ ГУНП',
         permissionPerformer:
-          'Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+          'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
       },
       fields: [
         {
@@ -296,7 +312,7 @@ const classASFormConfig: FormConfig = {
           type: 'text',
           fullWidth: true,
           placeholder:
-            'Наприклад: Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+            'Наприклад: Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
         },
       ],
     },
@@ -310,7 +326,7 @@ const classASFormConfig: FormConfig = {
         checkDate: '',
         checkPerformer: 'УРТЗІ ГУНП',
         checkPermissionPerformer:
-          'Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+          'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
       },
       fields: [
         {
@@ -337,7 +353,7 @@ const classASFormConfig: FormConfig = {
           type: 'text',
           fullWidth: true,
           placeholder:
-            'Наприклад: Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+            'Наприклад: Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
         },
       ],
     },
@@ -354,7 +370,7 @@ const classASFormConfig: FormConfig = {
         attestationValidUntil: '',
         atestationPerformer: 'УРТЗІ ГУНП',
         atestationPermissionPerformer:
-          'Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+          'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
       },
       fields: [
         {
@@ -397,7 +413,7 @@ const classASFormConfig: FormConfig = {
           type: 'text',
           fullWidth: true,
           placeholder:
-            'Наприклад: Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+            'Наприклад: Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
         },
       ],
     },
@@ -713,6 +729,9 @@ const classASCardConfig: CardConfig = {
       fields: [
         { label: 'Назва КЗЗ', value: 'kzzName' },
         { label: 'Серійний номер КЗЗ', value: 'kzzSerial' },
+        { label: 'Номер експертного висновку', value: 'kzzExpertOpinionNumber' },
+        { label: 'Дата видачі висновку', value: 'kzzExpertOpinionDate', format: 'date' },
+        { label: 'Термін експлуатації', value: 'kzzManufacturerExploitationTerm', format: 'date' },
       ],
     },
     {

@@ -86,6 +86,22 @@ const iksFormConfig: FormConfig = {
           type: 'text',
           placeholder: 'Наприклад: 001',
         },
+        {
+          name: 'kzzExpertOpinionNumber',
+          label: 'Номер експертного висновку',
+          type: 'text',
+          placeholder: 'Наприклад: 12345',
+        },
+        {
+          name: 'kzzExpertOpinionDate',
+          label: 'Дата видачі експертного висновку',
+          type: 'date',
+        },
+        {
+          name: 'kzzManufacturerExploitationTerm',
+          label: 'Встановлений виробником термін експлуатації',
+          type: 'date',
+        },
       ],
     },
     {
@@ -198,7 +214,7 @@ const iksFormConfig: FormConfig = {
         attestationValidUntil: '',
         atestationPerformer: 'УРТЗІ ГУНП',
         atestationPermissionPerformer:
-          'Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+          'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
       },
       fields: [
         {
@@ -241,7 +257,7 @@ const iksFormConfig: FormConfig = {
           type: 'text',
           fullWidth: true,
           placeholder:
-            'Наприклад: Дозвіл на проведення робіт з технічного захисту інформації для власних потреб, від 16.09.2024 № Д-14/123',
+            'Наприклад: Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
         },
       ],
     },
@@ -520,6 +536,9 @@ const iksCardConfig: CardConfig = {
       fields: [
         { label: 'Назва КЗЗ', value: 'kzzName' },
         { label: 'Серійний номер КЗЗ', value: 'kzzSerial' },
+        { label: 'Номер експертного висновку', value: 'kzzExpertOpinionNumber' },
+        { label: 'Дата видачі висновку', value: 'kzzExpertOpinionDate', format: 'date' },
+        { label: 'Термін експлуатації', value: 'kzzManufacturerExploitationTerm', format: 'date' },
       ],
     },
     {
