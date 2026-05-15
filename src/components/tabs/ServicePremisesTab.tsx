@@ -73,10 +73,11 @@ const servicePremisesFormConfig: FormConfig = {
   nestedFields: [
     {
       name: 'categorization',
-      title: 'Категоріювання ОІД',
+      title: 'Акт категоріювання ОІД',
       icon: '📋',
       dateField: 'categorizationActDate',
       defaultItem: {
+        categorizationType: '',
         categorizationActDate: '',
         categorizationActNumber: '',
         categorizationRank: '',
@@ -85,6 +86,16 @@ const servicePremisesFormConfig: FormConfig = {
         hightInformationRank: '',
       },
       fields: [
+        {
+          name: 'categorizationType',
+          label: 'Вид категоризування',
+          type: 'select',
+          options: [
+            { value: 'первинна', label: 'первинна' },
+            { value: 'чергова', label: 'чергова' },
+            { value: 'позачергова', label: 'позачергова' },
+          ],
+        },
         {
           name: 'categorizationActDate',
           label: 'Дата реєстрації акта категоріювання',
@@ -256,7 +267,7 @@ const servicePremisesFormConfig: FormConfig = {
     },
     {
       name: 'atestation',
-      title: 'Атестація комплексу технічного захисту інформації',
+      title: 'Акт атестації комплекса ТЗІ',
       icon: '✅',
       dateField: 'attestationRegDate',
       defaultItem: {
@@ -484,6 +495,7 @@ const servicePremisesCardConfig: CardConfig = {
       dateField: 'categorizationActDate',
       showPreviousVersions: true,
       fields: [
+        { label: 'Вид категоризування', value: 'categorizationType' },
         {
           label: 'Дата реєстрації акта',
           value: 'categorizationActDate',

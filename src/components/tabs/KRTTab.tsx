@@ -85,6 +85,7 @@ const krtFormConfig: FormConfig = {
       icon: '📋',
       dateField: 'categorizationActDate',
       defaultItem: {
+        categorizationType: '',
         categorizationActDate: '',
         categorizationActNumber: '',
         categorizationRank: '',
@@ -93,6 +94,16 @@ const krtFormConfig: FormConfig = {
         hightInformationRank: '',
       },
       fields: [
+        {
+          name: 'categorizationType',
+          label: 'Вид категоризування',
+          type: 'select',
+          options: [
+            { value: 'первинна', label: 'первинна' },
+            { value: 'чергова', label: 'чергова' },
+            { value: 'позачергова', label: 'позачергова' },
+          ],
+        },
         {
           name: 'categorizationActDate',
           label: 'Дата реєстрації акта категоріювання',
@@ -473,6 +484,7 @@ const krtCardConfig: CardConfig = {
       dateField: 'categorizationActDate',
       showPreviousVersions: true,
       fields: [
+        { label: 'Вид категоризування', value: 'categorizationType' },
         {
           label: 'Дата реєстрації акта',
           value: 'categorizationActDate',

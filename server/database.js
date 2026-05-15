@@ -158,6 +158,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS class_a_systems_categorization (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         systemId INTEGER NOT NULL,
+        categorizationType TEXT,
         categorizationActDate TEXT,
         categorizationActNumber TEXT,
         categorizationRank TEXT,
@@ -263,6 +264,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS service_premises_categorization (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         premisesId INTEGER NOT NULL,
+        categorizationType TEXT,
         categorizationActDate TEXT,
         categorizationActNumber TEXT,
         categorizationRank TEXT,
@@ -391,6 +393,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS krt_categorization (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         krtId INTEGER NOT NULL,
+        categorizationType TEXT,
         categorizationActDate TEXT,
         categorizationActNumber TEXT,
         categorizationRank TEXT,
@@ -514,6 +517,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS iks_categorization (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         iksId INTEGER NOT NULL,
+        categorizationType TEXT,
         categorizationActDate TEXT,
         categorizationActNumber TEXT,
         categorizationRank TEXT,
