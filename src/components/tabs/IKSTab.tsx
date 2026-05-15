@@ -145,22 +145,22 @@ const iksFormConfig: FormConfig = {
       fields: [
         {
           name: 'categorizationType',
-          label: 'Вид категоризування',
+          label: 'Вид категоріювання',
           type: 'select',
           options: [
-            { value: 'первинна', label: 'первинна' },
-            { value: 'чергова', label: 'чергова' },
-            { value: 'позачергова', label: 'позачергова' },
+            { value: 'первинне', label: 'первинне' },
+            { value: 'чергове', label: 'чергове' },
+            { value: 'позачергове', label: 'позачергове' },
           ],
         },
         {
           name: 'categorizationActDate',
-          label: 'Дата реєстрації акта категоріювання',
+          label: 'Дата реєстрації акту категоріювання',
           type: 'date',
         },
         {
           name: 'categorizationActNumber',
-          label: 'Номер акта категоріювання',
+          label: 'Номер акту категоріювання',
           type: 'text',
           placeholder: 'Наприклад: 16/2-11дск',
         },
@@ -214,7 +214,7 @@ const iksFormConfig: FormConfig = {
     },
     {
       name: 'atestation',
-      title: 'Акт атестації комплекса ТЗІ',
+      title: 'Акт атестації комплексу ТЗІ',
       icon: '✅',
       dateField: 'attestationRegDate',
       defaultItem: {
@@ -230,24 +230,24 @@ const iksFormConfig: FormConfig = {
       fields: [
         {
           name: 'attestationRegNumber',
-          label: 'Реєстраційний номер акта атестації',
+          label: 'Реєстраційний номер акту атестації',
           type: 'text',
           placeholder: 'Наприклад: 16/2-71т',
         },
         {
           name: 'attestationRegDate',
-          label: 'Дата реєстрації акта атестації',
+          label: 'Дата реєстрації акту атестації',
           type: 'date',
         },
 
         {
           name: 'attestationDsszziDate',
-          label: 'Дата реєстрації акта в ДССЗЗІ',
+          label: 'Дата реєстрації акту в ДССЗЗІ',
           type: 'date',
         },
         {
           name: 'attestationDsszziNumber',
-          label: 'Реєстраційний номер акта в ДССЗЗІ',
+          label: 'Реєстраційний номер акту в ДССЗЗІ',
           type: 'text',
           placeholder: 'Наприклад: 2226',
         },
@@ -258,7 +258,7 @@ const iksFormConfig: FormConfig = {
         },
         {
           name: 'atestationPerformer',
-          label: 'Виконавець робіт з атестації комплекса ТЗІ',
+          label: 'Виконавець робіт з атестації комплексу ТЗІ',
           type: 'text',
           placeholder: 'Наприклад: ДРТЗІ НПУ',
         },
@@ -588,16 +588,16 @@ const iksCardConfig: CardConfig = {
       dateField: 'categorizationActDate',
       showPreviousVersions: true,
       fields: [
-        { label: 'Вид категоризування', value: 'categorizationType' },
+        { label: 'Вид категоріювання', value: 'categorizationType' },
         {
-          label: 'Дата реєстрації акта',
+          label: 'Дата реєстрації акту',
           value: 'categorizationActDate',
           format: 'date',
         },
-        { label: 'Номер акта', value: 'categorizationActNumber' },
+        { label: 'Номер акту', value: 'categorizationActNumber' },
         { label: 'Категорія', value: 'categorizationRank', format: 'badge' },
         {
-          label: 'Термін дії акта',
+          label: 'Термін дії акту',
           value: 'categorizationValidUntil',
           format: 'date',
         },
@@ -613,7 +613,7 @@ const iksCardConfig: CardConfig = {
     },
     {
       name: 'atestation',
-      title: 'Акт атестації комплекса ТЗІ',
+      title: 'Акт атестації комплексу ТЗІ',
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       dateField: 'attestationRegDate',

@@ -189,22 +189,22 @@ const classASFormConfig: FormConfig = {
       fields: [
         {
           name: 'categorizationType',
-          label: 'Вид категоризування',
+          label: 'Вид категоріювання',
           type: 'select',
           options: [
-            { value: 'первинна', label: 'первинна' },
-            { value: 'чергова', label: 'чергова' },
-            { value: 'позачергова', label: 'позачергова' },
+            { value: 'первинне', label: 'первинне' },
+            { value: 'чергове', label: 'чергове' },
+            { value: 'позачергове', label: 'позачергове' },
           ],
         },
         {
           name: 'categorizationActDate',
-          label: 'Дата реєстрації акта категоріювання',
+          label: 'Дата реєстрації акту категоріювання',
           type: 'date',
         },
         {
           name: 'categorizationActNumber',
-          label: 'Номер акта категоріювання',
+          label: 'Номер акту категоріювання',
           type: 'text',
           placeholder: 'Наприклад: 16/2-11дск',
         },
@@ -258,7 +258,7 @@ const classASFormConfig: FormConfig = {
     },
     {
       name: 'technicalTask',
-      title: 'Технічне завдання на створення комплекса ТЗІ',
+      title: 'Технічне завдання на створення комплексу ТЗІ',
       icon: '🛠️',
       dateField: 'taskDate',
       defaultItem: { taskDate: '', taskNumber: '', taskClearance: '' },
@@ -290,25 +290,26 @@ const classASFormConfig: FormConfig = {
         controlDate: '',
         controlTermin: '',
         controlPerformer: 'УРТЗІ ГУНП',
+        controlEventDate: '',
         permissionPerformer:
           'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
       },
       fields: [
         {
           name: 'controlNumber',
-          label: 'Реєстраційний номер протокола',
+          label: 'Реєстраційний номер протоколу',
           type: 'text',
           placeholder: 'Наприклад: 7/1-71т',
         },
         {
           name: 'controlDate',
-          label: 'Дата реєстрації протокола',
+          label: 'Дата реєстрації протоколу',
           type: 'date',
         },
 
         {
           name: 'controlTermin',
-          label: 'Термін дії протокола',
+          label: 'Термін дії протоколу',
           type: 'date',
         },
         {
@@ -316,6 +317,12 @@ const classASFormConfig: FormConfig = {
           label: 'Виконавець робіт з ТЗІ',
           type: 'text',
           placeholder: 'Наприклад: ДРТЗІ НПУ',
+        },
+        {
+          name: 'controlEventDate',
+          label: 'Дата проведення заходу',
+          type: 'date',
+          required: true,
         },
         {
           name: 'permissionPerformer',
@@ -336,19 +343,20 @@ const classASFormConfig: FormConfig = {
         checkNumber: '',
         checkDate: '',
         checkPerformer: 'УРТЗІ ГУНП',
+        checkEventDate: '',
         checkPermissionPerformer:
           'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
       },
       fields: [
         {
           name: 'checkNumber',
-          label: 'Реєстраційний номер акта',
+          label: 'Реєстраційний номер акту',
           type: 'text',
           placeholder: 'Наприклад: 16/2-71т',
         },
         {
           name: 'checkDate',
-          label: 'Дата реєстрації акта',
+          label: 'Дата реєстрації акту',
           type: 'date',
         },
 
@@ -357,6 +365,12 @@ const classASFormConfig: FormConfig = {
           label: 'Виконавець робіт з ТЗІ',
           type: 'text',
           placeholder: 'Наприклад: ДРТЗІ НПУ',
+        },
+        {
+          name: 'checkEventDate',
+          label: 'Дата проведення заходу',
+          type: 'date',
+          required: true,
         },
         {
           name: 'checkPermissionPerformer',
@@ -370,7 +384,7 @@ const classASFormConfig: FormConfig = {
     },
     {
       name: 'atestation',
-      title: 'Акт атестації комплекса ТЗІ',
+      title: 'Акт атестації комплексу ТЗІ',
       icon: '✅',
       dateField: 'attestationRegDate',
       defaultItem: {
@@ -386,24 +400,24 @@ const classASFormConfig: FormConfig = {
       fields: [
         {
           name: 'attestationRegNumber',
-          label: 'Реєстраційний номер акта атестації',
+          label: 'Реєстраційний номер акту атестації',
           type: 'text',
           placeholder: 'Наприклад: 16/2-71т',
         },
         {
           name: 'attestationRegDate',
-          label: 'Дата реєстрації акта атестації',
+          label: 'Дата реєстрації акту атестації',
           type: 'date',
         },
 
         {
           name: 'attestationDsszziDate',
-          label: 'Дата реєстрації акта в ДССЗЗІ',
+          label: 'Дата реєстрації акту в ДССЗЗІ',
           type: 'date',
         },
         {
           name: 'attestationDsszziNumber',
-          label: 'Реєстраційний номер акта в ДССЗЗІ',
+          label: 'Реєстраційний номер акту в ДССЗЗІ',
           type: 'text',
           placeholder: 'Наприклад: 2226',
         },
@@ -414,7 +428,7 @@ const classASFormConfig: FormConfig = {
         },
         {
           name: 'atestationPerformer',
-          label: 'Виконавець робіт з атестації комплекса ТЗІ',
+          label: 'Виконавець робіт з атестації комплексу ТЗІ',
           type: 'text',
           placeholder: 'Наприклад: ДРТЗІ НПУ',
         },
@@ -428,9 +442,6 @@ const classASFormConfig: FormConfig = {
         },
       ],
     },
-    //     {
-    // name: ''
-    //     },
 
     {
       name: 'complianceDocuments',
@@ -798,16 +809,16 @@ const classASCardConfig: CardConfig = {
       dateField: 'categorizationActDate',
       showPreviousVersions: true,
       fields: [
-        { label: 'Вид категоризування', value: 'categorizationType' },
+        { label: 'Вид категоріювання', value: 'categorizationType' },
         {
-          label: 'Дата реєстрації акта',
+          label: 'Дата реєстрації акту',
           value: 'categorizationActDate',
           format: 'date',
         },
-        { label: 'Номер акта', value: 'categorizationActNumber' },
+        { label: 'Номер акту', value: 'categorizationActNumber' },
         { label: 'Категорія', value: 'categorizationRank', format: 'badge' },
         {
-          label: 'Термін дії акта',
+          label: 'Термін дії акту',
           value: 'categorizationValidUntil',
           format: 'date',
         },
@@ -847,6 +858,11 @@ const classASCardConfig: CardConfig = {
         { label: 'Термін дії', value: 'controlTermin', format: 'date' },
         { label: 'Виконавець', value: 'controlPerformer' },
         {
+          label: 'Дата проведення заходу',
+          value: 'controlEventDate',
+          format: 'date',
+        },
+        {
           label: 'Реквізити Дозволу (ліцензії)',
           value: 'permissionPerformer',
           fullWidth: true,
@@ -865,6 +881,11 @@ const classASCardConfig: CardConfig = {
         { label: 'Дата реєстрації', value: 'checkDate', format: 'date' },
         { label: 'Виконавець', value: 'checkPerformer' },
         {
+          label: 'Дата проведення заходу',
+          value: 'checkEventDate',
+          format: 'date',
+        },
+        {
           label: 'Реквізити Дозволу (ліцензії)',
           value: 'checkPermissionPerformer',
           fullWidth: true,
@@ -873,7 +894,7 @@ const classASCardConfig: CardConfig = {
     },
     {
       name: 'atestation',
-      title: 'Акт атестації комплекса ТЗІ',
+      title: 'Акт атестації комплексу ТЗІ',
       icon: '✅',
       itemTitle: 'attestationRegNumber',
       dateField: 'attestationRegDate',

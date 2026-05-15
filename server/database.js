@@ -191,6 +191,7 @@ function initializeDatabase() {
         controlDate TEXT,
         controlTermin TEXT,
         controlPerformer TEXT,
+        controlEventDate TEXT,
         permissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
@@ -204,6 +205,7 @@ function initializeDatabase() {
         checkNumber TEXT,
         checkDate TEXT,
         checkPerformer TEXT,
+        checkEventDate TEXT,
         checkPermissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
@@ -296,6 +298,7 @@ function initializeDatabase() {
         controlDate TEXT,
         controlTermin TEXT,
         controlPerformer TEXT,
+        controlEventDate TEXT,
         permissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
@@ -309,6 +312,7 @@ function initializeDatabase() {
         checkNumber TEXT,
         checkDate TEXT,
         checkPerformer TEXT,
+        checkEventDate TEXT,
         checkPermissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
@@ -425,6 +429,7 @@ function initializeDatabase() {
         controlDate TEXT,
         controlTermin TEXT,
         controlPerformer TEXT,
+        controlEventDate TEXT,
         permissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
@@ -438,6 +443,7 @@ function initializeDatabase() {
         checkNumber TEXT,
         checkDate TEXT,
         checkPerformer TEXT,
+        checkEventDate TEXT,
         checkPermissionPerformer TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE

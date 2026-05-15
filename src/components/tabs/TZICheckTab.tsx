@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import '../../styles/TabContent.css';
+import { useState, useEffect } from 'react';
+
+interface Check {
+  id: string;
+  name: string;
+  date?: string;
+  status: string;
+  result?: string;
+  notes?: string;
+}
 
 function TZICheckTab() {
-  const [checks, setChecks] = useState([]);
-  const [selectedCheck, setSelectedCheck] = useState(null);
+  const [checks, setChecks] = useState<Check[]>([]);
+  const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -20,7 +28,7 @@ function TZICheckTab() {
     }
   };
 
-  const handleAddCheck = async (data) => {
+  const handleAddCheck = async (data: Omit<Check, 'id'>) => {
     try {
       const response = await fetch('/api/tzi-check', {
         method: 'POST',
@@ -35,22 +43,7 @@ function TZICheckTab() {
     }
   };
 
-  const handleUpdateCheck = async (id, data) => {
-    try {
-      const response = await fetch(`/api/tzi-check/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const updated = await response.json();
-      setChecks(checks.map((c) => (c.id === id ? updated : c)));
-      setSelectedCheck(null);
-    } catch (error) {
-      console.error('Ошибка обновления:', error);
-    }
-  };
-
-  const handleDeleteCheck = async (id) => {
+  const handleDeleteCheck = async (id: string) => {
     if (window.confirm('Видалити перевірку?')) {
       try {
         await fetch(`/api/tzi-check/${id}`, { method: 'DELETE' });
@@ -104,11 +97,13 @@ function TZICheckTab() {
               e.preventDefault();
               const formData = new FormData(e.currentTarget);
               handleAddCheck({
-                name: formData.get('name'),
-                date: formData.get('date'),
-                status: formData.get('status'),
-                result: formData.get('result'),
-                notes: formData.get('notes'),
+                name: formData.get('name') as string,
+                date: (formData.get('date') as string | undefined) || undefined,
+                status: formData.get('status') as string,
+                result:
+                  (formData.get('result') as string | undefined) || undefined,
+                notes:
+                  (formData.get('notes') as string | undefined) || undefined,
               });
             }}
           >
