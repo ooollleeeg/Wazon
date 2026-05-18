@@ -427,6 +427,7 @@ const classASFormConfig: FormConfig = {
           name: 'attestationValidUntil',
           label: 'Акт атестації дійсний до',
           type: 'date',
+          calculateFrom: { field: 'attestationDsszziDate', years: 5 },
         },
         {
           name: 'atestationPerformer',
