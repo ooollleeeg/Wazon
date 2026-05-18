@@ -365,6 +365,7 @@ const servicePremisesFormConfig: FormConfig = {
         serialNumber: '',
         invertarNumber: '',
         releaseYear: '',
+        manufacturerExploitationTerm: '',
         certificateInfo: '',
       },
       fields: [
@@ -418,6 +419,11 @@ const servicePremisesFormConfig: FormConfig = {
         {
           name: 'releaseYear',
           label: 'Дата виготовлення засобу (DD.MM.YYYY)',
+          type: 'date',
+        },
+        {
+          name: 'manufacturerExploitationTerm',
+          label: 'Встановлений виробником термін експлуатації',
           type: 'date',
         },
         {
@@ -684,6 +690,11 @@ const servicePremisesCardConfig: CardConfig = {
         { label: 'Серійний номер', value: 'serialNumber' },
         { label: 'Інвентарний номер', value: 'invertarNumber' },
         { label: 'Дата виготовлення', value: 'releaseYear', format: 'date' },
+        {
+          label: 'Термін експлуатації',
+          value: 'manufacturerExploitationTerm',
+          format: 'date',
+        },
         { label: 'Дані експертного висновку', value: 'certificateInfo' },
       ],
     },

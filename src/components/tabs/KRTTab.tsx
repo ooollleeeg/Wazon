@@ -376,6 +376,7 @@ const krtFormConfig: FormConfig = {
         serialNumber: '',
         invertarNumber: '',
         releaseYear: '',
+        manufacturerExploitationTerm: '',
         certificateInfo: '',
       },
       fields: [
@@ -429,6 +430,11 @@ const krtFormConfig: FormConfig = {
         {
           name: 'releaseYear',
           label: 'Дата виготовлення засобу (DD.MM.YYYY)',
+          type: 'date',
+        },
+        {
+          name: 'manufacturerExploitationTerm',
+          label: 'Встановлений виробником термін експлуатації',
           type: 'date',
         },
         {
@@ -648,6 +654,11 @@ const krtCardConfig: CardConfig = {
         { label: 'Серійний номер', value: 'serialNumber' },
         { label: 'Інвентарний номер', value: 'invertarNumber' },
         { label: 'Дата виготовлення', value: 'releaseYear', format: 'date' },
+        {
+          label: 'Термін експлуатації',
+          value: 'manufacturerExploitationTerm',
+          format: 'date',
+        },
         { label: 'Дані експертного висновку', value: 'certificateInfo' },
       ],
     },
