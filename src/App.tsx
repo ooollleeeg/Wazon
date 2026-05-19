@@ -5,7 +5,7 @@ import ClassASTab from './components/tabs/ClassASTab';
 import ServicePremisesTab from './components/tabs/ServicePremisesTab';
 import KRTTab from './components/tabs/KRTTab';
 import IKSTab from './components/tabs/IKSTab';
-import TZIToolsTab from './components/tabs/TZIToolsTab';
+import ProtectionMeansTab from './components/tabs/ProtectionMeansTab';
 import SearchControlEquipmentTab from './components/tabs/SearchControlEquipmentTab';
 import AntivirusTab from './components/tabs/AntivirusTab';
 import TZICheckTab from './components/tabs/TZICheckTab';
@@ -72,7 +72,7 @@ const TABS: Tab[] = [
     id: 'tzi-tools',
     label: 'Засоби ТЗІ',
     icon: '🛡️',
-    component: TZIToolsTab,
+    component: ProtectionMeansTab,
     color: '#fee140',
   },
   {

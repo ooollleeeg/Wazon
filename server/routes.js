@@ -214,4 +214,109 @@ router.get('/types', (req, res) => {
   res.json(objectTypes);
 });
 
+/**
+ * GET /api/protection-means/all - Агреговане отримання всіх засобів ТЗІ
+ * Фільтри: ?category=...&status=...&departmentType=...&search=...
+ */
+router.get('/protection-means/all', (req, res) => {
+  import('./utils/protectionMeansAggregator.js')
+    .then(({ aggregateProtectionMeans }) => {
+      try {
+        const { category, status, departmentType, search } = req.query;
+        const filters = { category, status, departmentType, search };
+
+        aggregateProtectionMeans(filters, (err, data) => {
+          if (err) {
+            console.error('❌ Error aggregating protection means:', err);
+            res.status(500).json({ error: err.message });
+          } else {
+            res.json(data);
+          }
+        });
+      } catch (err) {
+        console.error('❌ Error in GET /protection-means/all:', err);
+        res.status(500).json({ error: err.message });
+      }
+    })
+    .catch((err) => {
+      console.error('❌ Failed to load aggregator:', err);
+      res.status(500).json({ error: 'Aggregator module not found' });
+    });
+});
+
+/**
+ * POST /api/protection-means/inventory - Створити новий запис засобу на складі
+ */
+router.post('/protection-means/inventory', (req, res) => {
+  import('./utils/protectionMeansAggregator.js').then(
+    ({ createInventoryItem }) => {
+      try {
+        console.log('📝 POST /api/protection-means/inventory', req.body);
+        createInventoryItem(req.body, (err, result) => {
+          if (err) {
+            console.error('❌ Error creating inventory item:', err);
+            res.status(500).json({ error: err.message });
+          } else {
+            console.log('✅ Inventory item created');
+            res.json(result);
+          }
+        });
+      } catch (err) {
+        console.error('❌ Error in POST /protection-means/inventory:', err);
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+});
+
+/**
+ * PUT /api/protection-means/inventory/:id - Оновити запис засобу на складі
+ */
+router.put('/protection-means/inventory/:id', (req, res) => {
+  import('./utils/protectionMeansAggregator.js').then(
+    ({ updateInventoryItem }) => {
+      try {
+        console.log('✏️ PUT /api/protection-means/inventory/:id', req.body);
+        updateInventoryItem(req.params.id, req.body, (err, result) => {
+          if (err) {
+            console.error('❌ Error updating inventory item:', err);
+            res.status(500).json({ error: err.message });
+          } else {
+            console.log('✅ Inventory item updated');
+            res.json(result);
+          }
+        });
+      } catch (err) {
+        console.error('❌ Error in PUT /protection-means/inventory:', err);
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+});
+
+/**
+ * DELETE /api/protection-means/inventory/:id - Видалити запис засобу зі складу
+ */
+router.delete('/protection-means/inventory/:id', (req, res) => {
+  import('./utils/protectionMeansAggregator.js').then(
+    ({ deleteInventoryItem }) => {
+      try {
+        console.log('🗑️ DELETE /api/protection-means/inventory/:id');
+        deleteInventoryItem(req.params.id, (err, result) => {
+          if (err) {
+            console.error('❌ Error deleting inventory item:', err);
+            res.status(500).json({ error: err.message });
+          } else {
+            console.log('✅ Inventory item deleted');
+            res.json(result);
+          }
+        });
+      } catch (err) {
+        console.error('❌ Error in DELETE /protection-means/inventory:', err);
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+});
+
 export default router;

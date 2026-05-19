@@ -651,6 +651,25 @@ function initializeDatabase() {
         }
       },
     );
+
+    // Таблиця для засобів ТЗІ на складі (не встановлені на об'єктах)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS protection_means_inventory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL,
+        name TEXT NOT NULL,
+        serialNumber TEXT,
+        invertarNumber TEXT,
+        releaseYear TEXT,
+        manufacturerExploitationTerm TEXT,
+        certificateInfo TEXT,
+        status TEXT DEFAULT 'in_stock',
+        inStockDate TEXT,
+        notes TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
   });
 }
 
