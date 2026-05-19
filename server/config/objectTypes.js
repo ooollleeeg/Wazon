@@ -222,10 +222,12 @@ export const objectTypes = {
       protectionMeans: {
         table: 'class_a_systems_protection_means',
         fields: [
+          'toolType',
           'name',
           'serialNumber',
           'invertarNumber',
           'releaseYear',
+          'manufacturerExploitationTerm',
           'certificateInfo',
         ],
       },
@@ -329,10 +331,12 @@ export const objectTypes = {
       protectionMeans: {
         table: 'service_premises_protection_means',
         fields: [
+          'toolType',
           'name',
           'serialNumber',
           'invertarNumber',
           'releaseYear',
+          'manufacturerExploitationTerm',
           'certificateInfo',
         ],
       },
@@ -413,10 +417,12 @@ export const objectTypes = {
       protectionMeans: {
         table: 'krt_protection_means',
         fields: [
+          'toolType',
           'name',
           'serialNumber',
           'invertarNumber',
           'releaseYear',
+          'manufacturerExploitationTerm',
           'certificateInfo',
         ],
       },
@@ -489,10 +495,12 @@ export const objectTypes = {
       protectionMeans: {
         table: 'iks_protection_means',
         fields: [
+          'toolType',
           'name',
           'serialNumber',
           'invertarNumber',
           'releaseYear',
+          'manufacturerExploitationTerm',
           'certificateInfo',
         ],
       },

@@ -126,7 +126,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     `
     SELECT 
       k.id as objectId,
-      k.kraName as objectName,
+      k.systemName as objectName,
       k.address as objectAddress,
       k.subdivisionType as departmentType,
       'KRT' as objectType,
@@ -162,11 +162,11 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     SELECT 
       i.id as objectId,
       i.systemName as objectName,
-      i.address as objectAddress,
+      null as objectAddress,
       'territorial' as departmentType,
       'IKS' as objectType,
       pm.id as id,
-      pm.toolType as category,
+      COALESCE(pm.toolType, 'Засоби захисту') as category,
       pm.name,
       pm.serialNumber,
       pm.invertarNumber,
@@ -179,6 +179,11 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     JOIN iks i ON pm.iksId = i.id
     `,
     (err, rows) => {
+      console.log(`🔵 IKS query result:`, {
+        err: err?.message,
+        count: rows?.length || 0,
+        rows: rows?.slice(0, 2),
+      });
       if (!err && rows) {
         allMeans.push(
           ...rows.map((row) => ({
@@ -211,13 +216,37 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.createdAt
     FROM class_a_systems a
     WHERE a.kzzName IS NOT NULL AND a.kzzName != ''
+    
+    UNION ALL
+    
+    SELECT 
+      i.id as objectId,
+      i.systemName as objectName,
+      null as objectAddress,
+      'territorial' as departmentType,
+      'IKS' as objectType,
+      'КЗЗ від НСД' as category,
+      i.kzzName as name,
+      i.kzzSerial as serialNumber,
+      NULL as invertarNumber,
+      NULL as releaseYear,
+      i.kzzManufacturerExploitationTerm as manufacturerExploitationTerm,
+      NULL as certificateInfo,
+      'installed' as status,
+      i.createdAt
+    FROM iks i
+    WHERE i.kzzName IS NOT NULL AND i.kzzName != ''
     `,
     (err, rows) => {
+      console.log(`🔵 КЗЗ від НСД query result:`, {
+        err: err?.message,
+        count: rows?.length || 0,
+      });
       if (!err && rows) {
         allMeans.push(
           ...rows.map((row) => ({
             ...row,
-            id: row.objectId + '-kzz', // унікальний ID для КЗЗ
+            id: row.objectId + '-' + row.objectType + '-kzz', // унікальний ID для КЗЗ
           })),
         );
       }

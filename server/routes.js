@@ -15,6 +15,7 @@ import {
   updateObjectWithNested,
   deleteNestedItem,
 } from './utils/dbHelpers.js';
+import { db } from './database.js';
 
 const router = express.Router();
 
@@ -212,6 +213,22 @@ router.delete(
  */
 router.get('/types', (req, res) => {
   res.json(objectTypes);
+});
+
+/**
+ * DEBUG: GET /api/debug/iks-protection - Check raw IKS protection means data
+ */
+router.get('/debug/iks-protection', (req, res) => {
+  db.all(
+    `SELECT pm.*, i.systemName FROM iks_protection_means pm JOIN iks i ON pm.iksId = i.id`,
+    (err, rows) => {
+      if (err) {
+        res.json({ error: err.message });
+      } else {
+        res.json({ count: rows?.length || 0, rows: rows || [] });
+      }
+    },
+  );
 });
 
 /**
