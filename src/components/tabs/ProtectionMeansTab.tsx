@@ -71,20 +71,20 @@ const ProtectionMeansTab = () => {
 
   // Обробник отримання переходу до об'єкта
   const handleNavigateToObject = (mean) => {
-    if (mean.objectType === 'AS') {
-      window.location.hash = '#class-as-systems';
-    } else if (mean.objectType === 'SP') {
-      window.location.hash = '#service-premises';
-    } else if (mean.objectType === 'KRT') {
-      window.location.hash = '#krt';
-    } else if (mean.objectType === 'IKS') {
-      window.location.hash = '#iks';
+    if (!mean.objectId) {
+      console.warn('No objectId found in mean:', mean);
+      handleCloseModal();
+      return;
     }
 
-    // Зберегти objectId для прокрутки у локальному сховищі
-    if (mean.objectId) {
-      sessionStorage.setItem('scrollToObjectId', mean.objectId);
-      sessionStorage.setItem('scrollToSectionId', 'protectionMeans');
+    if (mean.objectType === 'AS') {
+      window.location.hash = `#class-as-systems:${mean.objectId}`;
+    } else if (mean.objectType === 'SP') {
+      window.location.hash = `#service-premises:${mean.objectId}`;
+    } else if (mean.objectType === 'KRT') {
+      window.location.hash = `#krt:${mean.objectId}`;
+    } else if (mean.objectType === 'IKS') {
+      window.location.hash = `#iks:${mean.objectId}`;
     }
 
     handleCloseModal();
