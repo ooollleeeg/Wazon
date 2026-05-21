@@ -155,19 +155,26 @@ export function highlightText(
   // ============= ОБРОБКА ЗВИЧАЙНОГО ТЕКСТУ =============
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
+  let partIndex = 0;
 
   let index = textLower.indexOf(term);
   while (index !== -1) {
     // Додаємо текст до збігу
     if (index > lastIndex) {
-      parts.push(text.substring(lastIndex, index));
+      parts.push(
+        React.createElement(
+          React.Fragment,
+          { key: `part-${partIndex++}` },
+          text.substring(lastIndex, index),
+        ),
+      );
     }
 
     // Додаємо підсвічений текст
     parts.push(
       React.createElement(
         'mark',
-        { key: `${index}-${lastIndex}`, style: highlightStyle },
+        { key: `mark-${partIndex++}`, style: highlightStyle },
         text.substring(index, index + term.length),
       ),
     );
@@ -178,7 +185,18 @@ export function highlightText(
 
   // Додаємо залишок тексту
   if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex));
+    parts.push(
+      React.createElement(
+        React.Fragment,
+        { key: `part-${partIndex++}` },
+        text.substring(lastIndex),
+      ),
+    );
+  }
+
+  // Якщо немає збігів, повертаємо оригінальний текст
+  if (parts.length === 0) {
+    return text;
   }
 
   // Обертаємо в Fragment щоб запобігти додаванню пробілів
