@@ -69,7 +69,7 @@ const ProtectionMeansFilters = ({ filters, onFilterChange }) => {
       <div className='search-box'>
         <input
           type='text'
-          placeholder='Пошук по назві, серійному номеру...'
+          placeholder='Пошук по всіх полях (назва, серійний номер, інвентарний номер, сертифікат, дати, примітки)...'
           value={filters.search}
           onChange={handleSearchChange}
           className='search-input'

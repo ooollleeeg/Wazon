@@ -166,6 +166,7 @@ const ProtectionMeansTab = () => {
         <ProtectionMeansTable
           means={allMeans}
           onViewDetails={handleViewDetails}
+          searchTerm={filters.search}
         />
       )}
 

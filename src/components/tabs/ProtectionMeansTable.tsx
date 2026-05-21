@@ -1,6 +1,7 @@
 import React from 'react';
+import { highlightText } from '../../utils/searchUtils';
 
-const ProtectionMeansTable = ({ means, onViewDetails }) => {
+const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }) => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'installed':
@@ -57,10 +58,12 @@ const ProtectionMeansTable = ({ means, onViewDetails }) => {
           {means.map((mean, idx) => (
             <tr key={mean.id || idx} className={`mean-row mean-${mean.status}`}>
               <td className='category-cell'>
-                <span className='category-badge'>{mean.category}</span>
+                <span className='category-badge'>
+                  {highlightText(mean.category, searchTerm)}
+                </span>
               </td>
               <td className='name-cell'>
-                <strong>{mean.name}</strong>
+                <strong>{highlightText(mean.name, searchTerm)}</strong>
               </td>
               <td className='object-cell'>
                 {mean.objectName ? (
@@ -77,7 +80,11 @@ const ProtectionMeansTable = ({ means, onViewDetails }) => {
               <td className='department-cell'>
                 {getDepartmentLabel(mean.departmentType)}
               </td>
-              <td className='serial-cell'>{mean.serialNumber || '—'}</td>
+              <td className='serial-cell'>
+                {mean.serialNumber
+                  ? highlightText(mean.serialNumber, searchTerm)
+                  : '—'}
+              </td>
               <td className='status-cell'>{getStatusBadge(mean.status)}</td>
               <td className='action-cell'>
                 <button

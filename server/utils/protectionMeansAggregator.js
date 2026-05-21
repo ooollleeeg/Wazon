@@ -20,7 +20,14 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       return (
         item.name?.toLowerCase().includes(searchLower) ||
         item.objectName?.toLowerCase().includes(searchLower) ||
-        item.serialNumber?.toLowerCase().includes(searchLower)
+        item.serialNumber?.toLowerCase().includes(searchLower) ||
+        item.invertarNumber?.toLowerCase().includes(searchLower) ||
+        item.category?.toLowerCase().includes(searchLower) ||
+        item.certificateInfo?.toLowerCase().includes(searchLower) ||
+        item.releaseYear?.toString().includes(searchLower) ||
+        item.manufacturerExploitationTerm?.toString().includes(searchLower) ||
+        item.inStockDate?.toString().includes(searchLower) ||
+        item.notes?.toLowerCase().includes(searchLower)
       );
     }
     return true;
