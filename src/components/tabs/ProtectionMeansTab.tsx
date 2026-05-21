@@ -231,7 +231,7 @@ const ProtectionMeansForm = ({ onSubmit, onCancel }) => {
       <div className='form-row'>
         <div className='form-group'>
           <label>
-            Категорія * <span className='required'>*</span>
+            Категорія<span className='required'>*</span>
           </label>
           <select
             name='category'
@@ -250,7 +250,7 @@ const ProtectionMeansForm = ({ onSubmit, onCancel }) => {
 
         <div className='form-group'>
           <label>
-            Назва засобу * <span className='required'>*</span>
+            Назва засобу<span className='required'>*</span>
           </label>
           <input
             type='text'

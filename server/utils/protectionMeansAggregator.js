@@ -271,6 +271,8 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       releaseYear,
       manufacturerExploitationTerm,
       certificateInfo,
+      inStockDate,
+      notes,
       status,
       createdAt
     FROM protection_means_inventory

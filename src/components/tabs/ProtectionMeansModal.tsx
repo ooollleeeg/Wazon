@@ -89,6 +89,18 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
                   <strong>{mean.certificateInfo}</strong>
                 </div>
               )}
+              {mean.status === 'in_stock' && mean.inStockDate && (
+                <div className='info-item'>
+                  <label>Дата надходження:</label>
+                  <strong>{formatDate(mean.inStockDate)}</strong>
+                </div>
+              )}
+              {mean.status === 'in_stock' && mean.notes && (
+                <div className='info-item full-width'>
+                  <label>Примітки:</label>
+                  <p>{mean.notes}</p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -115,27 +127,6 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
                   <div className='info-item'>
                     <label>Тип підрозділу:</label>
                     <strong>{getDepartmentLabel(mean.departmentType)}</strong>
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* Інформація про склад (якщо на складі) */}
-          {mean.status === 'in_stock' && (
-            <section className='modal-section'>
-              <h3>📦 Інформація про склад</h3>
-              <div className='info-grid'>
-                {mean.inStockDate && (
-                  <div className='info-item'>
-                    <label>Дата надходження:</label>
-                    <strong>{formatDate(mean.inStockDate)}</strong>
-                  </div>
-                )}
-                {mean.notes && (
-                  <div className='info-item full-width'>
-                    <label>Примітки:</label>
-                    <p>{mean.notes}</p>
                   </div>
                 )}
               </div>
