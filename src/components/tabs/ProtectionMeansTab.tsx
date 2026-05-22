@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ProtectionMeansFilters from './ProtectionMeansFilters';
 import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
+import '../../styles/ProtectionMeansTab.css';
 
 interface Stats {
   total: number;
