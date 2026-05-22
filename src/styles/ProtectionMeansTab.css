@@ -526,9 +526,25 @@
 
 .info-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
   margin-bottom: 0.5rem;
+}
+
+/* Tablet: 768px - 1024px (2 колоны) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+/* Мобільні: <768px (1 колона) */
+@media (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 .info-item {

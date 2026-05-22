@@ -97,7 +97,7 @@
 
 .class-as-card .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
@@ -224,6 +224,14 @@
 }
 
 /* RESPONSIVE */
+/* Планшеты: 768px - 1024px (2 колоны) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .class-as-card .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
 @media (max-width: 768px) {
   .class-as-card {
     border-radius: 8px;
