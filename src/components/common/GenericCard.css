@@ -269,8 +269,8 @@
 
 .nested-item-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
 }
 
 .nested-item-content .info-item .label {
@@ -394,6 +394,11 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
   }
+
+  .nested-item-content {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -426,6 +431,7 @@
 
   .nested-item-content {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
   .section-title {
