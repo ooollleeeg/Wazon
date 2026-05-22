@@ -77,14 +77,21 @@ export function searchInObject(obj: any, searchTerm: string): boolean {
  * @param searchTerm - термін пошуку
  * @returns React element з підсвіченим текстом
  */
+// Global counter for unique key generation
+let highlightKeyCounter = 0;
+
 export function highlightText(
   text: string,
   searchTerm: string,
+  keyPrefix?: string,
 ): React.ReactNode {
   if (!searchTerm || !text) return text;
 
   const term = searchTerm.toLowerCase();
   const textLower = text.toLowerCase();
+  
+  // Use provided prefix or generate one from counter
+  const prefix = keyPrefix || `hlt-${highlightKeyCounter++}`;
 
   // Перевіряємо типи дат
   const isUkrainianDate = /^\d{2}\.\d{2}\.\d{4}$/.test(text.trim()); // DD.MM.YYYY
@@ -164,7 +171,7 @@ export function highlightText(
       parts.push(
         React.createElement(
           React.Fragment,
-          { key: `part-${partIndex++}` },
+          { key: `${prefix}-part-${partIndex++}` },
           text.substring(lastIndex, index),
         ),
       );
@@ -174,7 +181,7 @@ export function highlightText(
     parts.push(
       React.createElement(
         'mark',
-        { key: `mark-${partIndex++}`, style: highlightStyle },
+        { key: `${prefix}-mark-${partIndex++}`, style: highlightStyle },
         text.substring(index, index + term.length),
       ),
     );
@@ -188,7 +195,7 @@ export function highlightText(
     parts.push(
       React.createElement(
         React.Fragment,
-        { key: `part-${partIndex++}` },
+        { key: `${prefix}-part-${partIndex++}` },
         text.substring(lastIndex),
       ),
     );

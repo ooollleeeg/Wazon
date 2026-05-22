@@ -59,11 +59,11 @@ const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }) => {
             <tr key={mean.id || idx} className={`mean-row mean-${mean.status}`}>
               <td className='category-cell'>
                 <span className='category-badge'>
-                  {highlightText(mean.category, searchTerm)}
+                  {highlightText(mean.category, searchTerm, `${mean.id}-cat`)}
                 </span>
               </td>
               <td className='name-cell'>
-                <strong>{highlightText(mean.name, searchTerm)}</strong>
+                <strong>{highlightText(mean.name, searchTerm, `${mean.id}-name`)}</strong>
               </td>
               <td className='object-cell'>
                 {mean.objectName ? (
@@ -82,7 +82,7 @@ const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }) => {
               </td>
               <td className='serial-cell'>
                 {mean.serialNumber
-                  ? highlightText(mean.serialNumber, searchTerm)
+                  ? highlightText(mean.serialNumber, searchTerm, `${mean.id}-serial`)
                   : '—'}
               </td>
               <td className='status-cell'>{getStatusBadge(mean.status)}</td>
