@@ -590,6 +590,128 @@
   flex: 0 1 auto;
 }
 
+/* ========== INSTALL BUTTON ========== */
+
+.btn-install {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.3s ease;
+  margin-left: 0.5rem;
+}
+
+.btn-install:hover {
+  background: #229954;
+}
+
+.action-cell {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ========== SELECT OBJECT MODAL ========== */
+
+.object-type-selector {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border: 2px solid #ecf0f1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.radio-option:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.radio-option input[type='radio'] {
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.radio-option span {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.object-list {
+  border: 1px solid #ecf0f1;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #fafafa;
+}
+
+.object-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #ecf0f1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.object-item:last-child {
+  border-bottom: none;
+}
+
+.object-item:hover {
+  background: #f0f3f7;
+}
+
+.object-item input[type='radio'] {
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.object-label {
+  flex: 1;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.install-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.install-info .info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.install-info label {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.install-info span {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
 /* ========== RESPONSIVE ========== */
 
 @media (max-width: 768px) {
@@ -639,5 +761,13 @@
   .modal-footer .btn-primary,
   .modal-footer .btn-secondary {
     flex: 1;
+  }
+
+  .object-type-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .install-info {
+    grid-template-columns: 1fr;
   }
 }

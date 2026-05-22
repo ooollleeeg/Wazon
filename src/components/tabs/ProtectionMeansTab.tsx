@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ProtectionMeansFilters from './ProtectionMeansFilters';
 import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
+import SelectObjectModal from './SelectObjectModal';
 import '../../styles/ProtectionMeansTab.css';
 
 interface Stats {
@@ -24,6 +25,8 @@ const ProtectionMeansTab = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedMean, setSelectedMean] = useState<ProtectionMean | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [meanToInstall, setMeanToInstall] = useState<ProtectionMean | null>(null);
 
   // Загрузка даних з backend
   const fetchData = async () => {
@@ -93,6 +96,65 @@ const ProtectionMeansTab = () => {
     }
 
     handleCloseModal();
+  };
+
+  // Обробник відкриття модалі встановлення
+  const handleOpenInstallModal = (mean: ProtectionMean) => {
+    setMeanToInstall(mean);
+    setShowInstallModal(true);
+  };
+
+  // Обробник закриття модалі встановлення
+  const handleCloseInstallModal = () => {
+    setShowInstallModal(false);
+    setMeanToInstall(null);
+  };
+
+  // Обробник встановлення засобу на об'єкт
+  const handleInstallMean = async (
+    mean: ProtectionMean,
+    objectId: string,
+    objectType: string
+  ) => {
+    try {
+      // Готуємо дані для встановлення
+      const installData = {
+        meanId: mean.id,
+        objectId,
+        objectType,
+      };
+
+      // Відправляємо запит на встановлення
+      const response = await fetch('/api/protection-means/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(installData),
+      });
+
+      if (!response.ok) throw new Error('Помилка при встановленні засобу');
+
+      console.log('✅ Засіб успішно встановлено');
+      handleCloseInstallModal();
+
+      // Перезавантажуємо дані та переходимо на об'єкт
+      await fetchData();
+
+      // Навігуємо на об'єкт
+      if (objectType === 'AS') {
+        window.location.hash = `#class-as-systems:${objectId}`;
+      } else if (objectType === 'SP') {
+        window.location.hash = `#service-premises:${objectId}`;
+      } else if (objectType === 'KRT') {
+        window.location.hash = `#krt:${objectId}`;
+      } else if (objectType === 'IKS') {
+        window.location.hash = `#iks:${objectId}`;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      console.error('❌ Error installing protection means:', err);
+      throw err;
+    }
   };
 
   // Обробник додавання нового засобу на складі
@@ -172,6 +234,7 @@ const ProtectionMeansTab = () => {
         <ProtectionMeansTable
           means={allMeans}
           onViewDetails={handleViewDetails}
+          onInstall={handleOpenInstallModal}
           searchTerm={filters.search}
         />
       )}
@@ -182,6 +245,15 @@ const ProtectionMeansTab = () => {
           mean={selectedMean}
           onClose={handleCloseModal}
           onNavigate={handleNavigateToObject}
+        />
+      )}
+
+      {/* Модаль встановлення засобу */}
+      {showInstallModal && meanToInstall && (
+        <SelectObjectModal
+          mean={meanToInstall}
+          onClose={handleCloseInstallModal}
+          onInstall={handleInstallMean}
         />
       )}
     </div>

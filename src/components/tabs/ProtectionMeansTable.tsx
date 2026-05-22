@@ -17,10 +17,11 @@ export interface ProtectionMean {
 interface ProtectionMeansTableProps {
   means: ProtectionMean[];
   onViewDetails: (mean: ProtectionMean) => void;
+  onInstall?: (mean: ProtectionMean) => void;
   searchTerm?: string;
 }
 
-const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }: ProtectionMeansTableProps) => {
+const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = '' }: ProtectionMeansTableProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'installed':
@@ -103,6 +104,15 @@ const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }: Protect
                 >
                   👁️
                 </button>
+                {mean.status === 'in_stock' && onInstall && (
+                  <button
+                    className='btn-install'
+                    onClick={() => onInstall(mean)}
+                    title="Встановити на об'єкт"
+                  >
+                    ⚙️
+                  </button>
+                )}
               </td>
             </tr>
           ))}
