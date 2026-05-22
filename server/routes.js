@@ -336,4 +336,30 @@ router.delete('/protection-means/inventory/:id', (req, res) => {
   );
 });
 
+/**
+ * POST /api/protection-means/install - Встановити засіб ТЗІ з складу на об'єкт
+ * Очікує: { meanId: string, objectId: string, objectType: 'AS'|'SP'|'KRT'|'IKS' }
+ */
+router.post('/protection-means/install', (req, res) => {
+  import('./utils/protectionMeansAggregator.js').then(
+    ({ installProtectionMean }) => {
+      try {
+        console.log('🔧 POST /api/protection-means/install', req.body);
+        installProtectionMean(req.body, (err, result) => {
+          if (err) {
+            console.error('❌ Error installing protection mean:', err);
+            res.status(500).json({ error: err.message });
+          } else {
+            console.log('✅ Protection mean installed successfully');
+            res.json(result);
+          }
+        });
+      } catch (err) {
+        console.error('❌ Error in POST /protection-means/install:', err);
+        res.status(500).json({ error: err.message });
+      }
+    },
+  );
+});
+
 export default router;

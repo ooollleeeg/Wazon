@@ -403,3 +403,145 @@ export function deleteInventoryItem(id, callback) {
     },
   );
 }
+
+/**
+ * Встановити засіб ТЗІ з складу на конкретний об'єкт
+ *移動засобу з таблиці protection_means_inventory до об'єкту (АС, СП, КРТ, ІКС)
+ */
+export function installProtectionMean(data, callback) {
+  const { meanId, objectId, objectType } = data;
+
+  // Перевірити вхідні дані
+  if (!meanId || !objectId || !objectType) {
+    return callback(
+      new Error('meanId, objectId, та objectType є обов\'язковими')
+    );
+  }
+
+  // 1. Спочатку отримати засіб з складу
+  db.get(
+    'SELECT * FROM protection_means_inventory WHERE id = ?',
+    [meanId],
+    (err, mean) => {
+      if (err) {
+        return callback(new Error(`Помилка при запиті засобу: ${err.message}`));
+      }
+
+      if (!mean) {
+        return callback(new Error('Засіб на складі не знайдений'));
+      }
+
+      // 2. На основі типу об'єкту, додати засіб до відповідної таблиці
+      let insertQuery;
+      let insertParams;
+
+      switch (objectType) {
+        case 'AS': // АС класу 1,2,3
+          insertQuery = `
+            INSERT INTO class_a_systems_protection_means 
+            (systemId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `;
+          insertParams = [
+            objectId,
+            mean.category,
+            mean.name,
+            mean.serialNumber,
+            mean.invertarNumber,
+            mean.releaseYear,
+            mean.manufacturerExploitationTerm,
+            mean.certificateInfo,
+          ];
+          break;
+
+        case 'SP': // Службові приміщення
+          insertQuery = `
+            INSERT INTO service_premises_protection_means 
+            (premiseId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `;
+          insertParams = [
+            objectId,
+            mean.category,
+            mean.name,
+            mean.serialNumber,
+            mean.invertarNumber,
+            mean.releaseYear,
+            mean.manufacturerExploitationTerm,
+            mean.certificateInfo,
+          ];
+          break;
+
+        case 'KRT': // КРТ
+          insertQuery = `
+            INSERT INTO krt_protection_means 
+            (krtId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `;
+          insertParams = [
+            objectId,
+            mean.category,
+            mean.name,
+            mean.serialNumber,
+            mean.invertarNumber,
+            mean.releaseYear,
+            mean.manufacturerExploitationTerm,
+            mean.certificateInfo,
+          ];
+          break;
+
+        case 'IKS': // ІКС
+          insertQuery = `
+            INSERT INTO iks_protection_means 
+            (iksId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `;
+          insertParams = [
+            objectId,
+            mean.category,
+            mean.name,
+            mean.serialNumber,
+            mean.invertarNumber,
+            mean.releaseYear,
+            mean.manufacturerExploitationTerm,
+            mean.certificateInfo,
+          ];
+          break;
+
+        default:
+          return callback(new Error(`Невідомий тип об'єкту: ${objectType}`));
+      }
+
+      // 3. Вставити засіб до об'єкту
+      db.run(insertQuery, insertParams, function (err) {
+        if (err) {
+          return callback(
+            new Error(`Помилка при встановленні засобу: ${err.message}`)
+          );
+        }
+
+        // 4. Видалити засіб зі складу (або позначити як встановлено)
+        // Видаляємо записи зі складу після встановлення
+        db.run(
+          'DELETE FROM protection_means_inventory WHERE id = ?',
+          [meanId],
+          (deleteErr) => {
+            if (deleteErr) {
+              console.warn(`⚠️ Засіб встановлено але не видалено зі складу: ${deleteErr.message}`);
+            }
+
+            // Повернути успішний результат
+            callback(null, {
+              success: true,
+              meanId,
+              objectId,
+              objectType,
+              mean,
+              message: `Засіб "${mean.name}" успішно встановлено на об'єкт`,
+            });
+          }
+        );
+      });
+    }
+  );
+}

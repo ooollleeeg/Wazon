@@ -28,10 +28,10 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
 
   // Карта типів об'єктів
   const objectTypeMap: Record<ObjectType, { label: string; endpoint: string }> = {
-    AS: { label: 'АС класу 1,2,3', endpoint: '/api/class-as-systems' },
-    SP: { label: 'Службові приміщення', endpoint: '/api/service-premises' },
-    KRT: { label: 'КРТ', endpoint: '/api/krt' },
-    IKS: { label: 'ІКС', endpoint: '/api/iks' },
+    AS: { label: 'АС класу 1,2,3', endpoint: '/api/objects/class_a_systems' },
+    SP: { label: 'Службові приміщення', endpoint: '/api/objects/service_premises' },
+    KRT: { label: 'КРТ', endpoint: '/api/objects/krt' },
+    IKS: { label: 'ІКС', endpoint: '/api/objects/iks' },
   };
 
   // Завантажуємо об'єкти при зміні типу
@@ -43,7 +43,7 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
       try {
         const endpoint = objectTypeMap[selectedType].endpoint;
         const response = await fetch(endpoint);
-        if (!response.ok) throw new Error('Помилка при завантаженні об\'єктів');
+        if (!response.ok) throw new Error("Помилка при завантаженні об'єктів");
 
         const data = await response.json();
         // Нормалізуємо дані залежно від формату, що приходить з сервера
