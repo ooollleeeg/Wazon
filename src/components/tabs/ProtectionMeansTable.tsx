@@ -65,7 +65,7 @@ const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }: Protect
         </thead>
         <tbody>
           {means.map((mean: ProtectionMean, idx: number) => (
-            <tr key={mean.id || idx} className={`mean-row mean-${mean.status}`}>
+            <tr key={`${mean.id || mean.serialNumber || mean.name}-${idx}`} className={`mean-row mean-${mean.status}`}>
               <td className='category-cell'>
                 <span className='category-badge'>
                   {highlightText(mean.category, searchTerm, `${mean.id}-cat`)}
