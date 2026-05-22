@@ -1,6 +1,16 @@
-import React, { useState } from 'react';
+interface FiltersState {
+  category: string;
+  status: string;
+  departmentType: string;
+  search: string;
+}
 
-const ProtectionMeansFilters = ({ filters, onFilterChange }) => {
+interface ProtectionMeansFiltersProps {
+  filters: FiltersState;
+  onFilterChange: (filters: FiltersState) => void;
+}
+
+const ProtectionMeansFilters = ({ filters, onFilterChange }: ProtectionMeansFiltersProps) => {
   const categories = [
     'Генератор радіочастотного зашумлення',
     'Фільтр електроживлення',
@@ -24,22 +34,22 @@ const ProtectionMeansFilters = ({ filters, onFilterChange }) => {
     { value: 'in_stock', label: 'На складі' },
   ];
 
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = (category: string) => {
     const newCategory = filters.category === category ? '' : category;
     onFilterChange({ ...filters, category: newCategory });
   };
 
-  const handleStatusChange = (status) => {
+  const handleStatusChange = (status: string) => {
     const newStatus = filters.status === status ? '' : status;
     onFilterChange({ ...filters, status: newStatus });
   };
 
-  const handleDepartmentTypeChange = (dept) => {
+  const handleDepartmentTypeChange = (dept: string) => {
     const newDept = filters.departmentType === dept ? '' : dept;
     onFilterChange({ ...filters, departmentType: newDept });
   };
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFilterChange({ ...filters, search: e.target.value });
   };
 

@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import GenericList from '../common/GenericList';
-import GenericForm from '../common/GenericForm';
+import { useEffect, useState } from 'react';
 import ProtectionMeansFilters from './ProtectionMeansFilters';
-import ProtectionMeansTable from './ProtectionMeansTable';
+import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
-import '../../styles/ProtectionMeansTab.css';
+
+interface Stats {
+  total: number;
+  installed: number;
+  inStock: number;
+}
 
 const ProtectionMeansTab = () => {
-  const [allMeans, setAllMeans] = useState([]);
+  const [allMeans, setAllMeans] = useState<ProtectionMean[]>([]);
   const [filters, setFilters] = useState({
     category: '',
     status: '',
@@ -15,10 +18,10 @@ const ProtectionMeansTab = () => {
     search: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [selectedMean, setSelectedMean] = useState(null);
+  const [selectedMean, setSelectedMean] = useState<ProtectionMean | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Загрузка даних з backend
@@ -40,7 +43,8 @@ const ProtectionMeansTab = () => {
       setAllMeans(data.items || []);
       setStats(data.stats);
     } catch (err) {
-      setError(err.message);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       console.error('❌ Error fetching protection means:', err);
     } finally {
       setLoading(false);
@@ -53,12 +57,12 @@ const ProtectionMeansTab = () => {
   }, [filters]);
 
   // Обробник зміни фільтрів
-  const handleFilterChange = (newFilters) => {
+  const handleFilterChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
 
   // Обробник перегляду деталей
-  const handleViewDetails = (mean) => {
+  const handleViewDetails = (mean: ProtectionMean) => {
     setSelectedMean(mean);
     setShowModal(true);
   };
@@ -70,7 +74,7 @@ const ProtectionMeansTab = () => {
   };
 
   // Обробник отримання переходу до об'єкта
-  const handleNavigateToObject = (mean) => {
+  const handleNavigateToObject = (mean: ProtectionMean) => {
     if (!mean.objectId) {
       console.warn('No objectId found in mean:', mean);
       handleCloseModal();
@@ -91,7 +95,7 @@ const ProtectionMeansTab = () => {
   };
 
   // Обробник додавання нового засобу на складі
-  const handleAddNewMean = async (formData) => {
+  const handleAddNewMean = async (formData: Record<string, any>) => {
     try {
       const response = await fetch('/api/protection-means/inventory', {
         method: 'POST',
@@ -105,7 +109,8 @@ const ProtectionMeansTab = () => {
       setShowAddForm(false);
       fetchData(); // Перезавантажуємо дані
     } catch (err) {
-      setError(err.message);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       console.error('❌ Error creating inventory item:', err);
     }
   };
@@ -185,7 +190,12 @@ const ProtectionMeansTab = () => {
 /**
  * Компонент форми для додавання засобу на складі
  */
-const ProtectionMeansForm = ({ onSubmit, onCancel }) => {
+interface ProtectionMeansFormProps {
+  onSubmit: (formData: Record<string, any>) => Promise<void>;
+  onCancel: () => void;
+}
+
+const ProtectionMeansForm = ({ onSubmit, onCancel }: ProtectionMeansFormProps) => {
   const categories = [
     'Генератор радіочастотного зашумлення',
     'Фільтр електроживлення',
@@ -210,7 +220,7 @@ const ProtectionMeansForm = ({ onSubmit, onCancel }) => {
     notes: '',
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -218,7 +228,7 @@ const ProtectionMeansForm = ({ onSubmit, onCancel }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.category || !formData.name) {
       alert("Заповніть обов'язкові поля: Категорія та Назва");
@@ -340,7 +350,7 @@ const ProtectionMeansForm = ({ onSubmit, onCancel }) => {
           value={formData.notes}
           onChange={handleChange}
           placeholder='Додаткова інформація...'
-          rows='3'
+          rows={3}
         />
       </div>
 

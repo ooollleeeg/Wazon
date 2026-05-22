@@ -1,8 +1,27 @@
-import React from 'react';
 import { highlightText } from '../../utils/searchUtils';
 
-const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }) => {
-  const getStatusBadge = (status) => {
+export interface ProtectionMean {
+  id: string;
+  category: string;
+  name: string;
+  objectName?: string;
+  objectAddress?: string;
+  objectId?: string;
+  objectType?: string;
+  serialNumber?: string;
+  departmentType: string;
+  status: 'installed' | 'in_stock';
+  [key: string]: any;
+}
+
+interface ProtectionMeansTableProps {
+  means: ProtectionMean[];
+  onViewDetails: (mean: ProtectionMean) => void;
+  searchTerm?: string;
+}
+
+const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }: ProtectionMeansTableProps) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'installed':
         return <span className='badge badge-installed'>✅ Встановлено</span>;
@@ -13,23 +32,13 @@ const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }) => {
     }
   };
 
-  const getDepartmentLabel = (dept) => {
-    const map = {
+  const getDepartmentLabel = (dept: string) => {
+    const map: Record<string, string> = {
       apparatus: 'Апарат',
       territorial: 'Територіальні',
       in_warehouse: 'Склад',
     };
     return map[dept] || dept;
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—';
-    // Якщо це YYYY-MM-DD формат
-    if (dateStr.includes('-')) {
-      const [year, month, day] = dateStr.split('-');
-      return `${day}.${month}.${year}`;
-    }
-    return dateStr;
   };
 
   if (means.length === 0) {
@@ -55,7 +64,7 @@ const ProtectionMeansTable = ({ means, onViewDetails, searchTerm = '' }) => {
           </tr>
         </thead>
         <tbody>
-          {means.map((mean, idx) => (
+          {means.map((mean: ProtectionMean, idx: number) => (
             <tr key={mean.id || idx} className={`mean-row mean-${mean.status}`}>
               <td className='category-cell'>
                 <span className='category-badge'>
