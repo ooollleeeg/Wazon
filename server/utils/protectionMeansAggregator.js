@@ -457,7 +457,7 @@ export function installProtectionMean(data, callback) {
         case 'SP': // Службові приміщення
           insertQuery = `
             INSERT INTO service_premises_protection_means 
-            (premiseId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+            (premisesId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
           `;
           insertParams = [
