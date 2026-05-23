@@ -47,9 +47,19 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
 
         const data = await response.json();
         // Нормалізуємо дані залежно від формату, що приходить з сервера
-        const normalized = Array.isArray(data)
+        const rawObjects = Array.isArray(data)
           ? data
           : data.items || data.objects || [];
+
+        // Трансформуємо об'єкти в універсальний формат
+        const normalized: ObjectItem[] = rawObjects.map((obj: any) => ({
+          id: obj.id || obj.ID,
+          name: obj.name || obj.objectName || obj.subdivisionName || obj.systemName || obj.communicationName || `Object ${obj.id}`,
+          address: obj.address || obj.objectAddress || '',
+          departmentType: obj.departmentType || obj.subdivisionType || '',
+          objectName: obj.subdivisionName,
+          objectAddress: obj.address,
+        }));
 
         setObjects(normalized);
       } catch (err) {
@@ -83,10 +93,16 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
   };
 
   const getObjectDisplay = (obj: ObjectItem): string => {
-    if (selectedType === 'SP') {
-      return `${obj.name} (${obj.address || 'без адреси'})`;
+    const name = obj.name || `ID: ${obj.id}`;
+    const address = obj.address || '';
+    
+    if (selectedType === 'SP' && address) {
+      return `${name} (${address})`;
     }
-    return obj.name || `ID: ${obj.id}`;
+    if (address) {
+      return `${name} (${address})`;
+    }
+    return name;
   };
 
   return (
