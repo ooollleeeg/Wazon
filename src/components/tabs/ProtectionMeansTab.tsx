@@ -86,7 +86,7 @@ const ProtectionMeansTab = () => {
     }
 
     if (mean.objectType === 'AS') {
-      window.location.hash = `#class-as-systems:${mean.objectId}`;
+      window.location.hash = `#class-a:${mean.objectId}`;
     } else if (mean.objectType === 'SP') {
       window.location.hash = `#service-premises:${mean.objectId}`;
     } else if (mean.objectType === 'KRT') {
