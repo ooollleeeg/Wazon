@@ -280,7 +280,7 @@ function App() {
           title='Вгору'
           aria-label='Повернутися у верхню частину сторінки'
         >
-          ⬆️
+          ↑
         </button>
       )}
     </div>
