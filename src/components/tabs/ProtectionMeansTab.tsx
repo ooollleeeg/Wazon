@@ -44,7 +44,13 @@ const ProtectionMeansTab = () => {
 
       const response = await fetch(`/api/protection-means/all?${queryParams}`);
       if (!response.ok) throw new Error('Помилка при завантаженні даних');
-setError(message);
+
+      const data = await response.json();
+      setAllMeans(data.items || []);
+      setStats(data.stats);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
       console.error('❌ Error fetching protection means:', err);
     } finally {
       setLoading(false);
