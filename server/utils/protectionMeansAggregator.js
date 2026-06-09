@@ -66,6 +66,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.systemName as objectName,
       a.address as objectAddress,
       a.subdivisionType as departmentType,
+      a.systemClass,
       'AS' as objectType,
       pm.id as id,
       pm.toolType as category,

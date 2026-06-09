@@ -384,6 +384,11 @@
   font-style: italic;
 }
 
+.object-type-cell {
+  min-width: 140px;
+  font-weight: 500;
+}
+
 .status-cell {
   min-width: 120px;
 }

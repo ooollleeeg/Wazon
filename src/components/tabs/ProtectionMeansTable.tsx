@@ -8,6 +8,7 @@ export interface ProtectionMean {
   objectAddress?: string;
   objectId?: string;
   objectType?: string;
+  systemClass?: string;
   serialNumber?: string;
   departmentType: string;
   status: 'installed' | 'in_stock';
@@ -42,6 +43,21 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
     return map[dept] || dept;
   };
 
+  const getObjectTypeLabel = (mean: ProtectionMean): string => {
+    if (mean.objectType === 'AS') {
+      return `АС класу ${mean.systemClass || '?'}`;
+    }
+    
+    const typeMap: Record<string, string> = {
+      'SP': 'Службове приміщення',
+      'KRT': 'КРТ',
+      'IKS': 'ІКС',
+      'INVENTORY': 'На складі'
+    };
+    
+    return typeMap[mean.objectType || ''] || (mean.objectType || '—');
+  };
+
   if (means.length === 0) {
     return (
       <div className='empty-state'>
@@ -58,7 +74,7 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
             <th>Категорія</th>
             <th>Назва засобу</th>
             <th>Об'єкт установки</th>
-            <th>Тип підрозділу</th>
+            <th>Тип об'єкту</th>
             <th>Серійний номер</th>
             <th>Статус</th>
             <th>Дія</th>
@@ -87,8 +103,8 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
                   <span className='na'>На складі</span>
                 )}
               </td>
-              <td className='department-cell'>
-                {getDepartmentLabel(mean.departmentType)}
+              <td className='object-type-cell'>
+                {getObjectTypeLabel(mean)}
               </td>
               <td className='serial-cell'>
                 {mean.serialNumber
