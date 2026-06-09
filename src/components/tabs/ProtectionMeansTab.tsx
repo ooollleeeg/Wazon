@@ -26,7 +26,9 @@ const ProtectionMeansTab = () => {
   const [selectedMean, setSelectedMean] = useState<ProtectionMean | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showInstallModal, setShowInstallModal] = useState(false);
-  const [meanToInstall, setMeanToInstall] = useState<ProtectionMean | null>(null);
+  const [meanToInstall, setMeanToInstall] = useState<ProtectionMean | null>(
+    null,
+  );
 
   // Загрузка даних з backend
   const fetchData = async () => {
@@ -42,13 +44,7 @@ const ProtectionMeansTab = () => {
 
       const response = await fetch(`/api/protection-means/all?${queryParams}`);
       if (!response.ok) throw new Error('Помилка при завантаженні даних');
-
-      const data = await response.json();
-      setAllMeans(data.items || []);
-      setStats(data.stats);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      setError(message);
+setError(message);
       console.error('❌ Error fetching protection means:', err);
     } finally {
       setLoading(false);
@@ -114,7 +110,7 @@ const ProtectionMeansTab = () => {
   const handleInstallMean = async (
     mean: ProtectionMean,
     objectId: string,
-    objectType: string
+    objectType: string,
   ) => {
     try {
       // Готуємо дані для встановлення
@@ -268,7 +264,10 @@ interface ProtectionMeansFormProps {
   onCancel: () => void;
 }
 
-const ProtectionMeansForm = ({ onSubmit, onCancel }: ProtectionMeansFormProps) => {
+const ProtectionMeansForm = ({
+  onSubmit,
+  onCancel,
+}: ProtectionMeansFormProps) => {
   const categories = [
     'Генератор радіочастотного зашумлення',
     'Фільтр електроживлення',
@@ -293,7 +292,11 @@ const ProtectionMeansForm = ({ onSubmit, onCancel }: ProtectionMeansFormProps) =
     notes: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
