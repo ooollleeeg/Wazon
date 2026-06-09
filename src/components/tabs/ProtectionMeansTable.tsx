@@ -45,6 +45,11 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
 
   const getObjectTypeLabel = (mean: ProtectionMean): string => {
     if (mean.objectType === 'AS') {
+      // systemClass already contains "АС класу 1" from database, so return it as-is
+      // Or extract just the number if needed
+      if (mean.systemClass?.includes('АС класу')) {
+        return mean.systemClass; // Already formatted
+      }
       return `АС класу ${mean.systemClass || '?'}`;
     }
     
