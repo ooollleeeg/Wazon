@@ -78,9 +78,9 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
           <tr>
             <th>Категорія</th>
             <th>Назва засобу</th>
+            <th>Серійний номер</th>
             <th>Об'єкт установки</th>
             <th>Тип об'єкту</th>
-            <th>Серійний номер</th>
             <th>Статус</th>
             <th>Дія</th>
           </tr>
@@ -96,6 +96,11 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
               <td className='name-cell'>
                 <strong>{highlightText(mean.name, searchTerm, `${mean.id}-name`)}</strong>
               </td>
+              <td className='serial-cell'>
+                {mean.serialNumber
+                  ? highlightText(mean.serialNumber, searchTerm, `${mean.id}-serial`)
+                  : '—'}
+              </td>
               <td className='object-cell'>
                 {mean.objectName ? (
                   <div>
@@ -110,11 +115,6 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
               </td>
               <td className='object-type-cell'>
                 {getObjectTypeLabel(mean)}
-              </td>
-              <td className='serial-cell'>
-                {mean.serialNumber
-                  ? highlightText(mean.serialNumber, searchTerm, `${mean.id}-serial`)
-                  : '—'}
               </td>
               <td className='status-cell'>{getStatusBadge(mean.status)}</td>
               <td className='action-cell'>
