@@ -421,6 +421,9 @@
 }
 
 .btn-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   font-size: 1.2rem;
@@ -428,6 +431,8 @@
   padding: 0.4rem 0.8rem;
   border-radius: 6px;
   transition: background 0.2s ease;
+  line-height: 1;
+  height: 2rem;
 }
 
 .btn-view:hover {
@@ -601,6 +606,9 @@
 /* ========== INSTALL BUTTON ========== */
 
 .btn-install {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #27ae60;
   color: white;
   border: none;
@@ -610,6 +618,8 @@
   font-size: 0.9rem;
   transition: background 0.3s ease;
   margin-left: 0.5rem;
+  line-height: 1;
+  height: 2rem;
 }
 
 .btn-install:hover {
