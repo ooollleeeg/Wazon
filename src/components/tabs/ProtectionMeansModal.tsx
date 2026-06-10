@@ -123,7 +123,7 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
                     <strong>{mean.objectAddress}</strong>
                   </div>
                 )}
-                {mean.departmentType && (
+                {mean.departmentType && mean.objectType !== 'IKS' && (
                   <div className='info-item'>
                     <label>Тип підрозділу:</label>
                     <strong>{getDepartmentLabel(mean.departmentType)}</strong>
