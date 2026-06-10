@@ -6,7 +6,7 @@ import IKSCardCompact from '../iks/IKSCardCompact';
 
 // ===== FORM CONFIG =====
 const iksFormConfig: FormConfig = {
-  title: 'Інформаційно-комунікаційні системи (ІКС)',
+  title: 'ІКС',
   sections: [
     {
       title: '🏢 Основна інформація',
