@@ -212,7 +212,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.systemName as objectName,
       a.address as objectAddress,
       a.subdivisionType as departmentType,
-      'AS' as objectType,
+      COALESCE(a.systemClass, 'АС класу ?') as objectType,
       'КЗЗ від НСД' as category,
       a.kzzName as name,
       a.kzzSerial as serialNumber,
@@ -221,7 +221,8 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.kzzManufacturerExploitationTerm as manufacturerExploitationTerm,
       NULL as certificateInfo,
       'installed' as status,
-      a.createdAt
+      a.createdAt,
+      ('AS-' || a.id || '-kzz') as id
     FROM class_a_systems a
     WHERE a.kzzName IS NOT NULL AND a.kzzName != ''
     
@@ -232,7 +233,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       i.systemName as objectName,
       null as objectAddress,
       'territorial' as departmentType,
-      'IKS' as objectType,
+      'ІКС' as objectType,
       'КЗЗ від НСД' as category,
       i.kzzName as name,
       i.kzzSerial as serialNumber,
@@ -241,7 +242,8 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       i.kzzManufacturerExploitationTerm as manufacturerExploitationTerm,
       NULL as certificateInfo,
       'installed' as status,
-      i.createdAt
+      i.createdAt,
+      ('IKS-' || i.id || '-kzz') as id
     FROM iks i
     WHERE i.kzzName IS NOT NULL AND i.kzzName != ''
     `,
@@ -251,12 +253,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
         count: rows?.length || 0,
       });
       if (!err && rows) {
-        allMeans.push(
-          ...rows.map((row) => ({
-            ...row,
-            id: row.objectId + '-' + row.objectType + '-kzz', // унікальний ID для КЗЗ
-          })),
-        );
+        allMeans.push(...rows);
       }
       checkCompletion();
     },
