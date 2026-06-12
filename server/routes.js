@@ -338,7 +338,9 @@ router.delete('/protection-means/inventory/:id', (req, res) => {
 
 /**
  * POST /api/protection-means/install - Встановити засіб ТЗІ з складу на об'єкт
- * Очікує: { meanId: string, objectId: string, objectType: 'AS'|'SP'|'KRT'|'IKS' }
+ * Очікує: { meanId: string, objectId: string, objectType: 'AS'|'SP'|'KRT'|'IKS', category?: string }
+ * Для КЗЗ від НСД: зберігає в полі kzzName, дозволено тільки AS та IKS
+ * Для інших засобів: зберігає в таблиці *_protection_means
  */
 router.post('/protection-means/install', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(

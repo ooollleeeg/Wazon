@@ -8,31 +8,55 @@ interface ObjectItem {
   departmentType?: string;
   objectName?: string;
   objectAddress?: string;
+  hasKzz?: boolean; // Чи встановлено КЗЗ від НСД на об'єкті
 }
 
 interface SelectObjectModalProps {
   mean: ProtectionMean;
   onClose: () => void;
-  onInstall: (mean: ProtectionMean, objectId: string, objectType: string) => Promise<void>;
+  onInstall: (
+    mean: ProtectionMean,
+    objectId: string,
+    objectType: string,
+  ) => Promise<void>;
 }
 
 type ObjectType = 'AS' | 'SP' | 'KRT' | 'IKS';
 
-const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps) => {
-  const [selectedType, setSelectedType] = useState<ObjectType>('SP');
+const SelectObjectModal = ({
+  mean,
+  onClose,
+  onInstall,
+}: SelectObjectModalProps) => {
+  // Карта типів об'єктів
+  const objectTypeMap: Record<ObjectType, { label: string; endpoint: string }> =
+    {
+      AS: { label: 'АС класу 1,2,3', endpoint: '/api/objects/class_a_systems' },
+      SP: {
+        label: 'Службові приміщення',
+        endpoint: '/api/objects/service_premises',
+      },
+      KRT: { label: 'КРТ', endpoint: '/api/objects/krt' },
+      IKS: { label: 'ІКС', endpoint: '/api/objects/iks' },
+    };
+
+  // Функція для розрахунку дефолтного типу на основі категорії засобу
+  const getDefaultType = (): ObjectType => {
+    // КЗЗ від НСД за замовчуванням стартує з AS
+    if (mean.category === 'КЗЗ від НСД') {
+      return 'AS';
+    }
+    // Для інших засобів дефолт AS
+    return 'AS';
+  };
+
+  const [selectedType, setSelectedType] =
+    useState<ObjectType>(getDefaultType());
   const [objects, setObjects] = useState<ObjectItem[]>([]);
   const [selectedObject, setSelectedObject] = useState<ObjectItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
-
-  // Карта типів об'єктів
-  const objectTypeMap: Record<ObjectType, { label: string; endpoint: string }> = {
-    AS: { label: 'АС класу 1,2,3', endpoint: '/api/objects/class_a_systems' },
-    SP: { label: 'Службові приміщення', endpoint: '/api/objects/service_premises' },
-    KRT: { label: 'КРТ', endpoint: '/api/objects/krt' },
-    IKS: { label: 'ІКС', endpoint: '/api/objects/iks' },
-  };
 
   // Завантажуємо об'єкти при зміні типу
   useEffect(() => {
@@ -52,18 +76,35 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
           : data.items || data.objects || [];
 
         // Трансформуємо об'єкти в універсальний формат
-        const normalized: ObjectItem[] = rawObjects.map((obj: any) => ({
-          id: obj.id || obj.ID,
-          name: obj.name || obj.objectName || obj.subdivisionName || obj.systemName || obj.communicationName || `Object ${obj.id}`,
-          address: obj.address || obj.objectAddress || '',
-          departmentType: obj.departmentType || obj.subdivisionType || '',
-          objectName: obj.subdivisionName,
-          objectAddress: obj.address,
-        }));
+        const normalized: ObjectItem[] = rawObjects.map((obj: any) => {
+          // Для КЗЗ від НСД перевіримо, чи вже встановлений КЗЗ на об'єкті
+          let hasKzz = false;
+          if (mean.category === 'КЗЗ від НСД') {
+            // AS та IKS мають поле kzzName
+            hasKzz = !!(obj.kzzName && obj.kzzName.trim());
+          }
+
+          return {
+            id: obj.id || obj.ID,
+            name:
+              obj.name ||
+              obj.objectName ||
+              obj.subdivisionName ||
+              obj.systemName ||
+              obj.communicationName ||
+              `Object ${obj.id}`,
+            address: obj.address || obj.objectAddress || '',
+            departmentType: obj.departmentType || obj.subdivisionType || '',
+            objectName: obj.subdivisionName,
+            objectAddress: obj.address,
+            hasKzz,
+          };
+        });
 
         setObjects(normalized);
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Помилка завантаження';
+        const message =
+          err instanceof Error ? err.message : 'Помилка завантаження';
         setError(message);
         console.error('Error fetching objects:', err);
       } finally {
@@ -72,7 +113,27 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
     };
 
     fetchObjects();
-  }, [selectedType]);
+  }, [selectedType, mean.category]);
+
+  // Отримуємо доступні типи об'єктів залежно від категорії засобу
+  const getAvailableObjectTypes = (): ObjectType[] => {
+    // КЗЗ від НСД може бути встановлена ТІЛЬКИ на AS та IKS
+    if (mean.category === 'КЗЗ від НСД') {
+      return ['AS', 'IKS'];
+    }
+    // Для інших засобів доступні всі типи
+    return ['AS', 'SP', 'KRT', 'IKS'];
+  };
+
+  // Якщо вибраний тип не доступний, вибираємо перший доступний
+  const availableTypes = getAvailableObjectTypes();
+  const isCurrentTypeAvailable = availableTypes.includes(selectedType);
+
+  useEffect(() => {
+    if (!isCurrentTypeAvailable) {
+      setSelectedType(availableTypes[0]);
+    }
+  }, [mean.category]);
 
   const handleInstall = async () => {
     if (!selectedObject) {
@@ -84,7 +145,8 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
     try {
       await onInstall(mean, selectedObject.id, selectedType);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Помилка встановлення';
+      const message =
+        err instanceof Error ? err.message : 'Помилка встановлення';
       setError(message);
       console.error('Error installing:', err);
     } finally {
@@ -95,7 +157,7 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
   const getObjectDisplay = (obj: ObjectItem): string => {
     const name = obj.name || `ID: ${obj.id}`;
     const address = obj.address || '';
-    
+
     if (selectedType === 'SP' && address) {
       return `${name} (${address})`;
     }
@@ -141,14 +203,16 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
           <section className='modal-section'>
             <h3>🏢 Виберіть тип об'єкту</h3>
             <div className='object-type-selector'>
-              {(Object.keys(objectTypeMap) as ObjectType[]).map((type) => (
+              {availableTypes.map((type) => (
                 <label key={type} className='radio-option'>
                   <input
                     type='radio'
                     name='objectType'
                     value={type}
                     checked={selectedType === type}
-                    onChange={(e) => setSelectedType(e.target.value as ObjectType)}
+                    onChange={(e) =>
+                      setSelectedType(e.target.value as ObjectType)
+                    }
                   />
                   <span>{objectTypeMap[type].label}</span>
                 </label>
@@ -167,14 +231,25 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
             {!loading && objects.length > 0 && (
               <div className='object-list'>
                 {objects.map((obj) => (
-                  <label key={obj.id} className='object-item'>
+                  <label
+                    key={obj.id}
+                    className={`object-item ${obj.hasKzz ? 'disabled' : ''}`}
+                  >
                     <input
                       type='radio'
                       name='object'
                       checked={selectedObject?.id === obj.id}
                       onChange={() => setSelectedObject(obj)}
+                      disabled={obj.hasKzz}
                     />
-                    <span className='object-label'>{getObjectDisplay(obj)}</span>
+                    <span className='object-label'>
+                      {getObjectDisplay(obj)}
+                      {obj.hasKzz && (
+                        <span className='kzz-warning'>
+                          ⚠️ КЗЗ від НСД вже встановлено
+                        </span>
+                      )}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -190,7 +265,11 @@ const SelectObjectModal = ({ mean, onClose, onInstall }: SelectObjectModalProps)
             >
               {installing ? '⏳ Встановлення...' : '✓ Встановити засіб'}
             </button>
-            <button className='btn btn-secondary' onClick={onClose} disabled={installing}>
+            <button
+              className='btn btn-secondary'
+              onClick={onClose}
+              disabled={installing}
+            >
               Скасувати
             </button>
           </div>

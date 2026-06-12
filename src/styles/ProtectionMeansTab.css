@@ -707,6 +707,24 @@
   font-weight: 500;
 }
 
+.object-item.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f9f9f9;
+}
+
+.object-item.disabled input[type='radio'] {
+  cursor: not-allowed;
+}
+
+.kzz-warning {
+  display: block;
+  font-size: 0.85rem;
+  color: #e74c3c;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
 .install-info {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

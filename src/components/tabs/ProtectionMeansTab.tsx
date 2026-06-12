@@ -124,6 +124,7 @@ const ProtectionMeansTab = () => {
         meanId: mean.id,
         objectId,
         objectType,
+        category: mean.category, // Передаємо категорію для правильного обрання поля
       };
 
       // Відправляємо запит на встановлення
@@ -143,7 +144,7 @@ const ProtectionMeansTab = () => {
 
       // Навігуємо на об'єкт
       if (objectType === 'AS') {
-        window.location.hash = `#class-as-systems:${objectId}`;
+        window.location.hash = `#class-a:${objectId}`;
       } else if (objectType === 'SP') {
         window.location.hash = `#service-premises:${objectId}`;
       } else if (objectType === 'KRT') {
@@ -213,13 +214,13 @@ const ProtectionMeansTab = () => {
 
       {/* Кнопка додавання нового засобу */}
       <button className='btn-add-new' onClick={() => setShowAddForm(true)}>
-        + Додати засіб на складі
+        + Додати засіб на склад
       </button>
 
       {/* Форма додавання нового засобу */}
       {showAddForm && (
         <div className='add-form-container'>
-          <h3>Додавання нового засобу на складі</h3>
+          <h3>Додавання нового засобу на склад</h3>
           <ProtectionMeansForm
             onSubmit={handleAddNewMean}
             onCancel={() => setShowAddForm(false)}
