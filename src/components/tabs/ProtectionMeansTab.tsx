@@ -79,6 +79,14 @@ const ProtectionMeansTab = () => {
     setSelectedMean(null);
   };
 
+  const normalizeObjectType = (type?: string) => {
+    if (!type) return '';
+    if (type === 'AS' || type === 'ІКС' || type === 'IKS') return type;
+    if (type.includes('АС класу')) return 'AS';
+    if (type === 'SP' || type === 'KRT' || type === 'INVENTORY') return type;
+    return type;
+  };
+
   // Обробник отримання переходу до об'єкта
   const handleNavigateToObject = (mean: ProtectionMean) => {
     if (!mean.objectId) {
@@ -87,13 +95,15 @@ const ProtectionMeansTab = () => {
       return;
     }
 
-    if (mean.objectType === 'AS') {
+    const objectType = normalizeObjectType(mean.objectType);
+
+    if (objectType === 'AS') {
       window.location.hash = `#class-a:${mean.objectId}`;
-    } else if (mean.objectType === 'SP') {
+    } else if (objectType === 'SP') {
       window.location.hash = `#service-premises:${mean.objectId}`;
-    } else if (mean.objectType === 'KRT') {
+    } else if (objectType === 'KRT') {
       window.location.hash = `#krt:${mean.objectId}`;
-    } else if (mean.objectType === 'IKS') {
+    } else if (objectType === 'IKS' || objectType === 'ІКС') {
       window.location.hash = `#iks:${mean.objectId}`;
     }
 
