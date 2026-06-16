@@ -19,15 +19,24 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
     return map[dept] || dept;
   };
 
-  const getObjectTypeLabel = (type) => {
+  const isIksType = (type) => type === 'IKS' || type === 'ІКС';
+
+  const getObjectTypeLabel = (mean) => {
+    if (mean.objectType === 'AS') {
+      if (mean.systemClass?.includes('АС класу')) {
+        return mean.systemClass;
+      }
+      return `АС класу ${mean.systemClass || '1,2,3'}`;
+    }
+
     const map = {
-      AS: 'АС класу 1,2,3',
       SP: 'Службові приміщення',
       KRT: 'КРТ',
       IKS: 'ІКС',
+      ІКС: 'ІКС',
       INVENTORY: 'Запас (склад)',
     };
-    return map[type] || type;
+    return map[mean.objectType] || mean.objectType || '—';
   };
 
   return (
@@ -111,7 +120,7 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
               <div className='info-grid'>
                 <div className='info-item'>
                   <label>Тип об'єкту:</label>
-                  <strong>{getObjectTypeLabel(mean.objectType)}</strong>
+                  <strong>{getObjectTypeLabel(mean)}</strong>
                 </div>
                 <div className='info-item'>
                   <label>Назва об'єкту:</label>
@@ -123,7 +132,7 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
                     <strong>{mean.objectAddress}</strong>
                   </div>
                 )}
-                {mean.departmentType && mean.objectType !== 'IKS' && (
+                {mean.departmentType && !isIksType(mean.objectType) && (
                   <div className='info-item'>
                     <label>Тип підрозділу:</label>
                     <strong>{getDepartmentLabel(mean.departmentType)}</strong>
@@ -137,7 +146,7 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
         <div className='modal-footer'>
           {mean.status === 'installed' && mean.objectType !== 'INVENTORY' && (
             <button className='btn-primary' onClick={() => onNavigate(mean)}>
-              → Перейти до {getObjectTypeLabel(mean.objectType)}
+              → Перейти до {getObjectTypeLabel(mean)}
             </button>
           )}
           <button className='btn-secondary' onClick={onClose}>
