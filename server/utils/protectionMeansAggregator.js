@@ -296,6 +296,39 @@ export function aggregateProtectionMeans(filters = {}, callback) {
 /**
  * Створити новий запис засобу на складі
  */
+function checkDuplicateProtectionMean(category, name, serialNumber, callback) {
+  const sql = `
+    SELECT id, category, name, serialNumber, objectName
+    FROM (
+      SELECT id, lower(category) as category, lower(name) as name, lower(COALESCE(serialNumber, '')) as serialNumber, 'На складі' as objectName
+      FROM protection_means_inventory
+      UNION ALL
+      SELECT pm.id as id, lower(pm.toolType) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, a.systemName as objectName
+      FROM class_a_systems_protection_means pm
+      JOIN class_a_systems a ON pm.systemId = a.id
+      UNION ALL
+      SELECT pm.id as id, lower(pm.toolType) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, sp.subdivisionName as objectName
+      FROM service_premises_protection_means pm
+      JOIN service_premises sp ON pm.premisesId = sp.id
+      UNION ALL
+      SELECT pm.id as id, lower(pm.toolType) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, k.systemName as objectName
+      FROM krt_protection_means pm
+      JOIN krt k ON pm.krtId = k.id
+      UNION ALL
+      SELECT pm.id as id, lower(COALESCE(pm.toolType, '')) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, i.systemName as objectName
+      FROM iks_protection_means pm
+      JOIN iks i ON pm.iksId = i.id
+    )
+    WHERE category = lower(?) AND name = lower(?) AND serialNumber = lower(COALESCE(?, ''))
+    LIMIT 1
+  `;
+
+  db.get(sql, [category, name, serialNumber], (err, row) => {
+    if (err) return callback(err);
+    callback(null, row);
+  });
+}
+
 export function createInventoryItem(data, callback) {
   const {
     category,
@@ -309,32 +342,49 @@ export function createInventoryItem(data, callback) {
     notes,
   } = data;
 
-  const sql = `
-    INSERT INTO protection_means_inventory 
-    (category, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, inStockDate, notes, status, createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-  `;
-
-  db.run(
-    sql,
-    [
-      category,
-      name,
-      serialNumber,
-      invertarNumber,
-      releaseYear,
-      manufacturerExploitationTerm,
-      certificateInfo,
-      inStockDate,
-      notes,
-      'in_stock',
-    ],
-    function (err) {
-      if (err) {
-        callback(err);
-      } else {
-        callback(null, { id: this.lastID, ...data });
+  checkDuplicateProtectionMean(
+    category,
+    name,
+    serialNumber,
+    (err, existing) => {
+      if (err) return callback(err);
+      if (existing) {
+        const objectName = existing.objectName || 'невідомий об’єкт';
+        const message =
+          `${category} ${name} ${serialNumber || ''} вже встановлений на ${objectName}`.trim();
+        const duplicateError = new Error(message);
+        duplicateError.status = 400;
+        return callback(duplicateError);
       }
+
+      const sql = `
+      INSERT INTO protection_means_inventory 
+      (category, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, inStockDate, notes, status, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `;
+
+      db.run(
+        sql,
+        [
+          category,
+          name,
+          serialNumber,
+          invertarNumber,
+          releaseYear,
+          manufacturerExploitationTerm,
+          certificateInfo,
+          inStockDate,
+          notes,
+          'in_stock',
+        ],
+        function (err) {
+          if (err) {
+            callback(err);
+          } else {
+            callback(null, { id: this.lastID, ...data });
+          }
+        },
+      );
     },
   );
 }
@@ -362,27 +412,44 @@ export function updateInventoryItem(id, data, callback) {
     WHERE id = ?
   `;
 
-  db.run(
-    sql,
-    [
-      category,
-      name,
-      serialNumber,
-      invertarNumber,
-      releaseYear,
-      manufacturerExploitationTerm,
-      certificateInfo,
-      inStockDate,
-      notes,
-      status,
-      id,
-    ],
-    function (err) {
-      if (err) {
-        callback(err);
-      } else {
-        callback(null, { id, ...data });
+  checkDuplicateProtectionMean(
+    category,
+    name,
+    serialNumber,
+    (err, existing) => {
+      if (err) return callback(err);
+      if (existing && existing.id !== Number(id)) {
+        const objectName = existing.objectName || 'невідомий об’єкт';
+        const message =
+          `${category} ${name} ${serialNumber || ''} вже встановлений на ${objectName}`.trim();
+        const duplicateError = new Error(message);
+        duplicateError.status = 400;
+        return callback(duplicateError);
       }
+
+      db.run(
+        sql,
+        [
+          category,
+          name,
+          serialNumber,
+          invertarNumber,
+          releaseYear,
+          manufacturerExploitationTerm,
+          certificateInfo,
+          inStockDate,
+          notes,
+          status,
+          id,
+        ],
+        function (err) {
+          if (err) {
+            callback(err);
+          } else {
+            callback(null, { id, ...data });
+          }
+        },
+      );
     },
   );
 }

@@ -132,7 +132,8 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
     res.status(201).json(result);
   } catch (err) {
     console.error(`❌ Error in POST /objects:`, err);
-    res.status(500).json({ error: err.message });
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message });
   }
 });
 
@@ -164,7 +165,8 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error(`❌ Error in PUT /objects:`, err);
-    res.status(500).json({ error: err.message });
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message });
   }
 });
 
@@ -272,7 +274,8 @@ router.post('/protection-means/inventory', (req, res) => {
         createInventoryItem(req.body, (err, result) => {
           if (err) {
             console.error('❌ Error creating inventory item:', err);
-            res.status(500).json({ error: err.message });
+            const status = err.status || 500;
+            res.status(status).json({ error: err.message });
           } else {
             console.log('✅ Inventory item created');
             res.json(result);
@@ -297,7 +300,8 @@ router.put('/protection-means/inventory/:id', (req, res) => {
         updateInventoryItem(req.params.id, req.body, (err, result) => {
           if (err) {
             console.error('❌ Error updating inventory item:', err);
-            res.status(500).json({ error: err.message });
+            const status = err.status || 500;
+            res.status(status).json({ error: err.message });
           } else {
             console.log('✅ Inventory item updated');
             res.json(result);

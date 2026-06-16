@@ -1,5 +1,56 @@
 import { db } from '../database.js';
 
+const getObjectDisplayName = (data) => {
+  return (
+    data.systemName ||
+    data.subdivisionName ||
+    data.serviceName ||
+    data.premisesNumber ||
+    data.systemClass ||
+    'об’єкт'
+  );
+};
+
+const getProtectionMeanKey = (item) => {
+  const category = (item.category || item.toolType || '')
+    .toString()
+    .trim()
+    .toLowerCase();
+  const name = (item.name || '').toString().trim().toLowerCase();
+  const serialNumber = (item.serialNumber || '')
+    .toString()
+    .trim()
+    .toLowerCase();
+  return `${category}|${name}|${serialNumber}`;
+};
+
+const validateProtectionMeansArray = (items, objectName) => {
+  const seen = new Set();
+  for (const item of items) {
+    if (!item || typeof item !== 'object') continue;
+    const key = getProtectionMeanKey(item);
+    if (!key) continue;
+    if (seen.has(key)) {
+      const category = item.category || item.toolType || 'Засіб ТЗІ';
+      const name = item.name || '—';
+      const serial = item.serialNumber || '—';
+      const err = new Error(
+        `${category} ${name} ${serial} вже встановлений на ${objectName}`,
+      );
+      err.status = 400;
+      throw err;
+    }
+    seen.add(key);
+  }
+};
+
+const isProtectionMeansTable = (nestedKey, nestedConfig) => {
+  return (
+    nestedKey === 'protectionMeans' ||
+    nestedConfig?.table?.toString().toLowerCase().endsWith('_protection_means')
+  );
+};
+
 /**
  * Получить все объекты из таблицы
  */
@@ -158,6 +209,21 @@ export const createObjectWithNested = (config, data) => {
       console.log(`✅ Main record created with ID: ${id}`);
 
       try {
+        // Validate duplicate protection means in the object form before saving
+        const objectName = getObjectDisplayName(mainData);
+        if (nestedTables && nestedKeys.length > 0) {
+          for (const nestedKey of nestedKeys) {
+            const nestedConfig = nestedTables[nestedKey];
+            const nestedItems = data[nestedKey];
+            if (
+              isProtectionMeansTable(nestedKey, nestedConfig) &&
+              Array.isArray(nestedItems)
+            ) {
+              validateProtectionMeansArray(nestedItems, objectName);
+            }
+          }
+        }
+
         // Зберігаємо вложені дані
         if (nestedTables && nestedKeys.length > 0) {
           for (const nestedKey of nestedKeys) {
@@ -278,9 +344,21 @@ export const updateObjectWithNested = (config, id, data) => {
 
       let completed = 0;
 
+      const objectName = getObjectDisplayName(mainData);
       nestedKeys.forEach((nestedKey) => {
         const nestedConfig = config.nestedTables[nestedKey];
         const nestedItems = data[nestedKey] || [];
+        if (
+          isProtectionMeansTable(nestedKey, nestedConfig) &&
+          Array.isArray(nestedItems)
+        ) {
+          try {
+            validateProtectionMeansArray(nestedItems, objectName);
+          } catch (dupErr) {
+            return reject(dupErr);
+          }
+        }
+
         const foreignKeyName =
           config.foreignKeyName || `${config.table.slice(0, -1)}Id`;
 
