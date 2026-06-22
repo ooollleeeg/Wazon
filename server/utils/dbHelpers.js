@@ -12,15 +12,11 @@ const getObjectDisplayName = (data) => {
 };
 
 const getProtectionMeanKey = (item) => {
-  const category = (item.category || item.toolType || '')
-    .toString()
-    .trim()
-    .toLowerCase();
-  const name = (item.name || '').toString().trim().toLowerCase();
-  const serialNumber = (item.serialNumber || '')
-    .toString()
-    .trim()
-    .toLowerCase();
+  // Don't lowercase - for consistency with database comparisons
+  // This is important for Cyrillic text where JavaScript toLowerCase() doesn't work reliably
+  const category = (item.category || item.toolType || '').toString().trim();
+  const name = (item.name || '').toString().trim();
+  const serialNumber = (item.serialNumber || '').toString().trim();
   return `${category}|${name}|${serialNumber}`;
 };
 
@@ -49,6 +45,151 @@ const isProtectionMeansTable = (nestedKey, nestedConfig) => {
     nestedKey === 'protectionMeans' ||
     nestedConfig?.table?.toString().toLowerCase().endsWith('_protection_means')
   );
+};
+
+const getProtectionMeanLookupParams = (item) => {
+  // Don't lowercase - SQL will use COLLATE NOCASE for case-insensitive comparison
+  // This is important for Cyrillic text where JavaScript toLowerCase() doesn't work reliably
+  const category = (item.category || item.toolType || '').toString().trim();
+  const name = (item.name || '').toString().trim();
+  const serialNumber = (item.serialNumber || '').toString().trim();
+  return { category, name, serialNumber };
+};
+
+const findExistingProtectionMean = (category, name, serialNumber) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT 'AS' AS source, pm.systemId AS objectId, a.systemName AS objectName
+      FROM class_a_systems_protection_means pm
+      JOIN class_a_systems a ON pm.systemId = a.id
+      WHERE pm.toolType COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+      UNION ALL
+      SELECT 'SP' AS source, pm.premisesId AS objectId, sp.subdivisionName AS objectName
+      FROM service_premises_protection_means pm
+      JOIN service_premises sp ON pm.premisesId = sp.id
+      WHERE pm.toolType COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+      UNION ALL
+      SELECT 'KRT' AS source, pm.krtId AS objectId, k.systemName AS objectName
+      FROM krt_protection_means pm
+      JOIN krt k ON pm.krtId = k.id
+      WHERE pm.toolType COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+      UNION ALL
+      SELECT 'IKS' AS source, pm.iksId AS objectId, i.systemName AS objectName
+      FROM iks_protection_means pm
+      JOIN iks i ON pm.iksId = i.id
+      WHERE COALESCE(pm.toolType, '') COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+    `;
+
+    const params = [
+      category,
+      name,
+      serialNumber,
+      category,
+      name,
+      serialNumber,
+      category,
+      name,
+      serialNumber,
+      category,
+      name,
+      serialNumber,
+    ];
+
+    console.log(
+      `  🔎 findExistingProtectionMean SQL: category="${category}", name="${name}", serial="${serialNumber}"`,
+    );
+
+    db.all(sql, params, (err, rows) => {
+      if (err) {
+        console.error(`    ❌ SQL Error:`, err.message);
+        return reject(err);
+      }
+      console.log(
+        `    📊 Query returned ${rows?.length || 0} rows`,
+        rows?.length > 0 ? `(${rows[0].source} #${rows[0].objectId})` : '',
+      );
+      if (!rows?.length) return resolve(null);
+      resolve(rows[0]);
+    });
+  });
+};
+
+const getProtectionMeanSource = (tableName) => {
+  const lower = tableName?.toString().toLowerCase();
+  // Map main table names to source types
+  if (lower === 'class_a_systems') return 'AS';
+  if (lower === 'service_premises') return 'SP';
+  if (lower === 'krt') return 'KRT';
+  if (lower === 'iks') return 'IKS';
+  // Fallback for nested table names
+  if (lower.includes('class_a_systems')) return 'AS';
+  if (lower.includes('service_premises')) return 'SP';
+  if (lower.includes('krt')) return 'KRT';
+  if (lower.includes('iks')) return 'IKS';
+  return null;
+};
+
+const validateProtectionMeansAgainstExisting = async (
+  nestedItems,
+  objectName,
+  currentSource,
+  currentId,
+) => {
+  if (!Array.isArray(nestedItems)) return;
+
+  validateProtectionMeansArray(nestedItems, objectName);
+
+  console.log(
+    `🔍 validateProtectionMeansAgainstExisting: checking ${nestedItems.length} items for object "${objectName}" (source: ${currentSource}, id: ${currentId})`,
+  );
+
+  for (const item of nestedItems) {
+    if (!item || typeof item !== 'object') continue;
+    const { category, name, serialNumber } =
+      getProtectionMeanLookupParams(item);
+
+    console.log(
+      `  📍 Checking item: category="${category}", name="${name}", serial="${serialNumber}"`,
+    );
+
+    if (!category || !name) {
+      console.log(`  ⏭️  Skipping - missing category or name`);
+      continue;
+    }
+
+    const existing = await findExistingProtectionMean(
+      category,
+      name,
+      serialNumber,
+    );
+
+    console.log(
+      `  📡 Query result:`,
+      existing
+        ? `found on ${existing.objectName} (${existing.source} #${existing.objectId})`
+        : 'not found',
+    );
+
+    if (
+      existing &&
+      !(
+        currentSource &&
+        currentId &&
+        existing.source === currentSource &&
+        existing.objectId === Number(currentId)
+      )
+    ) {
+      const displayCategory = item.category || item.toolType || 'Засіб ТЗІ';
+      const displayName = item.name || '—';
+      const displaySerial = item.serialNumber || '—';
+      console.log(`  ❌ DUPLICATE FOUND! Throwing error...`);
+      const err = new Error(
+        `${displayCategory} ${displayName} ${displaySerial} вже встановлений на ${existing.objectName}`,
+      );
+      err.status = 400;
+      throw err;
+    }
+  }
 };
 
 /**
@@ -181,7 +322,7 @@ export const getObjectWithNested = (config, id) => {
  * Создать объект со всеми вложенными данными
  */
 export const createObjectWithNested = (config, data) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const { table, nestedTables, foreignKeyName } = config;
 
     // ✅ ВИДАЛІТЬ id і вложені таблиці з основних даних
@@ -194,10 +335,47 @@ export const createObjectWithNested = (config, data) => {
     const placeholders = fields.map(() => '?').join(',');
     const columns = fields.join(',');
     const values = Object.values(mainData);
-
     const query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders})`;
 
     console.log(`🔵 Creating in ${table}:`, { columns, values });
+
+    const objectName = getObjectDisplayName(mainData);
+    try {
+      if (nestedTables && nestedKeys.length > 0) {
+        console.log(
+          `🔐 Pre-insert validation: checking ${nestedKeys.length} nested table types (table: ${table})`,
+        );
+        const currentSource = getProtectionMeanSource(table);
+        console.log(`  📍 Detected source: ${currentSource}`);
+        for (const nestedKey of nestedKeys) {
+          const nestedConfig = nestedTables[nestedKey];
+          const nestedItems = data[nestedKey];
+          console.log(
+            `  🗂️  ${nestedKey}: isProtectionMeansTable=${isProtectionMeansTable(nestedKey, nestedConfig)}, isArray=${Array.isArray(nestedItems)}, length=${Array.isArray(nestedItems) ? nestedItems.length : 'N/A'}`,
+          );
+          if (
+            isProtectionMeansTable(nestedKey, nestedConfig) &&
+            Array.isArray(nestedItems)
+          ) {
+            console.log(
+              `  🔍 Validating protection means for ${nestedKey} (new object, no ID exclusion)...`,
+            );
+            await validateProtectionMeansAgainstExisting(
+              nestedItems,
+              objectName,
+              currentSource,
+              null,
+            );
+          }
+        }
+      }
+    } catch (validationError) {
+      console.error(
+        `❌ PRE-INSERT VALIDATION FAILED:`,
+        validationError.message,
+      );
+      return reject(validationError);
+    }
 
     db.run(query, values, async function (err) {
       if (err) {
@@ -209,91 +387,71 @@ export const createObjectWithNested = (config, data) => {
       console.log(`✅ Main record created with ID: ${id}`);
 
       try {
-        // Validate duplicate protection means in the object form before saving
-        const objectName = getObjectDisplayName(mainData);
-        if (nestedTables && nestedKeys.length > 0) {
-          for (const nestedKey of nestedKeys) {
-            const nestedConfig = nestedTables[nestedKey];
-            const nestedItems = data[nestedKey];
-            if (
-              isProtectionMeansTable(nestedKey, nestedConfig) &&
-              Array.isArray(nestedItems)
-            ) {
-              validateProtectionMeansArray(nestedItems, objectName);
-            }
-          }
-        }
-
         // Зберігаємо вложені дані
         if (nestedTables && nestedKeys.length > 0) {
           for (const nestedKey of nestedKeys) {
             const nestedConfig = nestedTables[nestedKey];
-            let nestedItems = data[nestedKey];
+            const nestedItems = data[nestedKey];
 
-            // ✅ Перевіряємо чи це масив
             if (!Array.isArray(nestedItems)) {
               console.warn(`⚠️ ${nestedKey} is not an array, skipping`);
               continue;
             }
 
-            if (nestedItems.length > 0) {
-              console.log(`📦 Inserting ${nestedItems.length} ${nestedKey}`);
+            if (nestedItems.length === 0) {
+              continue;
+            }
 
-              // ✅ ЧЕКАЄМО завершення всіх вложених вставок
-              for (const item of nestedItems) {
-                // ✅ Пропускаємо порожні або невалідні записи
-                if (!item || typeof item !== 'object') {
-                  console.warn(`⚠️ Invalid nested item in ${nestedKey}`, item);
-                  continue; // ✅ continue замість return
-                }
+            console.log(`📦 Inserting ${nestedItems.length} ${nestedKey}`);
 
-                // ✅ ФІЛЬТРУЄМО тільки непусті поля
-                const nestedFields = Object.keys(item).filter(
-                  (f) => f !== 'id' && item[f] !== undefined && item[f] !== '',
-                );
-
-                if (nestedFields.length === 0) {
-                  console.warn(`⚠️ No valid fields in nested item`, item);
-                  continue;
-                }
-
-                const nestedValues = nestedFields.map((f) => {
-                  const val = item[f];
-                  // ✅ Конвертуємо об'єкти в string
-                  if (val && typeof val === 'object') {
-                    return JSON.stringify(val);
-                  }
-                  return val ?? null;
-                });
-
-                const allFields = [...nestedFields, foreignKeyName];
-                const allValues = [...nestedValues, id];
-                const nestedPlaceholders = allFields.map(() => '?').join(', ');
-
-                const nestedQuery = `INSERT INTO ${nestedConfig.table} (${allFields.join(', ')}) VALUES (${nestedPlaceholders})`;
-
-                console.log(`  ↳ ${nestedConfig.table}:`, {
-                  fields: allFields,
-                  values: allValues,
-                });
-
-                // ✅ ЧЕКАЄМО кожну вставку
-                await new Promise((resolveNested, rejectNested) => {
-                  db.run(nestedQuery, allValues, function (nestedErr) {
-                    if (nestedErr) {
-                      console.error(
-                        `❌ Nested insert error (${nestedKey}):`,
-                        nestedErr.message,
-                      );
-                      return rejectNested(nestedErr);
-                    }
-                    console.log(
-                      `✅ ${nestedKey} record created with ID: ${this.lastID}`,
-                    );
-                    resolveNested();
-                  });
-                });
+            for (const item of nestedItems) {
+              if (!item || typeof item !== 'object') {
+                console.warn(`⚠️ Invalid nested item in ${nestedKey}`, item);
+                continue;
               }
+
+              const nestedFields = Object.keys(item).filter(
+                (f) => f !== 'id' && item[f] !== undefined && item[f] !== '',
+              );
+
+              if (nestedFields.length === 0) {
+                console.warn(`⚠️ No valid fields in nested item`, item);
+                continue;
+              }
+
+              const nestedValues = nestedFields.map((f) => {
+                const val = item[f];
+                if (val && typeof val === 'object') {
+                  return JSON.stringify(val);
+                }
+                return val ?? null;
+              });
+
+              const allFields = [...nestedFields, foreignKeyName];
+              const allValues = [...nestedValues, id];
+              const nestedPlaceholders = allFields.map(() => '?').join(', ');
+              const nestedQuery = `INSERT INTO ${nestedConfig.table} (${allFields.join(', ')}) VALUES (${nestedPlaceholders})`;
+
+              console.log(`  ↳ ${nestedConfig.table}:`, {
+                fields: allFields,
+                values: allValues,
+              });
+
+              await new Promise((resolveNested, rejectNested) => {
+                db.run(nestedQuery, allValues, function (nestedErr) {
+                  if (nestedErr) {
+                    console.error(
+                      `❌ Nested insert error (${nestedKey}):`,
+                      nestedErr.message,
+                    );
+                    return rejectNested(nestedErr);
+                  }
+                  console.log(
+                    `✅ ${nestedKey} record created with ID: ${this.lastID}`,
+                  );
+                  resolveNested();
+                });
+              });
             }
           }
         }
@@ -312,7 +470,7 @@ export const createObjectWithNested = (config, data) => {
  * Обновити объект со всеми вложенными данными
  */
 export const updateObjectWithNested = (config, id, data) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const nestedKeys = Object.keys(config.nestedTables || {});
     const mainData = { ...data };
 
@@ -323,10 +481,49 @@ export const updateObjectWithNested = (config, id, data) => {
     const fields = Object.keys(mainData);
     const setClause = fields.map((f) => `${f} = ?`).join(', ');
     const values = [...Object.values(mainData), id];
-
-    const query = `UPDATE ${config.table} SET ${setClause}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`;
+    const query = fields.length
+      ? `UPDATE ${config.table} SET ${setClause}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`
+      : `UPDATE ${config.table} SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?`;
 
     console.log(`🔵 Updating in ${config.table}:`, { id, values });
+
+    const objectName = getObjectDisplayName(mainData);
+    const currentSource = getProtectionMeanSource(config.table);
+
+    try {
+      if (nestedKeys.length > 0) {
+        console.log(
+          `🔐 PRE-UPDATE VALIDATION: checking ${nestedKeys.length} nested table types (table: ${config.table}, source: ${currentSource}, id: ${id})`,
+        );
+        for (const nestedKey of nestedKeys) {
+          const nestedConfig = config.nestedTables[nestedKey];
+          const nestedItems = data[nestedKey] || [];
+          console.log(
+            `  🗂️  ${nestedKey}: isProtectionMeansTable=${isProtectionMeansTable(nestedKey, nestedConfig)}, length=${nestedItems.length}`,
+          );
+          if (
+            isProtectionMeansTable(nestedKey, nestedConfig) &&
+            Array.isArray(nestedItems)
+          ) {
+            console.log(
+              `  🔍 Validating protection means for ${nestedKey} with global check (excluding ${currentSource}#${id})...`,
+            );
+            await validateProtectionMeansAgainstExisting(
+              nestedItems,
+              objectName,
+              currentSource,
+              id,
+            );
+          }
+        }
+      }
+    } catch (validationError) {
+      console.error(
+        `❌ PRE-UPDATE VALIDATION FAILED:`,
+        validationError.message,
+      );
+      return reject(validationError);
+    }
 
     db.run(query, values, function (err) {
       if (err) {
@@ -335,7 +532,6 @@ export const updateObjectWithNested = (config, id, data) => {
       }
 
       console.log(`✅ Main record updated`);
-
       let result = { id, ...mainData };
 
       if (nestedKeys.length === 0) {
@@ -344,25 +540,12 @@ export const updateObjectWithNested = (config, id, data) => {
 
       let completed = 0;
 
-      const objectName = getObjectDisplayName(mainData);
       nestedKeys.forEach((nestedKey) => {
         const nestedConfig = config.nestedTables[nestedKey];
         const nestedItems = data[nestedKey] || [];
-        if (
-          isProtectionMeansTable(nestedKey, nestedConfig) &&
-          Array.isArray(nestedItems)
-        ) {
-          try {
-            validateProtectionMeansArray(nestedItems, objectName);
-          } catch (dupErr) {
-            return reject(dupErr);
-          }
-        }
-
         const foreignKeyName =
           config.foreignKeyName || `${config.table.slice(0, -1)}Id`;
 
-        // Видаляємо старі записи
         db.run(
           `DELETE FROM ${nestedConfig.table} WHERE ${foreignKeyName} = ?`,
           [id],
@@ -394,7 +577,6 @@ export const updateObjectWithNested = (config, id, data) => {
               const nestedValues = [
                 ...nestedFields.map((f) => {
                   const val = item[f];
-                  // ✅ Конвертуємо об'єкти в string
                   if (val && typeof val === 'object') {
                     return JSON.stringify(val);
                   }
@@ -403,7 +585,6 @@ export const updateObjectWithNested = (config, id, data) => {
                 id,
               ];
               const nestedPlaceholders = nestedFields.map(() => '?').join(', ');
-
               const nestedQuery = `INSERT INTO ${nestedConfig.table} (${[...nestedFields, foreignKeyName].join(', ')}) VALUES (${nestedPlaceholders}, ?)`;
 
               db.run(nestedQuery, nestedValues, function (insertErr) {
