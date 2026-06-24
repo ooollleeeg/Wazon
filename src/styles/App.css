@@ -91,7 +91,7 @@ body {
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
-  animation: float 3s ease-in-out infinite;
+  /* animation: float 3s ease-in-out infinite; */
 }
 
 @keyframes float {
@@ -188,7 +188,7 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 999;
-  box-shadow: 
+  box-shadow:
     0 6px 24px rgba(102, 126, 234, 0.12),
     0 3px 12px rgba(102, 126, 234, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -202,7 +202,7 @@ body {
 
 .scroll-to-top:hover {
   transform: translateY(-3px);
-  box-shadow: 
+  box-shadow:
     0 10px 32px rgba(102, 126, 234, 0.18),
     0 4px 16px rgba(102, 126, 234, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
@@ -212,7 +212,7 @@ body {
 
 .scroll-to-top:active {
   transform: translateY(-1px);
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(102, 126, 234, 0.15),
     0 2px 6px rgba(102, 126, 234, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.25);
