@@ -604,12 +604,69 @@
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .modal-footer .btn-primary,
-.modal-footer .btn-secondary {
+.modal-footer .btn-secondary,
+.modal-footer .btn-edit,
+.modal-footer .btn-delete {
   margin: 0;
   flex: 0 1 auto;
+}
+
+/* ========== EDIT BUTTON ========== */
+
+.modal-footer .btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.modal-footer .btn-edit:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.modal-footer .btn-edit:active {
+  transform: translateY(0);
+}
+
+/* ========== DELETE BUTTON IN MODAL ========== */
+
+.modal-footer .btn-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.modal-footer .btn-delete:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+}
+
+.modal-footer .btn-delete:active {
+  transform: translateY(0);
 }
 
 /* ========== INSTALL BUTTON ========== */

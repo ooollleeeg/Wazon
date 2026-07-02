@@ -130,6 +130,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS class_a_systems_protection_means (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         systemId INTEGER NOT NULL,
+        categoryId INTEGER,
         name TEXT,
         serialNumber TEXT,
         invertarNumber TEXT,
@@ -344,6 +345,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS service_premises_protection_means (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         premisesId INTEGER NOT NULL,
+        categoryId INTEGER,
         name TEXT,
         serialNumber TEXT,
         invertarNumber TEXT,
@@ -478,6 +480,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS krt_protection_means (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         krtId INTEGER NOT NULL,
+        categoryId INTEGER,
         name TEXT,
         serialNumber TEXT,
         invertarNumber TEXT,
@@ -596,6 +599,7 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS iks_protection_means (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         iksId INTEGER NOT NULL,
+        categoryId INTEGER,
         name TEXT,
         serialNumber TEXT,
         invertarNumber TEXT,
@@ -656,6 +660,7 @@ function initializeDatabase() {
     db.run(`
       CREATE TABLE IF NOT EXISTS protection_means_inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        categoryId INTEGER,
         category TEXT NOT NULL,
         name TEXT NOT NULL,
         serialNumber TEXT,
@@ -670,6 +675,73 @@ function initializeDatabase() {
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Додати колону categoryId до існуючих таблиць, якщо вона ще не існує
+    db.run(
+      `
+      ALTER TABLE protection_means_inventory
+      ADD COLUMN categoryId INTEGER
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log(
+            'ℹ️ categoryId колона вже існує в protection_means_inventory або DB оновлена',
+          );
+        }
+      },
+    );
+
+    db.run(
+      `
+      ALTER TABLE class_a_systems_protection_means
+      ADD COLUMN categoryId INTEGER
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log(
+            'ℹ️ categoryId колона вже існує в class_a_systems_protection_means',
+          );
+        }
+      },
+    );
+
+    db.run(
+      `
+      ALTER TABLE service_premises_protection_means
+      ADD COLUMN categoryId INTEGER
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log(
+            'ℹ️ categoryId колона вже існує в service_premises_protection_means',
+          );
+        }
+      },
+    );
+
+    db.run(
+      `
+      ALTER TABLE krt_protection_means
+      ADD COLUMN categoryId INTEGER
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ categoryId колона вже існує в krt_protection_means');
+        }
+      },
+    );
+
+    db.run(
+      `
+      ALTER TABLE iks_protection_means
+      ADD COLUMN categoryId INTEGER
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ categoryId колона вже існує в iks_protection_means');
+        }
+      },
+    );
   });
 }
 

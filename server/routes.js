@@ -14,6 +14,7 @@ import {
   createObjectWithNested,
   updateObjectWithNested,
   deleteNestedItem,
+  checkProtectionMeanDuplicate,
 } from './utils/dbHelpers.js';
 import { db } from './database.js';
 
@@ -338,6 +339,41 @@ router.delete('/protection-means/inventory/:id', (req, res) => {
       }
     },
   );
+});
+
+/**
+ * POST /api/protection-means/check-duplicate - Перевірити дублікат засобу ТЗІ
+ * Очікує: { categoryId: number, name: string, serialNumber?: string }
+ * Возвращает: { isDuplicate: boolean, duplicateAt?: { source, objectName, objectId } }
+ */
+router.post('/protection-means/check-duplicate', async (req, res) => {
+  try {
+    const { categoryId, name, serialNumber } = req.body;
+
+    console.log('🔍 POST /api/protection-means/check-duplicate', {
+      categoryId,
+      name,
+      serialNumber,
+    });
+
+    if (!categoryId || !name) {
+      return res.status(400).json({
+        error: "categoryId та name обов'язкові",
+      });
+    }
+
+    const result = await checkProtectionMeanDuplicate(
+      categoryId,
+      name,
+      serialNumber || '',
+    );
+
+    console.log('✅ Check completed:', result);
+    res.json(result);
+  } catch (err) {
+    console.error('❌ Error checking duplicate:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /**

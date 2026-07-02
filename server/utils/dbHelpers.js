@@ -56,47 +56,68 @@ const getProtectionMeanLookupParams = (item) => {
   return { category, name, serialNumber };
 };
 
-const findExistingProtectionMean = (category, name, serialNumber) => {
+const findExistingProtectionMean = (categoryId, name, serialNumber) => {
   return new Promise((resolve, reject) => {
+    // If both name and serialNumber are empty, no duplicate check needed
+    if (!name || !serialNumber || serialNumber.trim() === '') {
+      console.log(
+        `  ℹ️  Skipping duplicate check: name="${name}", serial="${serialNumber}"`,
+      );
+      return resolve(null);
+    }
+
+    // NOTE: Do NOT use .toLowerCase() for Cyrillic! JavaScript's toLowerCase() doesn't work properly with Ukrainian characters.
+    // Example: "ПОЛИК".toLowerCase() returns "ПОЛИК", not "полик"
+    // Instead, use COLLATE NOCASE in SQL for case-insensitive comparison while preserving original case
+    const trimmedName = name.trim();
+    const trimmedSerial = (serialNumber || '').trim();
+
     const sql = `
       SELECT 'AS' AS source, pm.systemId AS objectId, a.systemName AS objectName
       FROM class_a_systems_protection_means pm
       JOIN class_a_systems a ON pm.systemId = a.id
-      WHERE pm.toolType COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+      WHERE pm.categoryId = ? AND pm.name COLLATE NOCASE = ? COLLATE NOCASE AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
       SELECT 'SP' AS source, pm.premisesId AS objectId, sp.subdivisionName AS objectName
       FROM service_premises_protection_means pm
       JOIN service_premises sp ON pm.premisesId = sp.id
-      WHERE pm.toolType COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+      WHERE pm.categoryId = ? AND pm.name COLLATE NOCASE = ? COLLATE NOCASE AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
       SELECT 'KRT' AS source, pm.krtId AS objectId, k.systemName AS objectName
       FROM krt_protection_means pm
       JOIN krt k ON pm.krtId = k.id
-      WHERE pm.toolType COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+      WHERE pm.categoryId = ? AND pm.name COLLATE NOCASE = ? COLLATE NOCASE AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
       SELECT 'IKS' AS source, pm.iksId AS objectId, i.systemName AS objectName
       FROM iks_protection_means pm
       JOIN iks i ON pm.iksId = i.id
-      WHERE COALESCE(pm.toolType, '') COLLATE NOCASE = ? AND pm.name COLLATE NOCASE = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ?
+      WHERE pm.categoryId = ? AND pm.name COLLATE NOCASE = ? COLLATE NOCASE AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
+      UNION ALL
+      SELECT 'Inventory' AS source, NULL AS objectId, 'На складі' AS objectName
+      FROM protection_means_inventory pi
+      WHERE pi.categoryId = ? AND pi.name COLLATE NOCASE = ? COLLATE NOCASE AND COALESCE(pi.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
     `;
 
     const params = [
-      category,
-      name,
-      serialNumber,
-      category,
-      name,
-      serialNumber,
-      category,
-      name,
-      serialNumber,
-      category,
-      name,
-      serialNumber,
+      categoryId,
+      trimmedName,
+      trimmedSerial,
+      categoryId,
+      trimmedName,
+      trimmedSerial,
+      categoryId,
+      trimmedName,
+      trimmedSerial,
+      categoryId,
+      trimmedName,
+      trimmedSerial,
+      categoryId,
+      trimmedName,
+      trimmedSerial,
     ];
 
     console.log(
-      `  🔎 findExistingProtectionMean SQL: category="${category}", name="${name}", serial="${serialNumber}"`,
+      `  🔎 findExistingProtectionMean: categoryId=${categoryId}, name="${trimmedName}", serial="${trimmedSerial}"`,
     );
 
     db.all(sql, params, (err, rows) => {
@@ -145,20 +166,23 @@ const validateProtectionMeansAgainstExisting = async (
 
   for (const item of nestedItems) {
     if (!item || typeof item !== 'object') continue;
-    const { category, name, serialNumber } =
-      getProtectionMeanLookupParams(item);
+
+    // Use categoryId if available, otherwise use category field
+    const categoryId = item.categoryId;
+    const name = (item.name || '').toString().trim();
+    const serialNumber = (item.serialNumber || '').toString().trim();
 
     console.log(
-      `  📍 Checking item: category="${category}", name="${name}", serial="${serialNumber}"`,
+      `  📍 Checking item: categoryId=${categoryId}, name="${name}", serial="${serialNumber}"`,
     );
 
-    if (!category || !name) {
-      console.log(`  ⏭️  Skipping - missing category or name`);
+    if (!categoryId || !name) {
+      console.log(`  ⏭️  Skipping - missing categoryId or name`);
       continue;
     }
 
     const existing = await findExistingProtectionMean(
-      category,
+      categoryId,
       name,
       serialNumber,
     );
@@ -179,12 +203,12 @@ const validateProtectionMeansAgainstExisting = async (
         existing.objectId === Number(currentId)
       )
     ) {
-      const displayCategory = item.category || item.toolType || 'Засіб ТЗІ';
+      const displayCategory = item.category || 'Засіб ТЗІ';
       const displayName = item.name || '—';
       const displaySerial = item.serialNumber || '—';
       console.log(`  ❌ DUPLICATE FOUND! Throwing error...`);
       const err = new Error(
-        `${displayCategory} ${displayName} ${displaySerial} вже встановлений на ${existing.objectName}`,
+        `${displayCategory} "${displayName}" (S/N: ${displaySerial}) вже встановлений на "${existing.objectName}"`,
       );
       err.status = 400;
       throw err;
@@ -629,4 +653,37 @@ export const deleteNestedItem = (
       else resolve({ id: itemId, deleted: true });
     });
   });
+};
+
+/**
+ * Перевірити дублікат засобу ТЗІ
+ * Вход: categoryId, name, serialNumber
+ * Выход: { isDuplicate: boolean, duplicateAt?: { source, objectName, objectId } }
+ */
+export const checkProtectionMeanDuplicate = async (
+  categoryId,
+  name,
+  serialNumber,
+) => {
+  try {
+    const existing = await findExistingProtectionMean(
+      categoryId,
+      name,
+      serialNumber,
+    );
+    if (existing) {
+      return {
+        isDuplicate: true,
+        duplicateAt: {
+          source: existing.source,
+          objectName: existing.objectName,
+          objectId: existing.objectId,
+        },
+      };
+    }
+    return { isDuplicate: false };
+  } catch (err) {
+    console.error('❌ Error checking duplicate:', err.message);
+    throw err;
+  }
 };

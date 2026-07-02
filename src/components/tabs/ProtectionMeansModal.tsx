@@ -1,6 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
+import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 
-const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
+const ProtectionMeansModal = ({
+  mean,
+  onClose,
+  onNavigate,
+  onEdit,
+  onDelete,
+}) => {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setDeleting(true);
+    try {
+      const response = await fetch(
+        `/api/protection-means/inventory/${mean.id}`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Помилка при видаленні засобу');
+      }
+
+      onDelete?.();
+      onClose();
+    } catch (err) {
+      console.error('❌ Error deleting protection mean:', err);
+      alert('Помилка при видаленні засобу');
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     if (dateStr.includes('-')) {
@@ -149,10 +187,41 @@ const ProtectionMeansModal = ({ mean, onClose, onNavigate }) => {
               → Перейти до {getObjectTypeLabel(mean)}
             </button>
           )}
+
+          {/* Кнопки для засобів на складі */}
+          {mean.status === 'in_stock' && (
+            <>
+              <button
+                className='btn-edit'
+                onClick={() => onEdit?.(mean)}
+                title='Редагувати засіб'
+              >
+                ✏️ Редагувати
+              </button>
+              <button
+                className='btn-delete'
+                onClick={handleDeleteClick}
+                title='Видалити засіб зі складу'
+              >
+                🗑️ Видалити
+              </button>
+            </>
+          )}
+
           <button className='btn-secondary' onClick={onClose}>
             Закрити
           </button>
         </div>
+
+        {/* Модаль підтвердження видалення */}
+        {showDeleteConfirm && (
+          <DeleteConfirmModal
+            fullName={`${mean.name} (S/N: ${mean.serialNumber || '—'})`}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setShowDeleteConfirm(false)}
+            isLoading={deleting}
+          />
+        )}
       </div>
     </div>
   );

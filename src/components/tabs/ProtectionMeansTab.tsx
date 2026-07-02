@@ -3,6 +3,9 @@ import ProtectionMeansFilters from './ProtectionMeansFilters';
 import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
 import SelectObjectModal from './SelectObjectModal';
+import DuplicateErrorModal from '../modals/DuplicateErrorModal';
+import { validateBeforeSave } from '../../utils/protectionMeansValidation';
+import { PROTECTION_MEANS_CATEGORIES } from '../../constants/protectionMeansCategories';
 import '../../styles/ProtectionMeansTab.css';
 
 interface Stats {
@@ -29,6 +32,17 @@ const ProtectionMeansTab = () => {
   const [meanToInstall, setMeanToInstall] = useState<ProtectionMean | null>(
     null,
   );
+  const [showDuplicateError, setShowDuplicateError] = useState(false);
+  const [duplicateError, setDuplicateError] = useState<{
+    category: string;
+    name: string;
+    serialNumber?: string;
+    location: {
+      source: string;
+      objectName: string;
+      objectId: number;
+    };
+  } | null>(null);
 
   // Загрузка даних з backend
   const fetchData = async () => {
@@ -71,6 +85,18 @@ const ProtectionMeansTab = () => {
   const handleViewDetails = (mean: ProtectionMean) => {
     setSelectedMean(mean);
     setShowModal(true);
+  };
+
+  // Обробник редагування засобу зі складу
+  const handleEditInventoryItem = (mean: ProtectionMean) => {
+    setSelectedMean(mean);
+    setShowModal(false);
+    setShowAddForm(true);
+  };
+
+  // Обробник успішного видалення
+  const handleDeleteSuccess = () => {
+    fetchData();
   };
 
   // Обробник закриття модалі
@@ -170,16 +196,64 @@ const ProtectionMeansTab = () => {
     }
   };
 
-  // Обробник додавання нового засобу на складі
+  // Обробник додавання або редагування засобу на складі
   const handleAddNewMean = async (formData: Record<string, any>) => {
     try {
+      // Check for duplicates before submitting (тільки якщо це не редагування)
+      if (!selectedMean) {
+        const validationResult = await validateBeforeSave(
+          formData.category,
+          formData.name,
+          formData.serialNumber,
+        );
+
+        if (!validationResult.isValid && validationResult.duplicateAt) {
+          // Show duplicate error modal
+          setDuplicateError({
+            category: formData.category,
+            name: formData.name,
+            serialNumber: formData.serialNumber,
+            location: validationResult.duplicateAt,
+          });
+          setShowDuplicateError(true);
+          return;
+        }
+      }
+
+      // Якщо редагується существуючий запис
+      if (selectedMean) {
+        const response = await fetch(
+          `/api/protection-means/inventory/${selectedMean.id}`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+          },
+        );
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Помилка при оновленні засобу');
+        }
+
+        console.log('✅ Inventory item updated');
+        setShowAddForm(false);
+        setSelectedMean(null);
+        fetchData();
+        return;
+      }
+
+      // Якщо додається новий запис
       const response = await fetch('/api/protection-means/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) throw new Error('Помилка при додаванні засобу');
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Помилка при додаванні засобу');
+      }
 
       console.log('✅ New inventory item created');
       setShowAddForm(false);
@@ -187,7 +261,7 @@ const ProtectionMeansTab = () => {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
-      console.error('❌ Error creating inventory item:', err);
+      console.error('❌ Error with inventory item:', err);
     }
   };
 
@@ -230,10 +304,18 @@ const ProtectionMeansTab = () => {
       {/* Форма додавання нового засобу */}
       {showAddForm && (
         <div className='add-form-container'>
-          <h3>Додавання нового засобу на склад</h3>
+          <h3>
+            {selectedMean
+              ? `✏️ Редагування засобу "${selectedMean.name}"`
+              : '➕ Додавання нового засобу на склад'}
+          </h3>
           <ProtectionMeansForm
             onSubmit={handleAddNewMean}
-            onCancel={() => setShowAddForm(false)}
+            onCancel={() => {
+              setShowAddForm(false);
+              setSelectedMean(null);
+            }}
+            editingMean={selectedMean}
           />
         </div>
       )}
@@ -258,6 +340,8 @@ const ProtectionMeansTab = () => {
           mean={selectedMean}
           onClose={handleCloseModal}
           onNavigate={handleNavigateToObject}
+          onEdit={handleEditInventoryItem}
+          onDelete={handleDeleteSuccess}
         />
       )}
 
@@ -267,6 +351,21 @@ const ProtectionMeansTab = () => {
           mean={meanToInstall}
           onClose={handleCloseInstallModal}
           onInstall={handleInstallMean}
+        />
+      )}
+
+      {/* Модаль помилки дублювання */}
+      {duplicateError && (
+        <DuplicateErrorModal
+          isOpen={showDuplicateError}
+          category={duplicateError.category}
+          name={duplicateError.name}
+          serialNumber={duplicateError.serialNumber}
+          duplicateLocation={duplicateError.location}
+          onClose={() => {
+            setShowDuplicateError(false);
+            setDuplicateError(null);
+          }}
         />
       )}
     </div>
@@ -279,34 +378,28 @@ const ProtectionMeansTab = () => {
 interface ProtectionMeansFormProps {
   onSubmit: (formData: Record<string, any>) => Promise<void>;
   onCancel: () => void;
+  editingMean?: ProtectionMean | null;
 }
 
 const ProtectionMeansForm = ({
   onSubmit,
   onCancel,
+  editingMean,
 }: ProtectionMeansFormProps) => {
-  const categories = [
-    'Генератор радіочастотного зашумлення',
-    'Фільтр електроживлення',
-    'Мережевий трансформатор',
-    'Генератор акустичного зашумлення',
-    'Віброперетворювач',
-    'Акустичний випромінювач',
-    'Виріб типу "SRC-300"',
-    'КЗЗ від НСД',
-    'Інші вироби',
-  ];
+  const categories = PROTECTION_MEANS_CATEGORIES.map((cat) => cat.name);
 
   const [formData, setFormData] = useState({
-    category: '',
-    name: '',
-    serialNumber: '',
-    invertarNumber: '',
-    releaseYear: '',
-    manufacturerExploitationTerm: '',
-    certificateInfo: '',
-    inStockDate: new Date().toISOString().split('T')[0],
-    notes: '',
+    category: editingMean?.category || '',
+    name: editingMean?.name || '',
+    serialNumber: editingMean?.serialNumber || '',
+    invertarNumber: editingMean?.invertarNumber || '',
+    releaseYear: editingMean?.releaseYear || '',
+    manufacturerExploitationTerm:
+      editingMean?.manufacturerExploitationTerm || '',
+    certificateInfo: editingMean?.certificateInfo || '',
+    inStockDate:
+      editingMean?.inStockDate || new Date().toISOString().split('T')[0],
+    notes: editingMean?.notes || '',
   });
 
   const handleChange = (

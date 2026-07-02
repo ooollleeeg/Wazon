@@ -296,8 +296,40 @@ export function aggregateProtectionMeans(filters = {}, callback) {
 
 /**
  * Створити новий запис засобу на складі
- * ЦЕНТРАЛІЗОВАНА ПЕРЕВІРКА ДУБЛІВ ЧЕРЕЗ dbHelpers.js
  */
+function checkDuplicateProtectionMean(category, name, serialNumber, callback) {
+  const sql = `
+    SELECT id, category, name, serialNumber, objectName
+    FROM (
+      SELECT id, lower(category) as category, lower(name) as name, lower(COALESCE(serialNumber, '')) as serialNumber, 'На складі' as objectName
+      FROM protection_means_inventory
+      UNION ALL
+      SELECT pm.id as id, lower(pm.toolType) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, a.systemName as objectName
+      FROM class_a_systems_protection_means pm
+      JOIN class_a_systems a ON pm.systemId = a.id
+      UNION ALL
+      SELECT pm.id as id, lower(pm.toolType) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, sp.subdivisionName as objectName
+      FROM service_premises_protection_means pm
+      JOIN service_premises sp ON pm.premisesId = sp.id
+      UNION ALL
+      SELECT pm.id as id, lower(pm.toolType) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, k.systemName as objectName
+      FROM krt_protection_means pm
+      JOIN krt k ON pm.krtId = k.id
+      UNION ALL
+      SELECT pm.id as id, lower(COALESCE(pm.toolType, '')) as category, lower(pm.name) as name, lower(COALESCE(pm.serialNumber, '')) as serialNumber, i.systemName as objectName
+      FROM iks_protection_means pm
+      JOIN iks i ON pm.iksId = i.id
+    )
+    WHERE category = lower(?) AND name = lower(?) AND serialNumber = lower(COALESCE(?, ''))
+    LIMIT 1
+  `;
+
+  db.get(sql, [category, name, serialNumber], (err, row) => {
+    if (err) return callback(err);
+    callback(null, row);
+  });
+}
+
 export function createInventoryItem(data, callback) {
   const {
     category,
@@ -311,27 +343,29 @@ export function createInventoryItem(data, callback) {
     notes,
   } = data;
 
-  // Централізована перевірка дублів через checkProtectionMeanDuplicate з dbHelpers.js
-  checkProtectionMeanDuplicate(category, name, serialNumber)
-    .then((result) => {
-      if (result.isDuplicate && result.duplicateAt) {
-        const objectName = result.duplicateAt.objectName || 'невідомий об\'єкт';
-        const displayCategory = category || 'Засіб ТЗІ';
-        const displaySerial = serialNumber || '—';
-        const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) вже встановлений на "${objectName}"`;
+  checkDuplicateProtectionMean(
+    category,
+    name,
+    serialNumber,
+    (err, existing) => {
+      if (err) return callback(err);
+      if (existing) {
+        const objectName = existing.objectName || 'невідомий об’єкт';
+        const message =
+          `${category} ${name} ${serialNumber || ''} вже встановлений на ${objectName}`.trim();
         const duplicateError = new Error(message);
         duplicateError.status = 400;
         return callback(duplicateError);
       }
 
-      // Якщо дублю немає - зберігаємо
-      const categoryId = getCategoryIdFromCategory(category);
+      // Get categoryId from category name
+      const categoryId = getCategoryId(category);
 
       const sql = `
-        INSERT INTO protection_means_inventory 
-        (categoryId, category, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, inStockDate, notes, status, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-      `;
+      INSERT INTO protection_means_inventory 
+      (categoryId, category, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, inStockDate, notes, status, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `;
 
       db.run(
         sql,
@@ -356,16 +390,12 @@ export function createInventoryItem(data, callback) {
           }
         },
       );
-    })
-    .catch((err) => {
-      console.error('❌ Error checking duplicate:', err);
-      callback(err);
-    });
+    },
+  );
 }
 
 /**
  * Оновити запис засобу на складі
- * ЦЕНТРАЛІЗОВАНА ПЕРЕВІРКА ДУБЛІВ ЧЕРЕЗ dbHelpers.js
  */
 export function updateInventoryItem(id, data, callback) {
   const {
@@ -381,28 +411,29 @@ export function updateInventoryItem(id, data, callback) {
     status,
   } = data;
 
-  // Централізована перевірка дублів через checkProtectionMeanDuplicate з dbHelpers.js
-  checkProtectionMeanDuplicate(category, name, serialNumber)
-    .then((result) => {
-      // Дозволяємо дублікат, якщо це той самий запис (id)
-      if (result.isDuplicate && result.duplicateAt) {
-        const objectName = result.duplicateAt.objectName || 'невідомий об\'єкт';
-        const displayCategory = category || 'Засіб ТЗІ';
-        const displaySerial = serialNumber || '—';
-        const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) вже встановлений на "${objectName}"`;
+  const sql = `
+    UPDATE protection_means_inventory
+    SET categoryId = ?, category = ?, name = ?, serialNumber = ?, invertarNumber = ?, releaseYear = ?, manufacturerExploitationTerm = ?, certificateInfo = ?, inStockDate = ?, notes = ?, status = ?, updatedAt = datetime('now')
+    WHERE id = ?
+  `;
+
+  checkDuplicateProtectionMean(
+    category,
+    name,
+    serialNumber,
+    (err, existing) => {
+      if (err) return callback(err);
+      if (existing && existing.id !== Number(id)) {
+        const objectName = existing.objectName || 'невідомий об’єкт';
+        const message =
+          `${category} ${name} ${serialNumber || ''} вже встановлений на ${objectName}`.trim();
         const duplicateError = new Error(message);
         duplicateError.status = 400;
         return callback(duplicateError);
       }
 
-      // Якщо дублю немає - оновлюємо
-      const categoryId = getCategoryIdFromCategory(category);
-
-      const sql = `
-        UPDATE protection_means_inventory
-        SET categoryId = ?, category = ?, name = ?, serialNumber = ?, invertarNumber = ?, releaseYear = ?, manufacturerExploitationTerm = ?, certificateInfo = ?, inStockDate = ?, notes = ?, status = ?, updatedAt = datetime('now')
-        WHERE id = ?
-      `;
+      // Get categoryId from category name
+      const categoryId = getCategoryId(category);
 
       db.run(
         sql,
@@ -428,11 +459,8 @@ export function updateInventoryItem(id, data, callback) {
           }
         },
       );
-    })
-    .catch((err) => {
-      console.error('❌ Error checking duplicate:', err);
-      callback(err);
-    });
+    },
+  );
 }
 
 /**
