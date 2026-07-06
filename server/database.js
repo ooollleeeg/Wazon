@@ -742,6 +742,32 @@ function initializeDatabase() {
         }
       },
     );
+
+    // Додати кззCategoryId до таблиці class_a_systems для КЗЗ від НСД
+    db.run(
+      `
+      ALTER TABLE class_a_systems
+      ADD COLUMN kzzCategoryId INTEGER
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ kzzCategoryId колона вже існує в class_a_systems');
+        }
+      },
+    );
+
+    // Додати kzzCategoryId до таблиці iks для КЗЗ від НСД
+    db.run(
+      `
+      ALTER TABLE iks
+      ADD COLUMN kzzCategoryId INTEGER
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ kzzCategoryId колона вже існує в iks');
+        }
+      },
+    );
   });
 }
 

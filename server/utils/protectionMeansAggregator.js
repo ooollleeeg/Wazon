@@ -628,11 +628,12 @@ export function installProtectionMean(data, callback) {
             case 'AS': // АС класу 1,2,3
               insertQuery = `
                 INSERT INTO class_a_systems_protection_means 
-                (systemId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (systemId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
+                mean.categoryId,
                 mean.category,
                 mean.name,
                 mean.serialNumber,
@@ -646,11 +647,12 @@ export function installProtectionMean(data, callback) {
             case 'SP': // Службові приміщення
               insertQuery = `
                 INSERT INTO service_premises_protection_means 
-                (premisesId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (premisesId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
+                mean.categoryId,
                 mean.category,
                 mean.name,
                 mean.serialNumber,
@@ -664,11 +666,12 @@ export function installProtectionMean(data, callback) {
             case 'KRT': // КРТ
               insertQuery = `
                 INSERT INTO krt_protection_means 
-                (krtId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (krtId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
+                mean.categoryId,
                 mean.category,
                 mean.name,
                 mean.serialNumber,
@@ -682,11 +685,12 @@ export function installProtectionMean(data, callback) {
             case 'IKS': // ІКС
               insertQuery = `
                 INSERT INTO iks_protection_means 
-                (iksId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (iksId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
+                mean.categoryId,
                 mean.category,
                 mean.name,
                 mean.serialNumber,
