@@ -768,6 +768,62 @@ function initializeDatabase() {
         }
       },
     );
+
+    // Виправити NULL categoryId - встановити категорію за toolType
+    const categoryMap = {
+      'Генератор радіочастотного зашумлення': 1,
+      'Фільтр електроживлення': 2,
+      'Мережевий трансформатор': 3,
+      'Генератор акустичного зашумлення': 4,
+      Віброперетворювач: 5,
+      'Акустичний випромінювач': 6,
+      'Виріб типу "SRC-300"': 7,
+      'КЗЗ від НСД': 8,
+      'Інші вироби': 9,
+    };
+
+    const tables = [
+      'class_a_systems_protection_means',
+      'service_premises_protection_means',
+      'krt_protection_means',
+      'iks_protection_means',
+    ];
+
+    tables.forEach((tableName) => {
+      db.all(
+        `SELECT id, toolType FROM ${tableName} WHERE categoryId IS NULL`,
+        (err, rows) => {
+          if (err) {
+            console.warn(`⚠️ Error reading ${tableName}:`, err.message);
+            return;
+          }
+
+          if (!rows || rows.length === 0) return;
+
+          rows.forEach((row) => {
+            const categoryId = categoryMap[row.toolType];
+            if (categoryId) {
+              db.run(
+                `UPDATE ${tableName} SET categoryId = ? WHERE id = ?`,
+                [categoryId, row.id],
+                (updateErr) => {
+                  if (updateErr) {
+                    console.warn(
+                      `⚠️ Error fixing ${tableName} id=${row.id}:`,
+                      updateErr.message,
+                    );
+                  } else {
+                    console.log(
+                      `✅ Fixed NULL categoryId in ${tableName} id=${row.id}: "${row.toolType}" → ${categoryId}`,
+                    );
+                  }
+                },
+              );
+            }
+          });
+        },
+      );
+    });
   });
 }
 

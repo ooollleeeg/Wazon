@@ -585,7 +585,7 @@ export function installProtectionMean(data, callback) {
               insertQuery = `
                 UPDATE class_a_systems 
                 SET kzzName = ?, kzzSerial = ?, kzzExpertOpinionNumber = ?, 
-                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?
+                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?, kzzCategoryId = ?
                 WHERE id = ?
               `;
               insertParams = [
@@ -594,6 +594,7 @@ export function installProtectionMean(data, callback) {
                 mean.certificateInfo || '',
                 mean.releaseYear || '',
                 mean.manufacturerExploitationTerm || '',
+                mean.categoryId,
                 objectId,
               ];
               break;
@@ -602,7 +603,7 @@ export function installProtectionMean(data, callback) {
               insertQuery = `
                 UPDATE iks 
                 SET kzzName = ?, kzzSerial = ?, kzzExpertOpinionNumber = ?, 
-                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?
+                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?, kzzCategoryId = ?
                 WHERE id = ?
               `;
               insertParams = [
@@ -611,6 +612,7 @@ export function installProtectionMean(data, callback) {
                 mean.certificateInfo || '',
                 mean.releaseYear || '',
                 mean.manufacturerExploitationTerm || '',
+                mean.categoryId,
                 objectId,
               ];
               break;
