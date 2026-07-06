@@ -203,7 +203,6 @@ const ProtectionMeansTab = () => {
       if (!selectedMean) {
         const validationResult = await validateBeforeSave(
           formData.category,
-          formData.name,
           formData.serialNumber,
         );
 

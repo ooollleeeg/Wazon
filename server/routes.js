@@ -343,28 +343,27 @@ router.delete('/protection-means/inventory/:id', (req, res) => {
 
 /**
  * POST /api/protection-means/check-duplicate - Перевірити дублікат засобу ТЗІ
- * Очікує: { categoryId: number, name: string, serialNumber?: string }
+ * Очікує: { categoryId: number, serialNumber?: string }
+ * Дублікат = categoryId + serialNumber обидва збігаються, S/N не порожній
  * Возвращает: { isDuplicate: boolean, duplicateAt?: { source, objectName, objectId } }
  */
 router.post('/protection-means/check-duplicate', async (req, res) => {
   try {
-    const { categoryId, name, serialNumber } = req.body;
+    const { categoryId, serialNumber } = req.body;
 
     console.log('🔍 POST /api/protection-means/check-duplicate', {
       categoryId,
-      name,
       serialNumber,
     });
 
-    if (!categoryId || !name) {
+    if (!categoryId) {
       return res.status(400).json({
-        error: "categoryId та name обов'язкові",
+        error: "categoryId обов'язковий",
       });
     }
 
     const result = await checkProtectionMeanDuplicate(
       categoryId,
-      name,
       serialNumber || '',
     );
 

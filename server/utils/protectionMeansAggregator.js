@@ -311,11 +311,19 @@ export function createInventoryItem(data, callback) {
     notes,
   } = data;
 
-  // Централізована перевірка дублів через checkProtectionMeanDuplicate з dbHelpers.js
-  checkProtectionMeanDuplicate(category, name, serialNumber)
+  // Get categoryId first
+  const categoryId = getCategoryIdFromCategory(category);
+  if (!categoryId) {
+    const err = new Error(`Невідома категорія: ${category}`);
+    err.status = 400;
+    return callback(err);
+  }
+
+  // Централізована перевірка дублів: тільки categoryId + serialNumber
+  checkProtectionMeanDuplicate(categoryId, serialNumber)
     .then((result) => {
       if (result.isDuplicate && result.duplicateAt) {
-        const objectName = result.duplicateAt.objectName || 'невідомий об\'єкт';
+        const objectName = result.duplicateAt.objectName || "невідомий об'єкт";
         const displayCategory = category || 'Засіб ТЗІ';
         const displaySerial = serialNumber || '—';
         const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) вже встановлений на "${objectName}"`;
@@ -325,8 +333,6 @@ export function createInventoryItem(data, callback) {
       }
 
       // Якщо дублю немає - зберігаємо
-      const categoryId = getCategoryIdFromCategory(category);
-
       const sql = `
         INSERT INTO protection_means_inventory 
         (categoryId, category, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, inStockDate, notes, status, createdAt, updatedAt)
@@ -381,12 +387,20 @@ export function updateInventoryItem(id, data, callback) {
     status,
   } = data;
 
-  // Централізована перевірка дублів через checkProtectionMeanDuplicate з dbHelpers.js
-  checkProtectionMeanDuplicate(category, name, serialNumber)
+  // Get categoryId first
+  const categoryId = getCategoryIdFromCategory(category);
+  if (!categoryId) {
+    const err = new Error(`Невідома категорія: ${category}`);
+    err.status = 400;
+    return callback(err);
+  }
+
+  // Централізована перевірка дублів: тільки categoryId + serialNumber
+  checkProtectionMeanDuplicate(categoryId, serialNumber)
     .then((result) => {
       // Дозволяємо дублікат, якщо це той самий запис (id)
       if (result.isDuplicate && result.duplicateAt) {
-        const objectName = result.duplicateAt.objectName || 'невідомий об\'єкт';
+        const objectName = result.duplicateAt.objectName || "невідомий об'єкт";
         const displayCategory = category || 'Засіб ТЗІ';
         const displaySerial = serialNumber || '—';
         const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) вже встановлений на "${objectName}"`;
@@ -396,8 +410,6 @@ export function updateInventoryItem(id, data, callback) {
       }
 
       // Якщо дублю немає - оновлюємо
-      const categoryId = getCategoryIdFromCategory(category);
-
       const sql = `
         UPDATE protection_means_inventory
         SET categoryId = ?, category = ?, name = ?, serialNumber = ?, invertarNumber = ?, releaseYear = ?, manufacturerExploitationTerm = ?, certificateInfo = ?, inStockDate = ?, notes = ?, status = ?, updatedAt = datetime('now')

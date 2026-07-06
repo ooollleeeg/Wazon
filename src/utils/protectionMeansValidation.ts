@@ -12,14 +12,13 @@ export interface DuplicateCheckResult {
 
 /**
  * Перевірити дублікат засобу ТЗІ за допомогою API
+ * Дублікат = categoryId + serialNumber обидва збігаються, S/N не порожній
  * @param categoryName Назва категорії (укр)
- * @param name Назва засобу
  * @param serialNumber Серійний номер
  * @returns Promise<DuplicateCheckResult>
  */
 export const checkDuplicateProtectionMean = async (
   categoryName: string,
-  name: string,
   serialNumber?: string,
 ): Promise<DuplicateCheckResult> => {
   try {
@@ -32,14 +31,10 @@ export const checkDuplicateProtectionMean = async (
       };
     }
 
-    // Don't check if required fields are missing
-    if (!name || !name.trim()) {
+    // Empty serial number is never a duplicate
+    if (!serialNumber || !serialNumber.trim()) {
       return { isDuplicate: false };
     }
-
-    // === НОРМАЛІЗАЦІЯ ДЛЯ ПЕРЕВІРКИ БЕЗ УРАХУВАННЯ РЕГІСТРУ ===
-    const normalizedName = name.trim().toLowerCase();
-    const normalizedSerialNumber = (serialNumber || '').trim().toLowerCase();
 
     const response = await fetch('/api/protection-means/check-duplicate', {
       method: 'POST',
@@ -48,8 +43,7 @@ export const checkDuplicateProtectionMean = async (
       },
       body: JSON.stringify({
         categoryId,
-        name: normalizedName, // відправляємо в нижньому регістрі
-        serialNumber: normalizedSerialNumber, // відправляємо в нижньому регістрі
+        serialNumber: serialNumber.trim(),
       }),
     });
 
@@ -78,7 +72,6 @@ export const checkDuplicateProtectionMean = async (
  */
 export const validateBeforeSave = async (
   categoryName: string,
-  name: string,
   serialNumber?: string,
 ): Promise<{
   isValid: boolean;
@@ -88,11 +81,7 @@ export const validateBeforeSave = async (
     objectId: number;
   };
 }> => {
-  const result = await checkDuplicateProtectionMean(
-    categoryName,
-    name,
-    serialNumber,
-  );
+  const result = await checkDuplicateProtectionMean(categoryName, serialNumber);
 
   if (result.error) {
     console.warn('⚠️ Validation error:', result.error);
