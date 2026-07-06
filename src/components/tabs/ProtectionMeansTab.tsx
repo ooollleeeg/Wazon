@@ -222,12 +222,18 @@ const ProtectionMeansTab = () => {
 
       // Якщо редагується существуючий запис
       if (selectedMean) {
+        // Додаємо статус до formData при редагуванні
+        const updateData = {
+          ...formData,
+          status: selectedMean.status || 'in_stock', // Зберігаємо оригінальний статус
+        };
+
         const response = await fetch(
           `/api/protection-means/inventory/${selectedMean.id}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(updateData),
           },
         );
 
