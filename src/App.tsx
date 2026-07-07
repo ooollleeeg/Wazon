@@ -77,7 +77,7 @@ const TABS: Tab[] = [
   },
   {
     id: 'search-control',
-    label: 'Пошукова техніка',
+    label: 'Вимірювальна та пошукова техніка',
     icon: '🔍',
     component: SearchControlEquipmentTab,
     color: '#30b0c0',

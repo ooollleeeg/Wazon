@@ -523,7 +523,7 @@ export const objectTypes = {
   },
   'search-control-equipment': {
     table: 'search_control_equipment',
-    label: 'Пошукова техніка',
+    label: 'Вимірювальна та пошукова техніка',
     icon: '🔍',
     fields: [
       { name: 'name', label: 'Назва', type: 'text', required: true },
