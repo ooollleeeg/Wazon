@@ -155,6 +155,25 @@ const ProtectionMeansTab = () => {
     objectType: string,
   ) => {
     try {
+      // Перевіримо дублювання перед встановленням
+      const validationResult = await validateBeforeSave(
+        mean.category,
+        mean.serialNumber,
+      );
+
+      if (!validationResult.isValid && validationResult.duplicateAt) {
+        // Показуємо помилку дублювання
+        setDuplicateError({
+          category: mean.category,
+          name: mean.name,
+          serialNumber: mean.serialNumber || '',
+          location: validationResult.duplicateAt,
+        });
+        setShowDuplicateError(true);
+        handleCloseInstallModal();
+        return;
+      }
+
       // Готуємо дані для встановлення
       const installData = {
         meanId: mean.id,
