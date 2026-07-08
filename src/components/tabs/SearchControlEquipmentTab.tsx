@@ -154,64 +154,59 @@ const SearchControlEquipmentTab = () => {
 
   return (
     <div className='search-control-equipment-tab'>
-      <div className='equipment-header'>
-        <h2>🔍 Вимірювальна та пошукова техніка</h2>
+      <h2>🔍 Вимірювальна та пошукова техніка</h2>
 
-        {/* Статистика */}
-        {stats && (
-          <div className='equipment-stats'>
-            <div className='stat-card'>
-              <div className='stat-value'>{stats.total}</div>
-              <div className='stat-label'>Всього засобів</div>
-            </div>
-            <div className='stat-card'>
-              <div className='stat-value'>{stats.specialSearch}</div>
-              <div className='stat-label'>Спеціальна пошукова техніка</div>
-            </div>
-            <div className='stat-card'>
-              <div className='stat-value'>{stats.measurementControl}</div>
-              <div className='stat-label'>Контрольно-вимірювальна техніка</div>
-            </div>
+      {/* Статистика */}
+      {stats && (
+        <div className='equipment-stats'>
+          <div className='stat-card'>
+            <div className='stat-value'>{stats.total}</div>
+            <div className='stat-label'>Всього засобів</div>
           </div>
-        )}
-      </div>
+          <div className='stat-card'>
+            <div className='stat-value'>{stats.specialSearch}</div>
+            <div className='stat-label'>Спеціальна пошукова техніка</div>
+          </div>
+          <div className='stat-card'>
+            <div className='stat-value'>{stats.measurementControl}</div>
+            <div className='stat-label'>Контрольно-вимірювальна техніка</div>
+          </div>
+        </div>
+      )}
 
+      {/* Панель фільтрів */}
+      <SearchControlEquipmentFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+      />
+
+      {/* Кнопка додавання */}
+      <button
+        className='btn-add-equipment'
+        onClick={() => {
+          setSelectedEquipment(null);
+          setShowModal(true);
+        }}
+      >
+        + Додати одиницю техніки
+      </button>
+
+      {/* Основний вміст з таблицею */}
       <div className='equipment-content'>
-        {/* Бокова панель з фільтрами */}
-        <aside className='equipment-sidebar'>
-          <SearchControlEquipmentFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
+        {loading && <p className='loading-message'>⏳ Завантаження...</p>}
+        {error && <p className='error-message'>❌ {error}</p>}
+
+        {!loading && equipment.length === 0 && (
+          <p className='empty-message'>Обладнання не знайдено</p>
+        )}
+
+        {!loading && equipment.length > 0 && (
+          <SearchControlEquipmentTable
+            equipment={equipment}
+            onViewDetails={handleViewDetails}
+            onDelete={handleDeleteClick}
           />
-
-          <button
-            className='btn-add-equipment'
-            onClick={() => {
-              setSelectedEquipment(null);
-              setShowModal(true);
-            }}
-          >
-            + Додати одиницю техніки
-          </button>
-        </aside>
-
-        {/* Основний вміст */}
-        <main className='equipment-main'>
-          {loading && <p className='loading-message'>⏳ Завантаження...</p>}
-          {error && <p className='error-message'>❌ {error}</p>}
-
-          {!loading && equipment.length === 0 && (
-            <p className='empty-message'>Обладнання не знайдено</p>
-          )}
-
-          {!loading && equipment.length > 0 && (
-            <SearchControlEquipmentTable
-              equipment={equipment}
-              onViewDetails={handleViewDetails}
-              onDelete={handleDeleteClick}
-            />
-          )}
-        </main>
+        )}
       </div>
 
       {/* Модальне вікно деталей */}

@@ -8,15 +8,8 @@
   padding: 0;
 }
 
-.equipment-header {
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #30b0c0 0%, #43e97b 100%);
-  border-radius: 12px;
-  color: white;
-}
-
-.equipment-header h2 {
-  margin: 0 0 1.5rem 0;
+.search-control-equipment-tab h2 {
+  margin: 0;
   font-size: 1.8rem;
   font-weight: 600;
 }
@@ -25,21 +18,22 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
+  margin: 1.5rem 0 0 0;
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(135deg, #30b0c0 0%, #43e97b 100%);
   padding: 1.2rem;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: none;
   text-align: center;
   transition: all 0.3s ease;
+  color: white;
 }
 
 .stat-card:hover {
-  background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(48, 176, 192, 0.3);
 }
 
 .stat-value {
@@ -54,21 +48,6 @@
   font-weight: 500;
 }
 
-.equipment-content {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 1.5rem;
-  flex: 1;
-  min-height: 0;
-}
-
-.equipment-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 0;
-}
-
 .btn-add-equipment {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -79,7 +58,7 @@
   font-weight: 600;
   font-size: 0.95rem;
   transition: all 0.3s ease;
-  width: 100%;
+  align-self: flex-start;
 }
 
 .btn-add-equipment:hover {
@@ -91,13 +70,57 @@
   transform: translateY(0);
 }
 
-.equipment-main {
+.equipment-content {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   background: white;
   border-radius: 12px;
   border: 1px solid #e0e0e0;
   overflow: auto;
+  padding: 1.5rem;
+}
+
+.loading-message,
+.error-message,
+.empty-message {
+  padding: 2rem;
+  text-align: center;
+  font-size: 1rem;
+  color: #666;
+}
+
+.error-message {
+  color: #d32f2f;
+  background: #ffebee;
+  border: 1px solid #ef5350;
+}
+
+.empty-message {
+  color: #999;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .equipment-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .search-control-equipment-tab h2 {
+    font-size: 1.4rem;
+  }
+
+  .equipment-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .equipment-content {
+    padding: 1rem;
+  }
 }
 
 .loading-message,

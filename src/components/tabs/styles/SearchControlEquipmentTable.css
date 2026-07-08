@@ -2,7 +2,7 @@
 
 .search-control-table-wrapper {
   overflow-x: auto;
-  flex: 1;
+  width: 100%;
 }
 
 .search-control-table {

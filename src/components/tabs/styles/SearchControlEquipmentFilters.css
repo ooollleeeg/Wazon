@@ -9,10 +9,14 @@
 
 .filters-section {
   padding: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
 }
 
 .filters-section h3 {
-  margin: 0 0 1.25rem 0;
+  grid-column: 1 / -1;
+  margin: 0 0 0 0;
   font-size: 1.1rem;
   font-weight: 600;
   color: #333;
@@ -22,13 +26,8 @@
 }
 
 .filter-group {
-  margin-bottom: 1.25rem;
   display: flex;
   flex-direction: column;
-}
-
-.filter-group:last-child {
-  margin-bottom: 0;
 }
 
 .filter-group label {
@@ -81,12 +80,20 @@
   cursor: not-allowed;
 }
 
+/* Responsive */
+@media (max-width: 1024px) {
+  .filters-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .filters-section {
+    grid-template-columns: 1fr;
     padding: 1rem;
   }
 
   .filter-group {
-    margin-bottom: 1rem;
+    margin-bottom: 0;
   }
 }
