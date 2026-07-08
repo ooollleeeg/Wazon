@@ -403,4 +403,313 @@ router.post('/protection-means/install', (req, res) => {
   );
 });
 
+// ===== SEARCH CONTROL EQUIPMENT ENDPOINTS =====
+
+/**
+ * GET /api/search-control-equipment - Отримати список пошукової/вимірювальної техніки з фільтрацією
+ */
+router.get('/search-control-equipment', (req, res) => {
+  try {
+    const { search, category, technicalCondition } = req.query;
+    let query = 'SELECT * FROM search_control_equipment WHERE 1=1';
+    const params = [];
+
+    if (category) {
+      query += ' AND category = ?';
+      params.push(category);
+    }
+
+    if (technicalCondition) {
+      query += ' AND technicalCondition = ?';
+      params.push(technicalCondition);
+    }
+
+    if (search) {
+      query += ` AND (
+        name LIKE ? OR 
+        serialNumber LIKE ? OR 
+        invertarNumber LIKE ? OR 
+        releaseYear LIKE ?
+      )`;
+      const searchPattern = `%${search}%`;
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+    }
+
+    query += ' ORDER BY createdAt DESC';
+
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        console.error('❌ Error fetching search control equipment:', err);
+        res.status(500).json({ error: err.message });
+      } else {
+        // Отримати статистику
+        db.all(
+          `SELECT 
+            COUNT(*) as total,
+            SUM(CASE WHEN category = 'Спеціальна пошукова техніка' THEN 1 ELSE 0 END) as specialSearch,
+            SUM(CASE WHEN category = 'Контрольно-вимірювальна техніка' THEN 1 ELSE 0 END) as measurementControl
+          FROM search_control_equipment`,
+          (statsErr, statsRows) => {
+            const stats = statsErr ? null : statsRows[0];
+            res.json({ items: rows || [], stats });
+          },
+        );
+      }
+    });
+  } catch (err) {
+    console.error('❌ Error in GET /search-control-equipment:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/search-control-equipment/:id - Отримати одиницю техніки з її повіркою
+ */
+router.get('/search-control-equipment/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    db.get(
+      'SELECT * FROM search_control_equipment WHERE id = ?',
+      [id],
+      (err, equipment) => {
+        if (err) {
+          console.error('❌ Error fetching equipment:', err);
+          res.status(500).json({ error: err.message });
+        } else if (!equipment) {
+          res.status(404).json({ error: 'Equipment not found' });
+        } else {
+          // Отримати повірки
+          db.all(
+            'SELECT * FROM search_control_equipment_verification WHERE equipmentId = ? ORDER BY verificationDate DESC',
+            [id],
+            (verifyErr, verifications) => {
+              if (verifyErr) {
+                console.error('❌ Error fetching verifications:', verifyErr);
+              }
+              res.json({ ...equipment, verifications: verifications || [] });
+            },
+          );
+        }
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in GET /search-control-equipment/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/search-control-equipment - Створити нову одиницю техніки
+ */
+router.post('/search-control-equipment', (req, res) => {
+  try {
+    const {
+      category,
+      name,
+      serialNumber,
+      invertarNumber,
+      releaseYear,
+      technicalCondition,
+      pricePerUnit,
+      notes,
+    } = req.body;
+
+    if (!category || !name || !technicalCondition) {
+      return res
+        .status(400)
+        .json({
+          error: 'Missing required fields: category, name, technicalCondition',
+        });
+    }
+
+    db.run(
+      `INSERT INTO search_control_equipment (category, name, serialNumber, invertarNumber, releaseYear, technicalCondition, pricePerUnit, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        category,
+        name,
+        serialNumber,
+        invertarNumber,
+        releaseYear,
+        technicalCondition,
+        pricePerUnit,
+        notes,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error creating equipment:', err);
+          res.status(500).json({ error: err.message });
+        } else {
+          res.json({
+            id: this.lastID,
+            message: 'Equipment created successfully',
+          });
+        }
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in POST /search-control-equipment:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /api/search-control-equipment/:id - Редагувати одиницю техніки
+ */
+router.put('/search-control-equipment/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      category,
+      name,
+      serialNumber,
+      invertarNumber,
+      releaseYear,
+      technicalCondition,
+      pricePerUnit,
+      notes,
+    } = req.body;
+
+    db.run(
+      `UPDATE search_control_equipment 
+       SET category = ?, name = ?, serialNumber = ?, invertarNumber = ?, releaseYear = ?, technicalCondition = ?, pricePerUnit = ?, notes = ?, updatedAt = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        category,
+        name,
+        serialNumber,
+        invertarNumber,
+        releaseYear,
+        technicalCondition,
+        pricePerUnit,
+        notes,
+        id,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error updating equipment:', err);
+          res.status(500).json({ error: err.message });
+        } else if (this.changes === 0) {
+          res.status(404).json({ error: 'Equipment not found' });
+        } else {
+          res.json({ message: 'Equipment updated successfully' });
+        }
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in PUT /search-control-equipment/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/search-control-equipment/:id - Видалити одиницю техніки
+ */
+router.delete('/search-control-equipment/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    db.run(
+      'DELETE FROM search_control_equipment WHERE id = ?',
+      [id],
+      function (err) {
+        if (err) {
+          console.error('❌ Error deleting equipment:', err);
+          res.status(500).json({ error: err.message });
+        } else if (this.changes === 0) {
+          res.status(404).json({ error: 'Equipment not found' });
+        } else {
+          res.json({ message: 'Equipment deleted successfully' });
+        }
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in DELETE /search-control-equipment/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/search-control-equipment/:id/verification - Додати метрологічну повірку
+ */
+router.post('/search-control-equipment/:id/verification', (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      certificateRegNumber,
+      verificationDate,
+      validUntil,
+      verificationCost,
+    } = req.body;
+
+    if (!verificationDate || !validUntil) {
+      return res
+        .status(400)
+        .json({
+          error: 'Missing required fields: verificationDate, validUntil',
+        });
+    }
+
+    db.run(
+      `INSERT INTO search_control_equipment_verification (equipmentId, certificateRegNumber, verificationDate, validUntil, verificationCost)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        id,
+        certificateRegNumber,
+        verificationDate,
+        validUntil,
+        verificationCost,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error creating verification:', err);
+          res.status(500).json({ error: err.message });
+        } else {
+          res.json({
+            id: this.lastID,
+            message: 'Verification created successfully',
+          });
+        }
+      },
+    );
+  } catch (err) {
+    console.error(
+      '❌ Error in POST /search-control-equipment/:id/verification:',
+      err,
+    );
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/search-control-equipment/:id/verification/:verificationId - Видалити повірку
+ */
+router.delete(
+  '/search-control-equipment/:id/verification/:verificationId',
+  (req, res) => {
+    try {
+      const { verificationId } = req.params;
+      db.run(
+        'DELETE FROM search_control_equipment_verification WHERE id = ?',
+        [verificationId],
+        function (err) {
+          if (err) {
+            console.error('❌ Error deleting verification:', err);
+            res.status(500).json({ error: err.message });
+          } else if (this.changes === 0) {
+            res.status(404).json({ error: 'Verification not found' });
+          } else {
+            res.json({ message: 'Verification deleted successfully' });
+          }
+        },
+      );
+    } catch (err) {
+      console.error(
+        '❌ Error in DELETE /search-control-equipment/:id/verification/:verificationId:',
+        err,
+      );
+      res.status(500).json({ error: err.message });
+    }
+  },
+);
+
 export default router;

@@ -676,6 +676,37 @@ function initializeDatabase() {
       )
     `);
 
+    // Таблиця для пошукової/вимірювальної техніки
+    db.run(`
+      CREATE TABLE IF NOT EXISTS search_control_equipment (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT NOT NULL,
+        name TEXT NOT NULL,
+        serialNumber TEXT,
+        invertarNumber TEXT,
+        releaseYear INTEGER,
+        technicalCondition TEXT NOT NULL,
+        pricePerUnit REAL,
+        notes TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Таблиця для метрологічної повірки (nested для контрольно-вимірювальної техніки)
+    db.run(`
+      CREATE TABLE IF NOT EXISTS search_control_equipment_verification (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipmentId INTEGER NOT NULL,
+        certificateRegNumber TEXT,
+        verificationDate TEXT,
+        validUntil TEXT,
+        verificationCost REAL,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (equipmentId) REFERENCES search_control_equipment(id) ON DELETE CASCADE
+      )
+    `);
+
     // Додати колону categoryId до існуючих таблиць, якщо вона ще не існує
     db.run(
       `

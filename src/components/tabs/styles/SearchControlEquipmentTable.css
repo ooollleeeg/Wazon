@@ -1,0 +1,182 @@
+/* SearchControlEquipmentTable.css */
+
+.search-control-table-wrapper {
+  overflow-x: auto;
+  flex: 1;
+}
+
+.search-control-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  background: white;
+}
+
+.search-control-table thead {
+  background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.search-control-table th {
+  padding: 1rem 0.875rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+  white-space: nowrap;
+}
+
+.search-control-table td {
+  padding: 0.875rem;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+
+.search-control-table tbody tr {
+  transition: background-color 0.3s ease;
+}
+
+.search-control-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.search-control-table tbody tr:last-child td {
+  border-bottom: 1px solid #ddd;
+}
+
+/* Category Badge */
+.category-badge {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: #e3f2fd;
+  color: #1976d2;
+  white-space: nowrap;
+}
+
+/* Name Cell */
+.name-cell {
+  max-width: 250px;
+}
+
+.name {
+  font-weight: 500;
+  color: #333;
+  word-break: break-word;
+}
+
+.notes {
+  display: block;
+  color: #999;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Condition Badge */
+.condition-badge {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.condition-badge.справна {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.condition-badge.несправна {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* Price Cell */
+.price {
+  text-align: right;
+  font-weight: 500;
+  color: #666;
+}
+
+/* Actions */
+.actions {
+  text-align: center;
+}
+
+.btn-details {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.btn-details:hover {
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.1);
+}
+
+.btn-details:active {
+  transform: scale(0.95);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .search-control-table {
+    font-size: 0.85rem;
+  }
+
+  .search-control-table th,
+  .search-control-table td {
+    padding: 0.6rem 0.5rem;
+  }
+
+  .name-cell {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-control-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .search-control-table {
+    font-size: 0.8rem;
+    min-width: 900px;
+  }
+
+  .search-control-table th,
+  .search-control-table td {
+    padding: 0.5rem;
+  }
+
+  .name {
+    font-size: 0.85rem;
+  }
+
+  .notes {
+    display: none;
+  }
+
+  .btn-details {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 1rem;
+  }
+}

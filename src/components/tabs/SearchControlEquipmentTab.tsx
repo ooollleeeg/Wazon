@@ -1,236 +1,248 @@
-import React, { useState, useEffect } from 'react';
-import '../../styles/TabContent.css';
+import { useEffect, useState } from 'react';
+import SearchControlEquipmentFilters from './SearchControlEquipmentFilters';
+import SearchControlEquipmentTable from './SearchControlEquipmentTable';
+import SearchControlEquipmentModal from './SearchControlEquipmentModal';
+import DeleteConfirmModal from '../modals/DeleteConfirmModal';
+import '../../styles/SearchControlEquipmentTab.css';
 
-function SearchControlEquipmentTab() {
-  const [equipment, setEquipment] = useState([]);
-  const [selectedEquipment, setSelectedEquipment] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+interface EquipmentStats {
+  total: number;
+  specialSearch: number;
+  measurementControl: number;
+}
+
+interface EquipmentItem {
+  id: number;
+  category: string;
+  name: string;
+  serialNumber: string;
+  invertarNumber: string;
+  releaseYear: number;
+  technicalCondition: string;
+  pricePerUnit: number;
+  notes: string;
+  verifications?: Array<{
+    id: number;
+    certificateRegNumber: string;
+    verificationDate: string;
+    validUntil: string;
+    verificationCost: number;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const SearchControlEquipmentTab = () => {
+  const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
+  const [stats, setStats] = useState<EquipmentStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [filters, setFilters] = useState({
+    search: '',
+    category: '',
+    technicalCondition: '',
+  });
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] =
+    useState<EquipmentItem | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [equipmentToDelete, setEquipmentToDelete] =
+    useState<EquipmentItem | null>(null);
+
+  // Завантажити дані
+  const fetchEquipment = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams();
+      if (filters.search) queryParams.append('search', filters.search);
+      if (filters.category) queryParams.append('category', filters.category);
+      if (filters.technicalCondition)
+        queryParams.append('technicalCondition', filters.technicalCondition);
+
+      const response = await fetch(
+        `/api/search-control-equipment?${queryParams}`,
+      );
+      if (!response.ok) throw new Error('Помилка при завантаженні даних');
+
+      const data = await response.json();
+      setEquipment(data.items || []);
+      setStats(data.stats);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(message);
+      console.error('❌ Error fetching equipment:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchEquipment();
-  }, []);
+  }, [filters]);
 
-  const fetchEquipment = async () => {
+  const handleFilterChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
+  const handleViewDetails = async (item: EquipmentItem) => {
     try {
-      const response = await fetch('/api/search-control-equipment');
-      const data = await response.json();
-      setEquipment(data);
-    } catch (error) {
-      console.error('Ошибка загрузки:', error);
+      const response = await fetch(`/api/search-control-equipment/${item.id}`);
+      if (!response.ok) throw new Error('Помилка при завантаженні деталей');
+      const detailedItem = await response.json();
+      setSelectedEquipment(detailedItem);
+      setShowModal(true);
+    } catch (err) {
+      console.error('❌ Error fetching details:', err);
+      setError('Помилка при завантаженні деталей');
     }
   };
 
-  const handleAddEquipment = async (data) => {
+  const handleSaveEquipment = async (data: Partial<EquipmentItem>) => {
     try {
-      const response = await fetch('/api/search-control-equipment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const newEquipment = await response.json();
-      setEquipment([...equipment, newEquipment]);
-      setShowForm(false);
-    } catch (error) {
-      console.error('Ошибка добавления:', error);
-    }
-  };
+      const url = selectedEquipment
+        ? `/api/search-control-equipment/${selectedEquipment.id}`
+        : '/api/search-control-equipment';
 
-  const handleUpdateEquipment = async (id, data) => {
-    try {
-      const response = await fetch(`/api/search-control-equipment/${id}`, {
-        method: 'PUT',
+      const method = selectedEquipment ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      const updated = await response.json();
-      setEquipment(equipment.map((e) => (e.id === id ? updated : e)));
+
+      if (!response.ok) throw new Error('Помилка при збереженні');
+
+      setShowModal(false);
       setSelectedEquipment(null);
-    } catch (error) {
-      console.error('Ошибка обновления:', error);
+      await fetchEquipment();
+    } catch (err) {
+      console.error('❌ Error saving equipment:', err);
+      setError('Помилка при збереженні');
     }
   };
 
-  const handleDeleteEquipment = async (id) => {
-    if (window.confirm('Видалити обладнання?')) {
-      try {
-        await fetch(`/api/search-control-equipment/${id}`, {
+  const handleDeleteClick = (item: EquipmentItem) => {
+    setEquipmentToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!equipmentToDelete) return;
+
+    try {
+      const response = await fetch(
+        `/api/search-control-equipment/${equipmentToDelete.id}`,
+        {
           method: 'DELETE',
-        });
-        setEquipment(equipment.filter((e) => e.id !== id));
-        setSelectedEquipment(null);
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
-      }
+        },
+      );
+
+      if (!response.ok) throw new Error('Помилка при видаленні');
+
+      setShowDeleteModal(false);
+      setEquipmentToDelete(null);
+      await fetchEquipment();
+    } catch (err) {
+      console.error('❌ Error deleting equipment:', err);
+      setError('Помилка при видаленні');
     }
   };
 
   return (
-    <div className='tab-layout'>
-      <aside className='tab-sidebar'>
-        <button className='btn-add' onClick={() => setShowForm(!showForm)}>
-          {showForm ? '✕ Отменить' : '+ Додати обладнання'}
-        </button>
-        <div className='property-list'>
-          <div className='search-box'>
-            <input type='text' placeholder='🔍 Пошук...' />
-          </div>
-          <div className='property-items'>
-            {equipment.length === 0 ? (
-              <p className='empty'>Обладнання не знайдено</p>
-            ) : (
-              equipment.map((item) => (
-                <div
-                  key={item.id}
-                  className={`property-item ${selectedEquipment?.id === item.id ? 'active' : ''}`}
-                  onClick={() => setSelectedEquipment(item)}
-                >
-                  <div className='item-address'>🔍 {item.name}</div>
-                  <div className='item-meta'>
-                    <span className='badge'>{item.type}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          <div className='list-footer'>
-            <small>Всього: {equipment.length}</small>
-          </div>
-        </div>
-      </aside>
+    <div className='search-control-equipment-tab'>
+      <div className='equipment-header'>
+        <h2>🔍 Вимірювальна та пошукова техніка</h2>
 
-      <main className='tab-main'>
-        {showForm ? (
-          <form
-            className='property-form'
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleAddEquipment({
-                name: formData.get('name'),
-                type: formData.get('type'),
-                location: formData.get('location'),
-                calibrationDate: formData.get('calibrationDate'),
-                notes: formData.get('notes'),
-              });
-            }}
-          >
-            <div className='form-section'>
-              <h2>🔍 Пошукова та контрольно-вимірювальна техніка</h2>
-              <div className='form-group'>
-                <label>Назва *</label>
-                <input
-                  type='text'
-                  name='name'
-                  placeholder='Назва обладнання'
-                  required
-                />
-              </div>
-              <div className='form-row'>
-                <div className='form-group'>
-                  <label>Тип</label>
-                  <input type='text' name='type' placeholder='Тип обладнання' />
-                </div>
-                <div className='form-group'>
-                  <label>Місцеположення</label>
-                  <input
-                    type='text'
-                    name='location'
-                    placeholder='Де розташоване'
-                  />
-                </div>
-              </div>
-              <div className='form-group'>
-                <label>Дата калібрування</label>
-                <input type='date' name='calibrationDate' />
-              </div>
-              <div className='form-group'>
-                <label>Примітки</label>
-                <textarea
-                  name='notes'
-                  placeholder='Додаткова інформація...'
-                  rows={4}
-                ></textarea>
-              </div>
+        {/* Статистика */}
+        {stats && (
+          <div className='equipment-stats'>
+            <div className='stat-card'>
+              <div className='stat-value'>{stats.total}</div>
+              <div className='stat-label'>Всього засобів</div>
             </div>
-            <div className='form-actions'>
-              <button type='submit' className='btn-primary'>
-                ✓ Зберегти
-              </button>
-              <button
-                type='button'
-                className='btn-secondary'
-                onClick={() => setShowForm(false)}
-              >
-                ✕ Скасувати
-              </button>
+            <div className='stat-card'>
+              <div className='stat-value'>{stats.specialSearch}</div>
+              <div className='stat-label'>Спеціальна пошукова техніка</div>
             </div>
-          </form>
-        ) : selectedEquipment ? (
-          <div className='property-card'>
-            <div
-              className='card-header'
-              style={{
-                background: 'linear-gradient(135deg, #30b0c0 0%, #43e97b 100%)',
-              }}
-            >
-              <h2>🔍 {selectedEquipment.name}</h2>
-              <div className='card-actions'>
-                <button
-                  className='btn-icon edit'
-                  onClick={() => setShowForm(true)}
-                  title='Редагувати'
-                >
-                  ✏️
-                </button>
-                <button
-                  className='btn-icon delete'
-                  onClick={() => handleDeleteEquipment(selectedEquipment.id)}
-                  title='Видалити'
-                >
-                  🗑️
-                </button>
-              </div>
+            <div className='stat-card'>
+              <div className='stat-value'>{stats.measurementControl}</div>
+              <div className='stat-label'>Контрольно-вимірювальна техніка</div>
             </div>
-            <div className='card-sections'>
-              <section className='card-section'>
-                <h3>📋 Інформація</h3>
-                <div className='info-grid'>
-                  <div className='info-row'>
-                    <span className='label'>Тип:</span>
-                    <span className='value'>{selectedEquipment.type}</span>
-                  </div>
-                  <div className='info-row'>
-                    <span className='label'>Місцеположення:</span>
-                    <span className='value'>{selectedEquipment.location}</span>
-                  </div>
-                  {selectedEquipment.calibrationDate && (
-                    <div className='info-row'>
-                      <span className='label'>Дата калібрування:</span>
-                      <span className='value'>
-                        {new Date(
-                          selectedEquipment.calibrationDate,
-                        ).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </section>
-              {selectedEquipment.notes && (
-                <section className='card-section'>
-                  <h3>📝 Примітки</h3>
-                  <p className='notes'>{selectedEquipment.notes}</p>
-                </section>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className='empty-state'>
-            <p>Виберіть обладнання зі списку або додайте нове</p>
           </div>
         )}
-      </main>
+      </div>
+
+      <div className='equipment-content'>
+        {/* Бокова панель з фільтрами */}
+        <aside className='equipment-sidebar'>
+          <SearchControlEquipmentFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+          />
+
+          <button
+            className='btn-add-equipment'
+            onClick={() => {
+              setSelectedEquipment(null);
+              setShowModal(true);
+            }}
+          >
+            + Додати одиницю техніки
+          </button>
+        </aside>
+
+        {/* Основний вміст */}
+        <main className='equipment-main'>
+          {loading && <p className='loading-message'>⏳ Завантаження...</p>}
+          {error && <p className='error-message'>❌ {error}</p>}
+
+          {!loading && equipment.length === 0 && (
+            <p className='empty-message'>Обладнання не знайдено</p>
+          )}
+
+          {!loading && equipment.length > 0 && (
+            <SearchControlEquipmentTable
+              equipment={equipment}
+              onViewDetails={handleViewDetails}
+              onDelete={handleDeleteClick}
+            />
+          )}
+        </main>
+      </div>
+
+      {/* Модальне вікно деталей */}
+      {showModal && (
+        <SearchControlEquipmentModal
+          equipment={selectedEquipment}
+          onClose={() => setShowModal(false)}
+          onSave={handleSaveEquipment}
+          onDelete={() => {
+            if (selectedEquipment) {
+              handleDeleteClick(selectedEquipment);
+              setShowModal(false);
+            }
+          }}
+        />
+      )}
+
+      {/* Модальне вікно підтвердження видалення */}
+      {showDeleteModal && equipmentToDelete && (
+        <DeleteConfirmModal
+          itemName={equipmentToDelete.name}
+          itemDetails={`${equipmentToDelete.category} | ${equipmentToDelete.serialNumber || 'Без серійного номера'}`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setEquipmentToDelete(null);
+          }}
+        />
+      )}
     </div>
   );
-}
+};
 
 export default SearchControlEquipmentTab;
