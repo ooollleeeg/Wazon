@@ -10,18 +10,25 @@ interface EquipmentItem {
   technicalCondition: string;
   pricePerUnit: number;
   notes: string;
+  verifications?: Array<{
+    id: number;
+    certificateRegNumber: string;
+    verificationDate: string;
+    validUntil: string;
+    verificationCost: number;
+  }>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SearchControlEquipmentTableProps {
   equipment: EquipmentItem[];
-  onViewDetails: (item: EquipmentItem) => void;
-  onDelete: (item: EquipmentItem) => void;
+  onViewDetails: (item: EquipmentItem) => Promise<void>;
 }
 
 const SearchControlEquipmentTable = ({
   equipment,
   onViewDetails,
-  onDelete,
 }: SearchControlEquipmentTableProps) => {
   return (
     <div className='search-control-table-wrapper'>

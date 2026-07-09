@@ -154,8 +154,6 @@ const SearchControlEquipmentTab = () => {
 
   return (
     <div className='search-control-equipment-tab'>
-      <h2>🔍 Вимірювальна та пошукова техніка</h2>
-
       {/* Статистика */}
       {stats && (
         <div className='equipment-stats'>
@@ -204,7 +202,6 @@ const SearchControlEquipmentTab = () => {
           <SearchControlEquipmentTable
             equipment={equipment}
             onViewDetails={handleViewDetails}
-            onDelete={handleDeleteClick}
           />
         )}
       </div>
@@ -227,8 +224,7 @@ const SearchControlEquipmentTab = () => {
       {/* Модальне вікно підтвердження видалення */}
       {showDeleteModal && equipmentToDelete && (
         <DeleteConfirmModal
-          itemName={equipmentToDelete.name}
-          itemDetails={`${equipmentToDelete.category} | ${equipmentToDelete.serialNumber || 'Без серійного номера'}`}
+          fullName={equipmentToDelete.name}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
             setShowDeleteModal(false);
