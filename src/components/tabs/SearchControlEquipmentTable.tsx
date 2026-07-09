@@ -47,7 +47,7 @@ const SearchControlEquipmentTable = ({
         <tbody>
           {equipment.map((item) => (
             <tr key={item.id}>
-              <td>
+              <td className='category'>
                 <span className='category-badge'>
                   {item.category === 'Спеціальна пошукова техніка'
                     ? '🔍 Пошукова'
@@ -58,9 +58,9 @@ const SearchControlEquipmentTable = ({
                 <div className='name'>{item.name}</div>
                 {item.notes && <small className='notes'>{item.notes}</small>}
               </td>
-              <td>{item.serialNumber || '—'}</td>
-              <td>{item.releaseYear || '—'}</td>
-              <td>
+              <td className='serial-number'>{item.serialNumber || '—'}</td>
+              <td className='release-year'>{item.releaseYear || '—'}</td>
+              <td className='condition'>
                 <span
                   className={`condition-badge ${item.technicalCondition.toLowerCase()}`}
                 >
@@ -71,7 +71,7 @@ const SearchControlEquipmentTable = ({
               </td>
               <td className='price'>
                 {item.pricePerUnit
-                  ? `${item.pricePerUnit.toLocaleString('uk-UA')} грн`
+                  ? `${item.pricePerUnit.toLocaleString('uk-UA')} грн.`
                   : '—'}
               </td>
               <td className='actions'>

@@ -21,7 +21,7 @@
 
 .search-control-table th {
   padding: 1rem 0.875rem;
-  text-align: left;
+  /* text-align: left; */
   font-weight: 600;
   color: #333;
   border-bottom: 2px solid #ddd;
@@ -47,6 +47,10 @@
 }
 
 /* Category Badge */
+.category {
+  text-align: center;
+}
+
 .category-badge {
   display: inline-block;
   padding: 0.35rem 0.6rem;
@@ -61,6 +65,7 @@
 /* Name Cell */
 .name-cell {
   max-width: 250px;
+  text-align: center;
 }
 
 .name {
@@ -79,7 +84,21 @@
   white-space: nowrap;
 }
 
+.serial-number {
+  text-align: center;
+}
+
+.release-year {
+  text-align: center;
+  font-weight: 500;
+  color: #666;
+}
+
 /* Condition Badge */
+.condition {
+  text-align: center;
+}
+
 .condition-badge {
   display: inline-block;
   padding: 0.35rem 0.6rem;
@@ -101,7 +120,7 @@
 
 /* Price Cell */
 .price {
-  text-align: right;
+  text-align: center;
   font-weight: 500;
   color: #666;
 }
