@@ -128,13 +128,9 @@
 /* Actions */
 .actions {
   text-align: center;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
 }
 
-.btn-edit,
-.btn-delete {
+.btn-details {
   background: none;
   border: none;
   font-size: 1.2rem;
@@ -149,21 +145,12 @@
   min-height: 36px;
 }
 
-.btn-edit:hover {
-  background: rgba(52, 152, 219, 0.1);
+.btn-details:hover {
+  background: rgba(102, 126, 234, 0.1);
   transform: scale(1.1);
 }
 
-.btn-edit:active {
-  transform: scale(0.95);
-}
-
-.btn-delete:hover {
-  background: rgba(231, 76, 60, 0.1);
-  transform: scale(1.1);
-}
-
-.btn-delete:active {
+.btn-details:active {
   transform: scale(0.95);
 }
 
@@ -206,8 +193,7 @@
     display: none;
   }
 
-  .btn-edit,
-  .btn-delete {
+  .btn-details {
     min-width: 32px;
     min-height: 32px;
     font-size: 1rem;
