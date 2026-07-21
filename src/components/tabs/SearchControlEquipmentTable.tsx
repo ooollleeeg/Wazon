@@ -23,12 +23,14 @@ interface EquipmentItem {
 
 interface SearchControlEquipmentTableProps {
   equipment: EquipmentItem[];
-  onViewDetails: (item: EquipmentItem) => Promise<void>;
+  onEdit: (item: EquipmentItem) => void;
+  onDelete: (item: EquipmentItem) => void;
 }
 
 const SearchControlEquipmentTable = ({
   equipment,
-  onViewDetails,
+  onEdit,
+  onDelete,
 }: SearchControlEquipmentTableProps) => {
   return (
     <div className='search-control-table-wrapper'>
@@ -76,12 +78,20 @@ const SearchControlEquipmentTable = ({
               </td>
               <td className='actions'>
                 <button
-                  className='btn-details'
-                  onClick={() => onViewDetails(item)}
-                  title='Переглянути деталі'
-                  aria-label={`Переглянути деталі для ${item.name}`}
+                  className='btn-edit'
+                  onClick={() => onEdit(item)}
+                  title='Редагувати'
+                  aria-label={`Редагувати ${item.name}`}
                 >
-                  👁️
+                  ✏️
+                </button>
+                <button
+                  className='btn-delete'
+                  onClick={() => onDelete(item)}
+                  title='Видалити'
+                  aria-label={`Видалити ${item.name}`}
+                >
+                  🗑️
                 </button>
               </td>
             </tr>
