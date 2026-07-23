@@ -94,7 +94,11 @@ const ProtectionMeansModal = ({
             <div className='info-grid'>
               <div className='info-item'>
                 <label>Категорія:</label>
-                <strong>{mean.category}</strong>
+                <strong>{mean.category || '—'}</strong>
+              </div>
+              <div className='info-item'>
+                <label>Назва:</label>
+                <strong>{mean.name || '—'}</strong>
               </div>
               <div className='info-item'>
                 <label>Статус:</label>
@@ -104,48 +108,44 @@ const ProtectionMeansModal = ({
                     : '🔄 На складі'}
                 </strong>
               </div>
-              {mean.serialNumber && (
+              <div className='info-item'>
+                <label>Серійний номер:</label>
+                <strong>{mean.serialNumber || '—'}</strong>
+              </div>
+              <div className='info-item'>
+                <label>Інвентарний номер:</label>
+                <strong>{mean.invertarNumber || '—'}</strong>
+              </div>
+              <div className='info-item'>
+                <label>Дата виготовлення:</label>
+                <strong>
+                  {mean.releaseYear ? formatDate(mean.releaseYear) : '—'}
+                </strong>
+              </div>
+              <div className='info-item'>
+                <label>Термін експлуатації виробника:</label>
+                <strong>
+                  {mean.manufacturerExploitationTerm
+                    ? formatDate(mean.manufacturerExploitationTerm)
+                    : '—'}
+                </strong>
+              </div>
+              <div className='info-item'>
+                <label>Інформація про сертифікат:</label>
+                <strong>{mean.certificateInfo || '—'}</strong>
+              </div>
+              {mean.status === 'in_stock' && (
                 <div className='info-item'>
-                  <label>Серійний номер:</label>
-                  <strong>{mean.serialNumber}</strong>
-                </div>
-              )}
-              {mean.invertarNumber && (
-                <div className='info-item'>
-                  <label>Інвентарний номер:</label>
-                  <strong>{mean.invertarNumber}</strong>
-                </div>
-              )}
-              {mean.releaseYear && (
-                <div className='info-item'>
-                  <label>Дата виготовлення:</label>
-                  <strong>{formatDate(mean.releaseYear)}</strong>
-                </div>
-              )}
-              {mean.manufacturerExploitationTerm && (
-                <div className='info-item'>
-                  <label>Термін експлуатації:</label>
+                  <label>Дата надходження на склад:</label>
                   <strong>
-                    {formatDate(mean.manufacturerExploitationTerm)}
+                    {mean.inStockDate ? formatDate(mean.inStockDate) : '—'}
                   </strong>
-                </div>
-              )}
-              {mean.certificateInfo && (
-                <div className='info-item'>
-                  <label>Інформація про сертифікат:</label>
-                  <strong>{mean.certificateInfo}</strong>
-                </div>
-              )}
-              {mean.status === 'in_stock' && mean.inStockDate && (
-                <div className='info-item'>
-                  <label>Дата надходження:</label>
-                  <strong>{formatDate(mean.inStockDate)}</strong>
                 </div>
               )}
               {mean.status === 'in_stock' && mean.notes && (
                 <div className='info-item full-width'>
                   <label>Примітки:</label>
-                  <p>{mean.notes}</p>
+                  <p>{mean.notes || '—'}</p>
                 </div>
               )}
             </div>
