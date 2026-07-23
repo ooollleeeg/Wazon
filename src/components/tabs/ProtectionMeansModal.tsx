@@ -207,10 +207,6 @@ const ProtectionMeansModal = ({
               </button>
             </>
           )}
-
-          <button className='btn-secondary' onClick={onClose}>
-            Закрити
-          </button>
         </div>
 
         {/* Модаль підтвердження видалення */}
