@@ -396,7 +396,7 @@ export function updateInventoryItem(id, data, callback) {
   }
 
   // Централізована перевірка дублів: тільки categoryId + serialNumber
-  checkProtectionMeanDuplicate(categoryId, serialNumber)
+  checkProtectionMeanDuplicate(categoryId, serialNumber, id)
     .then((result) => {
       // Дозволяємо дублікат, якщо це той самий запис (id)
       if (result.isDuplicate && result.duplicateAt) {

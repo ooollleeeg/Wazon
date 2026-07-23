@@ -56,7 +56,11 @@ const getProtectionMeanLookupParams = (item) => {
   return { category, name, serialNumber };
 };
 
-const findExistingProtectionMean = (categoryId, serialNumber) => {
+const findExistingProtectionMean = (
+  categoryId,
+  serialNumber,
+  excludeInventoryId = null,
+) => {
   return new Promise((resolve, reject) => {
     // Duplicate check: categoryId + serialNumber must both match
     // Empty serial number is NOT a match (multiple items can have empty S/N)
@@ -95,6 +99,7 @@ const findExistingProtectionMean = (categoryId, serialNumber) => {
       SELECT 'Inventory' AS source, NULL AS objectId, 'На складі' AS objectName
       FROM protection_means_inventory pi
       WHERE pi.categoryId = ? AND COALESCE(pi.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
+      ${excludeInventoryId ? 'AND pi.id != ?' : ''}
     `;
 
     const params = [
@@ -110,8 +115,12 @@ const findExistingProtectionMean = (categoryId, serialNumber) => {
       trimmedSerial,
     ];
 
+    if (excludeInventoryId) {
+      params.push(excludeInventoryId);
+    }
+
     console.log(
-      `  🔎 Checking duplicate: categoryId=${categoryId}, serial="${trimmedSerial}"`,
+      `  🔎 Checking duplicate: categoryId=${categoryId}, serial="${trimmedSerial}"${excludeInventoryId ? `, excludeId=${excludeInventoryId}` : ''}`,
     );
 
     db.all(sql, params, (err, rows) => {
@@ -658,9 +667,14 @@ export const deleteNestedItem = (
 export const checkProtectionMeanDuplicate = async (
   categoryId,
   serialNumber,
+  excludeInventoryId = null,
 ) => {
   try {
-    const existing = await findExistingProtectionMean(categoryId, serialNumber);
+    const existing = await findExistingProtectionMean(
+      categoryId,
+      serialNumber,
+      excludeInventoryId,
+    );
     if (existing) {
       return {
         isDuplicate: true,

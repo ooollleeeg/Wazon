@@ -254,9 +254,10 @@ const ProtectionMeansTab = () => {
 
       // Якщо редагується существуючий запис
       if (selectedMean) {
-        // Додаємо статус до formData при редагуванні
+        // Додаємо статус і ID до formData при редагуванні
         const updateData = {
           ...formData,
+          id: selectedMean.id, // Передаємо ID щоб бекенд виключив цей запис з перевірки на дублювання
           status: selectedMean.status || 'in_stock', // Зберігаємо оригінальний статус
         };
 
