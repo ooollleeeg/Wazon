@@ -4,6 +4,7 @@ import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
 import SelectObjectModal from './SelectObjectModal';
 import DuplicateErrorModal from '../modals/DuplicateErrorModal';
+import SuccessModal from '../modals/SuccessModal';
 import { validateBeforeSave } from '../../utils/protectionMeansValidation';
 import { PROTECTION_MEANS_CATEGORIES } from '../../constants/protectionMeansCategories';
 import '../../styles/ProtectionMeansTab.css';
@@ -26,6 +27,8 @@ const ProtectionMeansTab = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedMean, setSelectedMean] = useState<ProtectionMean | null>(null);
@@ -110,6 +113,8 @@ const ProtectionMeansTab = () => {
 
   // Обробник успішного видалення
   const handleDeleteSuccess = () => {
+    setSuccessMessage('Засіб ТЗІ успішно видалено');
+    setShowSuccessModal(true);
     fetchData();
   };
 
@@ -276,6 +281,8 @@ const ProtectionMeansTab = () => {
         }
 
         console.log('✅ Inventory item updated');
+        setSuccessMessage(`Засіб ТЗІ "${formData.name}" успішно редаговано`);
+        setShowSuccessModal(true);
         setShowAddForm(false);
         setSelectedMean(null);
         fetchData();
@@ -407,6 +414,16 @@ const ProtectionMeansTab = () => {
           }}
         />
       )}
+
+      {/* Модаль успішної операції */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        message={successMessage || ''}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setSuccessMessage(null);
+        }}
+      />
     </div>
   );
 };

@@ -1,0 +1,80 @@
+/* ========== SUCCESS MODAL STYLES ========== */
+
+.success-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.success-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.success-modal-content {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.success-modal-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.success-modal-content h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #27ae60;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.success-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #ecf0f1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.success-modal-btn-ok {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.success-modal-btn-ok:hover {
+  background: #229954;
+  box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.success-modal-btn-ok:active {
+  transform: scale(0.98);
+}

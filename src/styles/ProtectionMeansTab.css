@@ -13,6 +13,18 @@
   font-weight: 600;
 }
 
+/* ========== MESSAGES ========== */
+
+.protection-means-tab p.error {
+  background: #fadbd8;
+  border: 1px solid #f5b7b1;
+  color: #c0392b;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
 /* ========== STATS CARD ========== */
 
 .stats-card {
