@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import ProtectionMeansFilters from './ProtectionMeansFilters';
 import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
@@ -15,6 +15,8 @@ interface Stats {
 }
 
 const ProtectionMeansTab = () => {
+  const formContainerRef = useRef<HTMLDivElement>(null);
+
   const [allMeans, setAllMeans] = useState<ProtectionMean[]>([]);
   const [filters, setFilters] = useState({
     category: '',
@@ -75,6 +77,18 @@ const ProtectionMeansTab = () => {
   useEffect(() => {
     fetchData();
   }, [filters]);
+
+  // Прокручування до форми редагування коли вона відкривається
+  useEffect(() => {
+    if (showAddForm && selectedMean && formContainerRef.current) {
+      setTimeout(() => {
+        formContainerRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 100);
+    }
+  }, [showAddForm, selectedMean]);
 
   // Обробник зміни фільтрів
   const handleFilterChange = (newFilters: typeof filters) => {
@@ -327,7 +341,7 @@ const ProtectionMeansTab = () => {
 
       {/* Форма додавання нового засобу */}
       {showAddForm && (
-        <div className='add-form-container'>
+        <div className='add-form-container' ref={formContainerRef}>
           <h3>
             {selectedMean
               ? `✏️ Редагування засобу "${selectedMean.name}"`

@@ -81,7 +81,7 @@ const SearchControlEquipmentTable = ({
                   title='Переглянути деталі'
                   aria-label={`Переглянути деталі для ${item.name}`}
                 >
-                  �️
+                  👁️
                 </button>
               </td>
             </tr>
