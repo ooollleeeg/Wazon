@@ -26,14 +26,12 @@ interface SearchControlEquipmentModalProps {
   equipment: EquipmentItem | null;
   onClose: () => void;
   onSave: (data: Partial<EquipmentItem>) => void;
-  onDelete: () => void;
 }
 
 const SearchControlEquipmentModal = ({
   equipment,
   onClose,
   onSave,
-  onDelete,
 }: SearchControlEquipmentModalProps) => {
   const [formData, setFormData] = useState<Partial<EquipmentItem>>({
     category: '',
@@ -444,17 +442,11 @@ const SearchControlEquipmentModal = ({
               </div>
             </section>
           )}
-
           {/* Кнопки дій */}
           <div className='modal-actions'>
             <button type='submit' className='btn-primary'>
-              ✓ Зберегти
+              💾 Зберегти
             </button>
-            {equipment?.id && (
-              <button type='button' className='btn-danger' onClick={onDelete}>
-                🗑️ Видалити
-              </button>
-            )}
             <button type='button' className='btn-secondary' onClick={onClose}>
               ✕ Скасувати
             </button>

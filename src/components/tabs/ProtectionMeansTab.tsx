@@ -510,7 +510,7 @@ const ProtectionMeansForm = ({
             name='name'
             value={formData.name}
             onChange={handleChange}
-            placeholder='Наприклад: РЧЗ-100'
+            placeholder='Наприклад: ІЗ-2000'
             required
           />
         </div>

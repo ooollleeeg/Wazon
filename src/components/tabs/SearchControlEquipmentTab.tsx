@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import SearchControlEquipmentFilters from './SearchControlEquipmentFilters';
 import SearchControlEquipmentTable from './SearchControlEquipmentTable';
+import SearchControlEquipmentInfoModal from './SearchControlEquipmentInfoModal';
 import SearchControlEquipmentModal from './SearchControlEquipmentModal';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
+import SuccessModal from '../modals/SuccessModal';
 import '../../styles/SearchControlEquipmentTab.css';
 
 interface EquipmentStats {
@@ -45,11 +47,14 @@ const SearchControlEquipmentTab = () => {
   });
 
   const [showModal, setShowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedEquipment, setSelectedEquipment] =
     useState<EquipmentItem | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [equipmentToDelete, setEquipmentToDelete] =
     useState<EquipmentItem | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Завантажити дані
   const fetchEquipment = async () => {
@@ -116,6 +121,9 @@ const SearchControlEquipmentTab = () => {
 
       if (!response.ok) throw new Error('Помилка при збереженні');
 
+      setSuccessMessage(`Обладнання "${data.name}" успішно редаговано`);
+      setShowSuccessModal(true);
+      setShowEditModal(false);
       setShowModal(false);
       setSelectedEquipment(null);
       await fetchEquipment();
@@ -128,6 +136,11 @@ const SearchControlEquipmentTab = () => {
   const handleDeleteClick = (item: EquipmentItem) => {
     setEquipmentToDelete(item);
     setShowDeleteModal(true);
+  };
+
+  const handleEditFromInfo = () => {
+    setShowModal(false);
+    setShowEditModal(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -143,7 +156,10 @@ const SearchControlEquipmentTab = () => {
 
       if (!response.ok) throw new Error('Помилка при видаленні');
 
+      setSuccessMessage('Обладнання успішно видалено');
+      setShowSuccessModal(true);
       setShowDeleteModal(false);
+      setShowModal(false);
       setEquipmentToDelete(null);
       await fetchEquipment();
     } catch (err) {
@@ -183,7 +199,7 @@ const SearchControlEquipmentTab = () => {
         className='btn-add-equipment'
         onClick={() => {
           setSelectedEquipment(null);
-          setShowModal(true);
+          setShowEditModal(true);
         }}
       >
         + Додати одиницю техніки
@@ -206,18 +222,30 @@ const SearchControlEquipmentTab = () => {
         )}
       </div>
 
-      {/* Модальне вікно деталей */}
-      {showModal && (
+      {/* Модальне вікно інформації про обладнання */}
+      {showModal && selectedEquipment && (
+        <SearchControlEquipmentInfoModal
+          equipment={selectedEquipment}
+          onClose={() => {
+            setShowModal(false);
+            setSelectedEquipment(null);
+          }}
+          onEdit={handleEditFromInfo}
+          onDelete={() => {
+            handleDeleteClick(selectedEquipment);
+          }}
+        />
+      )}
+
+      {/* Модальне вікно редагування */}
+      {showEditModal && selectedEquipment && (
         <SearchControlEquipmentModal
           equipment={selectedEquipment}
-          onClose={() => setShowModal(false)}
-          onSave={handleSaveEquipment}
-          onDelete={() => {
-            if (selectedEquipment) {
-              handleDeleteClick(selectedEquipment);
-              setShowModal(false);
-            }
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedEquipment(null);
           }}
+          onSave={handleSaveEquipment}
         />
       )}
 
@@ -232,6 +260,16 @@ const SearchControlEquipmentTab = () => {
           }}
         />
       )}
+
+      {/* Модальне вікно успішної операції */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        message={successMessage || ''}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setSuccessMessage(null);
+        }}
+      />
     </div>
   );
 };
