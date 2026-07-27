@@ -512,14 +512,13 @@ router.post('/search-control-equipment', (req, res) => {
       technicalCondition,
       pricePerUnit,
       notes,
+      verifications,
     } = req.body;
 
     if (!category || !name || !technicalCondition) {
-      return res
-        .status(400)
-        .json({
-          error: 'Missing required fields: category, name, technicalCondition',
-        });
+      return res.status(400).json({
+        error: 'Missing required fields: category, name, technicalCondition',
+      });
     }
 
     db.run(
@@ -540,8 +539,27 @@ router.post('/search-control-equipment', (req, res) => {
           console.error('❌ Error creating equipment:', err);
           res.status(500).json({ error: err.message });
         } else {
+          const equipmentId = this.lastID;
+
+          // Якщо передані повірки, додати їх
+          if (Array.isArray(verifications) && verifications.length > 0) {
+            verifications.forEach((v) => {
+              db.run(
+                `INSERT INTO search_control_equipment_verification (equipmentId, certificateRegNumber, verificationDate, validUntil, verificationCost)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [
+                  equipmentId,
+                  v.certificateRegNumber || null,
+                  v.verificationDate,
+                  v.validUntil,
+                  v.verificationCost || 0,
+                ],
+              );
+            });
+          }
+
           res.json({
-            id: this.lastID,
+            id: equipmentId,
             message: 'Equipment created successfully',
           });
         }
@@ -642,11 +660,9 @@ router.post('/search-control-equipment/:id/verification', (req, res) => {
     } = req.body;
 
     if (!verificationDate || !validUntil) {
-      return res
-        .status(400)
-        .json({
-          error: 'Missing required fields: verificationDate, validUntil',
-        });
+      return res.status(400).json({
+        error: 'Missing required fields: verificationDate, validUntil',
+      });
     }
 
     db.run(

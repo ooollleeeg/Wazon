@@ -176,7 +176,10 @@ const SearchControlEquipmentModal = ({
 
     if (!validateForm()) return;
 
-    onSave(formData);
+    onSave({
+      ...formData,
+      verifications,
+    });
   };
 
   return (
