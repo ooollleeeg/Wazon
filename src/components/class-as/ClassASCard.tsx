@@ -82,6 +82,7 @@ export default function ClassASCard({
   showCloseButton = true,
 }: ClassASCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [expandedProtectionMeans, setExpandedProtectionMeans] = useState(false);
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
@@ -326,10 +327,14 @@ export default function ClassASCard({
           {protectionMeans && protectionMeans.length > 0 && (
             <section className='card-section'>
               <h4 className='section-title'>
-                🛡️ Застосовані засоби захисту ({protectionMeans.length})
+                🛡️ Застосовані засоби технічного захисту інформації (
+                {protectionMeans.length})
               </h4>
               <div className='nested-list'>
-                {protectionMeans.map((mean, index) => (
+                {(protectionMeans.length <= 2 || expandedProtectionMeans
+                  ? protectionMeans
+                  : []
+                ).map((mean, index) => (
                   <div key={index} className='nested-item'>
                     <div className='nested-item-header'>
                       <span className='item-number'>{index + 1}.</span>
@@ -355,6 +360,18 @@ export default function ClassASCard({
                   </div>
                 ))}
               </div>
+              {protectionMeans.length > 2 && (
+                <button
+                  className='btn-toggle-previous'
+                  onClick={() =>
+                    setExpandedProtectionMeans(!expandedProtectionMeans)
+                  }
+                >
+                  {expandedProtectionMeans
+                    ? '← Згорнути'
+                    : `↓ Переглянути (${protectionMeans.length})`}
+                </button>
+              )}
             </section>
           )}
 

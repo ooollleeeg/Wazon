@@ -23,6 +23,7 @@ export interface NestedCardSection {
   showPreviousVersions?: boolean; // Show "View previous" button with current version first
   showAllByDefault?: boolean; // Show all records by default (no toggle button)
   hideAllByDefault?: boolean; // Hide all records by default, show only expand button
+  hideWhenMoreThan?: number; // Hide all by default when items count exceeds this threshold
   fields: {
     label: string;
     value: string; // Field name in nested item
@@ -242,13 +243,17 @@ export default function GenericCard({
             let showToggleButton = false;
             let buttonLabel = '';
 
-            if (nested.hideAllByDefault) {
+            // Check if should hide based on hideWhenMoreThan threshold
+            const shouldHideWhenMoreThan =
+              nested.hideWhenMoreThan && items.length > nested.hideWhenMoreThan;
+
+            if (nested.hideAllByDefault || shouldHideWhenMoreThan) {
               // Hide all by default, show expand button
               displayItems = isShowingPreviousVersions ? items : [];
               showToggleButton = items.length > 0;
               buttonLabel = isShowingPreviousVersions
-                ? 'Приховати'
-                : 'Переглянути';
+                ? '← Згорнути'
+                : `↓ Переглянути (${items.length})`;
             } else if (nested.showAllByDefault) {
               // Show all records by default, no toggle button
               displayItems = items;
@@ -274,18 +279,21 @@ export default function GenericCard({
                 <div className='nested-list'>
                   {displayItems.map((item: any, itemIdx: number) => {
                     const isCurrentVersion =
-                      itemIdx === 0 && !nested.hideAllByDefault;
+                      itemIdx === 0 &&
+                      !nested.hideAllByDefault &&
+                      !shouldHideWhenMoreThan;
                     const isPreviousVersion =
                       itemIdx > 0 &&
                       !nested.hideAllByDefault &&
-                      !nested.showAllByDefault;
+                      !nested.showAllByDefault &&
+                      !shouldHideWhenMoreThan;
 
                     return (
                       <div
                         key={itemIdx}
                         className={`nested-item ${
                           isPreviousVersion ? 'previous-version' : ''
-                        }`}
+                        } visible-item`}
                       >
                         <div className='nested-item-header'>
                           <span className='item-number'>{itemIdx + 1}.</span>
