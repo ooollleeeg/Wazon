@@ -238,7 +238,7 @@ const SearchControlEquipmentTab = () => {
       )}
 
       {/* Модальне вікно редагування */}
-      {showEditModal && selectedEquipment && (
+      {showEditModal && (
         <SearchControlEquipmentModal
           equipment={selectedEquipment}
           onClose={() => {
