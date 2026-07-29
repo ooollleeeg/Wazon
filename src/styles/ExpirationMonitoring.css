@@ -116,6 +116,7 @@
 .filter-group,
 .sort-group {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
 }
@@ -171,15 +172,15 @@
 
 .monitoring-table th {
   padding: 15px 12px;
-  text-align: left;
+  text-align: center;
   font-weight: 600;
   color: #2c3e50;
   white-space: nowrap;
 }
 
-.monitoring-table th:nth-child(6) {
+/* .monitoring-table th:nth-child(6) {
   text-align: center;
-}
+} */
 
 .monitoring-table tbody tr {
   border-bottom: 1px solid #ecf0f1;
@@ -211,6 +212,7 @@
 .monitoring-table td {
   padding: 12px;
   color: #2c3e50;
+  text-align: center;
 }
 
 .status-cell {
