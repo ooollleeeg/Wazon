@@ -5,6 +5,7 @@ import SearchControlEquipmentInfoModal from './SearchControlEquipmentInfoModal';
 import SearchControlEquipmentModal from './SearchControlEquipmentModal';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import SuccessModal from '../modals/SuccessModal';
+import LoadingSpinner from '../common/LoadingSpinner';
 import '../../styles/SearchControlEquipmentTab.css';
 
 interface EquipmentStats {
@@ -207,7 +208,9 @@ const SearchControlEquipmentTab = () => {
 
       {/* Основний вміст з таблицею */}
       <div className='equipment-content'>
-        {loading && <p className='loading-message'>⏳ Завантаження...</p>}
+        {loading && (
+          <LoadingSpinner fullScreen label='Завантаження техніки...' />
+        )}
         {error && <p className='error-message'>❌ {error}</p>}
 
         {!loading && equipment.length === 0 && (

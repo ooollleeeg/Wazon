@@ -5,6 +5,7 @@ import ProtectionMeansModal from './ProtectionMeansModal';
 import SelectObjectModal from './SelectObjectModal';
 import DuplicateErrorModal from '../modals/DuplicateErrorModal';
 import SuccessModal from '../modals/SuccessModal';
+import LoadingSpinner from '../common/LoadingSpinner';
 import { validateBeforeSave } from '../../utils/protectionMeansValidation';
 import { PROTECTION_MEANS_CATEGORIES } from '../../constants/protectionMeansCategories';
 import '../../styles/ProtectionMeansTab.css';
@@ -368,7 +369,7 @@ const ProtectionMeansTab = () => {
 
       {/* Таблиця засобів */}
       {loading ? (
-        <p>Завантаження...</p>
+        <LoadingSpinner fullScreen label='Завантаження засобів ТЗІ...' />
       ) : error ? (
         <p className='error'>{error}</p>
       ) : (
