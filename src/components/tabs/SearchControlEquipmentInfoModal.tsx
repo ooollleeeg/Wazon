@@ -3,6 +3,8 @@ import './styles/SearchControlEquipmentInfoModal.css';
 
 interface Verification {
   id: number;
+  deviceName: string;
+  serialNumber: string;
   certificateRegNumber: string;
   verificationDate: string;
   validUntil: string;
@@ -17,7 +19,7 @@ interface EquipmentItem {
   invertarNumber: string;
   releaseYear: number;
   technicalCondition: string;
-  pricePerUnit: number;
+  pricePerUnit: string; // ✅ Змінено на string для точності
   notes: string;
   verifications?: Verification[];
 }
@@ -114,11 +116,19 @@ const SearchControlEquipmentInfoModal: React.FC<
                     <div key={v.id} className='verification-record'>
                       <div className='verification-info'>
                         <div>
+                          <label>Назва та умовне позначення засобу:</label>
+                          <strong>{v.deviceName || '—'}</strong>
+                        </div>
+                        <div>
+                          <label>Серійний номер:</label>
+                          <strong>{v.serialNumber || '—'}</strong>
+                        </div>
+                        <div>
                           <label>Реєстраційний номер:</label>
                           <strong>{v.certificateRegNumber || '—'}</strong>
                         </div>
                         <div>
-                          <label>Дата проведення:</label>
+                          <label>Дата реєстрації свідоцтва:</label>
                           <strong>{formatDate(v.verificationDate)}</strong>
                         </div>
                         <div>

@@ -22,10 +22,12 @@ interface EquipmentItem {
   invertarNumber: string;
   releaseYear: number;
   technicalCondition: string;
-  pricePerUnit: number;
+  pricePerUnit: string; // ✅ Змінено на string для точності
   notes: string;
   verifications?: Array<{
     id: number;
+    deviceName: string;
+    serialNumber: string;
     certificateRegNumber: string;
     verificationDate: string;
     validUntil: string;
@@ -56,6 +58,7 @@ const SearchControlEquipmentTab = () => {
     useState<EquipmentItem | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // ✅ Додано для спінера під час збереження
 
   // Завантажити дані
   const fetchEquipment = async () => {
@@ -108,6 +111,8 @@ const SearchControlEquipmentTab = () => {
 
   const handleSaveEquipment = async (data: Partial<EquipmentItem>) => {
     try {
+      setIsSaving(true); // ✅ Показати спінер
+
       const url = selectedEquipment
         ? `/api/search-control-equipment/${selectedEquipment.id}`
         : '/api/search-control-equipment';
@@ -122,7 +127,11 @@ const SearchControlEquipmentTab = () => {
 
       if (!response.ok) throw new Error('Помилка при збереженні');
 
-      setSuccessMessage(`Обладнання "${data.name}" успішно редаговано`);
+      setSuccessMessage(
+        selectedEquipment
+          ? `Обладнання "${data.name}" успішно оновлено`
+          : `Обладнання "${data.name}" успішно створено`,
+      );
       setShowSuccessModal(true);
       setShowEditModal(false);
       setShowModal(false);
@@ -131,6 +140,8 @@ const SearchControlEquipmentTab = () => {
     } catch (err) {
       console.error('❌ Error saving equipment:', err);
       setError('Помилка при збереженні');
+    } finally {
+      setIsSaving(false); // ✅ Приховати спінер
     }
   };
 
@@ -249,6 +260,7 @@ const SearchControlEquipmentTab = () => {
             setSelectedEquipment(null);
           }}
           onSave={handleSaveEquipment}
+          isSaving={isSaving} // ✅ Передати стан спінера
         />
       )}
 

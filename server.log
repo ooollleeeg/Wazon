@@ -1,34 +1,20 @@
+nohup: ignoring input
 
-> vazon@0.0.1 start
-> concurrently "npm run dev" "npm run server"
+> vazon@0.0.1 server
+> node server/index.js
 
-(node:10424) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
-(Use `node --trace-deprecation ...` to show where the warning was created)
-[1] 
-[1] > vazon@0.0.1 server
-[1] > node server/index.js
-[1] 
-[0] 
-[0] > vazon@0.0.1 dev
-[0] > vite
-[0] 
-[0] 
-[0]   [32m[1mVITE[22m v4.5.14[39m  [2mready in [0m[1m1536[22m[2m[0m ms[22m
-[0] 
-[0]   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m3000[22m/[39m
-[0] [2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
-[1] ✓ Сервер запущен на http://localhost:3001
-[1] ✓ Система реєстру об'єктів інформаційної діяльності активна
-[1] ✅ Database connected at: C:\Users\Администратор\OneDrive\Документи\GitHub\vazon\data\vazon.db
-[1] ✅ Database tables initialized
-[1] ✅ Database tables initialized
-[0] (node:4164) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
-[0] (Use `node --trace-deprecation ...` to show where the warning was created)
-[1] 📥 GET /api/expiration-summary
-[1] ✅ Retrieved 0 expiration documents
-[1] 📥 GET /api/expiration-summary
-[1] ✅ Retrieved 0 expiration documents
-[1] 📥 GET /api/expiration-summary
-[1] ✅ Retrieved 0 expiration documents
-[1] 📥 GET /api/expiration-summary
-[1] ✅ Retrieved 0 expiration documents
+✓ Сервер запущен на http://localhost:3005
+✓ Система реєстру об'єктів інформаційної діяльності активна
+✅ Database connected at: C:\Users\Администратор\OneDrive\Документи\GitHub\vazon\data\vazon.db
+✅ Database tables initialized
+✅ Database tables initialized
+📝 POST /search-control-equipment/:id/verification
+  equipmentId: 10
+  deviceName: Генератор тестовий GEN-TEST-2024 (type: string )
+  serialNumber: VERIFICATION-SN-12345 (type: string )
+  certificateRegNumber: CERT-TEST-2024-001
+  verificationDate: 2024-11-15
+  validUntil: 2025-11-15
+  verificationCost: 1500
+✅ Verification created successfully with ID: 10
+^C

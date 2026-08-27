@@ -686,7 +686,7 @@ function initializeDatabase() {
         invertarNumber TEXT,
         releaseYear INTEGER,
         technicalCondition TEXT NOT NULL,
-        pricePerUnit REAL,
+        pricePerUnit TEXT,
         notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -698,14 +698,34 @@ function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS search_control_equipment_verification (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         equipmentId INTEGER NOT NULL,
+        deviceName TEXT,
+        serialNumber TEXT,
         certificateRegNumber TEXT,
         verificationDate TEXT,
         validUntil TEXT,
-        verificationCost REAL,
+        verificationCost TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (equipmentId) REFERENCES search_control_equipment(id) ON DELETE CASCADE
       )
     `);
+
+    // Додати колони до search_control_equipment_verification, якщо вони ще не існують
+    db.run(
+      `ALTER TABLE search_control_equipment_verification ADD COLUMN deviceName TEXT`,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ deviceName колона вже існує');
+        }
+      },
+    );
+    db.run(
+      `ALTER TABLE search_control_equipment_verification ADD COLUMN serialNumber TEXT`,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ serialNumber колона вже існує');
+        }
+      },
+    );
 
     // Додати колону categoryId до існуючих таблиць, якщо вона ще не існує
     db.run(

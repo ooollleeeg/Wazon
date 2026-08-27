@@ -8,7 +8,7 @@ interface EquipmentItem {
   invertarNumber: string;
   releaseYear: number;
   technicalCondition: string;
-  pricePerUnit: number;
+  pricePerUnit: string; // ✅ Змінено на string для точності
   notes: string;
   verifications?: Array<{
     id: number;

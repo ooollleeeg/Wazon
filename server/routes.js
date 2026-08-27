@@ -545,10 +545,12 @@ router.post('/search-control-equipment', (req, res) => {
           if (Array.isArray(verifications) && verifications.length > 0) {
             verifications.forEach((v) => {
               db.run(
-                `INSERT INTO search_control_equipment_verification (equipmentId, certificateRegNumber, verificationDate, validUntil, verificationCost)
-                 VALUES (?, ?, ?, ?, ?)`,
+                `INSERT INTO search_control_equipment_verification (equipmentId, deviceName, serialNumber, certificateRegNumber, verificationDate, validUntil, verificationCost)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                   equipmentId,
+                  v.deviceName || null,
+                  v.serialNumber || null,
                   v.certificateRegNumber || null,
                   v.verificationDate,
                   v.validUntil,
@@ -586,7 +588,18 @@ router.put('/search-control-equipment/:id', (req, res) => {
       technicalCondition,
       pricePerUnit,
       notes,
+      verifications = [],
     } = req.body;
+
+    console.log('📝 PUT /search-control-equipment/:id');
+    console.log('  Equipment ID:', id);
+    console.log('  Body keys:', Object.keys(req.body));
+    console.log('  Verifications received:', verifications?.length || 0);
+
+    if (!category || !name) {
+      console.error('❌ Missing required fields: category or name');
+      return res.status(400).json({ error: 'Category and name are required' });
+    }
 
     db.run(
       `UPDATE search_control_equipment 
@@ -610,7 +623,19 @@ router.put('/search-control-equipment/:id', (req, res) => {
         } else if (this.changes === 0) {
           res.status(404).json({ error: 'Equipment not found' });
         } else {
-          res.json({ message: 'Equipment updated successfully' });
+          // Обробити повірки, якщо вони передані
+          if (verifications && verifications.length > 0) {
+            processVerifications(id, verifications, (verErr) => {
+              if (verErr) {
+                console.error('❌ Error processing verifications:', verErr);
+                res.status(500).json({ error: verErr.message });
+              } else {
+                res.json({ message: 'Equipment updated successfully' });
+              }
+            });
+          } else {
+            res.json({ message: 'Equipment updated successfully' });
+          }
         }
       },
     );
@@ -619,6 +644,125 @@ router.put('/search-control-equipment/:id', (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+/**
+ * Допоміжна функція для обробки повірок
+ */
+function processVerifications(equipmentId, verifications, callback) {
+  // Отримаємо всі існуючі повірки
+  db.all(
+    'SELECT id FROM search_control_equipment_verification WHERE equipmentId = ?',
+    [equipmentId],
+    (err, existingVerifications) => {
+      if (err) return callback(err);
+
+      const existingIds = new Set(existingVerifications.map((v) => v.id));
+      const incomingIds = new Set(
+        verifications.filter((v) => v.id && v.id > 0).map((v) => v.id),
+      );
+
+      // Знайти які повірки видалили (існують, але не у новому масиві)
+      const toDelete = [];
+      existingIds.forEach((id) => {
+        if (!incomingIds.has(id)) {
+          toDelete.push(id);
+        }
+      });
+
+      // Видалити повірки
+      let deleteCount = 0;
+      if (toDelete.length > 0) {
+        toDelete.forEach((verificationId) => {
+          db.run(
+            'DELETE FROM search_control_equipment_verification WHERE id = ?',
+            [verificationId],
+            (delErr) => {
+              deleteCount++;
+              if (deleteCount === toDelete.length) {
+                // Всі видалення завершені, тепер додаємо нові
+                addNewVerifications(equipmentId, verifications, callback);
+              }
+            },
+          );
+        });
+      } else {
+        // Немає чого видаляти, одразу додаємо нові
+        addNewVerifications(equipmentId, verifications, callback);
+      }
+    },
+  );
+}
+
+/**
+ * Допоміжна функція для додавання нових повірок
+ */
+function addNewVerifications(equipmentId, verifications, callback) {
+  // Отримаємо лише нові повірки (id = 0 або не визначено)
+  const newVerifications = verifications.filter((v) => !v.id || v.id <= 0);
+
+  console.log(
+    `🔄 Додавання ${newVerifications.length} нових повірок для техніки ID ${equipmentId}`,
+  );
+
+  // Якщо немає нових повірок - готово
+  if (newVerifications.length === 0) {
+    console.log('✅ Нових повірок немає');
+    return callback(null);
+  }
+
+  // Додаємо кожну нову повірку
+  let addedCount = 0;
+  let hasError = false;
+
+  newVerifications.forEach((verification) => {
+    const {
+      deviceName,
+      serialNumber,
+      certificateRegNumber,
+      verificationDate,
+      validUntil,
+      verificationCost,
+    } = verification;
+
+    db.run(
+      `INSERT INTO search_control_equipment_verification (equipmentId, deviceName, serialNumber, certificateRegNumber, verificationDate, validUntil, verificationCost)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        equipmentId,
+        deviceName || null,
+        serialNumber || null,
+        certificateRegNumber || null,
+        verificationDate,
+        validUntil,
+        verificationCost || 0,
+      ],
+      function (err) {
+        addedCount++;
+        if (err) {
+          console.error(
+            `❌ Error adding verification for equipment ${equipmentId}:`,
+            err,
+          );
+          hasError = true;
+        } else {
+          console.log(`  ✅ Повірка додана (${deviceName})`);
+        }
+
+        // Коли всі операції додавання завершені
+        if (addedCount === newVerifications.length) {
+          if (hasError) {
+            callback(new Error('Error adding some verifications'));
+          } else {
+            console.log(
+              `✅ Усі ${newVerifications.length} нові повірки успішно додані`,
+            );
+            callback(null);
+          }
+        }
+      },
+    );
+  });
+}
 
 /**
  * DELETE /api/search-control-equipment/:id - Видалити одиницю техніки
@@ -653,23 +797,43 @@ router.post('/search-control-equipment/:id/verification', (req, res) => {
   try {
     const { id } = req.params;
     const {
+      deviceName,
+      serialNumber,
       certificateRegNumber,
       verificationDate,
       validUntil,
       verificationCost,
     } = req.body;
 
-    if (!verificationDate || !validUntil) {
+    console.log('📝 POST /search-control-equipment/:id/verification');
+    console.log('  equipmentId:', id);
+    console.log('  deviceName:', deviceName, '(type:', typeof deviceName, ')');
+    console.log(
+      '  serialNumber:',
+      serialNumber,
+      '(type:',
+      typeof serialNumber,
+      ')',
+    );
+    console.log('  certificateRegNumber:', certificateRegNumber);
+    console.log('  verificationDate:', verificationDate);
+    console.log('  validUntil:', validUntil);
+    console.log('  verificationCost:', verificationCost);
+
+    if (!deviceName || !serialNumber || !verificationDate || !validUntil) {
       return res.status(400).json({
-        error: 'Missing required fields: verificationDate, validUntil',
+        error:
+          'Missing required fields: deviceName, serialNumber, verificationDate, validUntil',
       });
     }
 
     db.run(
-      `INSERT INTO search_control_equipment_verification (equipmentId, certificateRegNumber, verificationDate, validUntil, verificationCost)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO search_control_equipment_verification (equipmentId, deviceName, serialNumber, certificateRegNumber, verificationDate, validUntil, verificationCost)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
+        deviceName,
+        serialNumber,
         certificateRegNumber,
         verificationDate,
         validUntil,
@@ -680,6 +844,10 @@ router.post('/search-control-equipment/:id/verification', (req, res) => {
           console.error('❌ Error creating verification:', err);
           res.status(500).json({ error: err.message });
         } else {
+          console.log(
+            '✅ Verification created successfully with ID:',
+            this.lastID,
+          );
           res.json({
             id: this.lastID,
             message: 'Verification created successfully',
