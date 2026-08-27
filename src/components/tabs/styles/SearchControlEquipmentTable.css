@@ -118,6 +118,55 @@
   color: #c62828;
 }
 
+/* Verification Status */
+.verification-status {
+  text-align: center;
+}
+
+.verification-badge {
+  display: inline-block;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: #f5f5f5;
+  color: #666;
+}
+
+.verification-badge.verification-none {
+  color: #999;
+}
+
+/* Row status-based styling */
+.search-control-table tbody tr.verification-ok {
+  border-left: 3px solid transparent;
+}
+
+.search-control-table tbody tr.verification-warning {
+  border-left: 3px solid #ffa726;
+  background-color: #fff8f0;
+}
+
+.search-control-table tbody tr.verification-critical {
+  border-left: 3px solid #ef5350;
+  background-color: #ffebee;
+}
+
+.search-control-table tbody tr.verification-expired {
+  border-left: 3px solid #666;
+  background-color: #f5f5f5;
+  opacity: 0.7;
+}
+
+.search-control-table tbody tr.verification-warning:hover {
+  background-color: #ffe6d1;
+}
+
+.search-control-table tbody tr.verification-critical:hover {
+  background-color: #ffcdd2;
+}
+
 /* Price Cell */
 .price {
   text-align: center;

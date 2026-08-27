@@ -1,28 +1,12 @@
 import React from 'react';
 import './styles/SearchControlEquipmentInfoModal.css';
-
-interface Verification {
-  id: number;
-  deviceName: string;
-  serialNumber: string;
-  certificateRegNumber: string;
-  verificationDate: string;
-  validUntil: string;
-  verificationCost: number;
-}
-
-interface EquipmentItem {
-  id: number;
-  category: string;
-  name: string;
-  serialNumber: string;
-  invertarNumber: string;
-  releaseYear: number;
-  technicalCondition: string;
-  pricePerUnit: string; // ✅ Змінено на string для точності
-  notes: string;
-  verifications?: Verification[];
-}
+import {
+  getVerificationStatus,
+  getStatusIcon,
+  getStatusLabel,
+  formatDaysRemaining,
+} from '../../utils/verificationStatusUtils';
+import { EquipmentItem } from '../../types/equipment';
 
 interface SearchControlEquipmentInfoModalProps {
   equipment: EquipmentItem | null;
@@ -92,7 +76,7 @@ const SearchControlEquipmentInfoModal: React.FC<
                 <label>Ціна за одиницю:</label>
                 <strong>
                   {equipment.pricePerUnit
-                    ? `${equipment.pricePerUnit.toLocaleString('uk-UA')} грн`
+                    ? `${Number(equipment.pricePerUnit).toLocaleString('uk-UA')} грн`
                     : '—'}
                 </strong>
               </div>
@@ -112,40 +96,65 @@ const SearchControlEquipmentInfoModal: React.FC<
               <section className='info-section'>
                 <h3>📊 Метрологічна повірка</h3>
                 <div className='verifications-list'>
-                  {equipment.verifications.map((v) => (
-                    <div key={v.id} className='verification-record'>
-                      <div className='verification-info'>
-                        <div>
-                          <label>Назва та умовне позначення засобу:</label>
-                          <strong>{v.deviceName || '—'}</strong>
+                  {equipment.verifications.map((v) => {
+                    const statusInfo = getVerificationStatus(v.validUntil);
+                    return (
+                      <div
+                        key={v.id}
+                        className={`verification-record verification-${statusInfo.status}`}
+                      >
+                        <div className='verification-header'>
+                          <strong className='verification-name'>
+                            {v.deviceName || '—'}
+                          </strong>
+                          <span
+                            className={`verification-status-badge status-${statusInfo.status}`}
+                            title={getStatusLabel(statusInfo.status)}
+                          >
+                            {getStatusIcon(statusInfo.status)}{' '}
+                            {getStatusLabel(statusInfo.status)}
+                          </span>
                         </div>
-                        <div>
-                          <label>Серійний номер:</label>
-                          <strong>{v.serialNumber || '—'}</strong>
-                        </div>
-                        <div>
-                          <label>Реєстраційний номер:</label>
-                          <strong>{v.certificateRegNumber || '—'}</strong>
-                        </div>
-                        <div>
-                          <label>Дата реєстрації свідоцтва:</label>
-                          <strong>{formatDate(v.verificationDate)}</strong>
-                        </div>
-                        <div>
-                          <label>Дійсне до:</label>
-                          <strong>{formatDate(v.validUntil)}</strong>
-                        </div>
-                        {v.verificationCost && (
+                        <div className='verification-info'>
                           <div>
-                            <label>Вартість:</label>
-                            <strong>
-                              {v.verificationCost.toLocaleString('uk-UA')} грн
-                            </strong>
+                            <label>Серійний номер:</label>
+                            <strong>{v.serialNumber || '—'}</strong>
                           </div>
-                        )}
+                          <div>
+                            <label>Реєстраційний номер:</label>
+                            <strong>{v.certificateRegNumber || '—'}</strong>
+                          </div>
+                          <div>
+                            <label>Дата реєстрації свідоцтва:</label>
+                            <strong>{formatDate(v.verificationDate)}</strong>
+                          </div>
+                          <div className='validity-section'>
+                            <label>Дійсне до:</label>
+                            <div className='validity-info'>
+                              <strong
+                                className={`validity-date status-${statusInfo.status}`}
+                              >
+                                {formatDate(v.validUntil)}
+                              </strong>
+                              <span
+                                className={`days-remaining status-${statusInfo.status}`}
+                              >
+                                ({formatDaysRemaining(statusInfo.days)})
+                              </span>
+                            </div>
+                          </div>
+                          {v.verificationCost && (
+                            <div>
+                              <label>Вартість:</label>
+                              <strong>
+                                {v.verificationCost.toLocaleString('uk-UA')} грн
+                              </strong>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}

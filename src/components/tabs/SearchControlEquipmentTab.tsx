@@ -6,36 +6,9 @@ import SearchControlEquipmentModal from './SearchControlEquipmentModal';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import SuccessModal from '../modals/SuccessModal';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { getVerificationStatus } from '../../utils/verificationStatusUtils';
+import { EquipmentItem, EquipmentStats } from '../../types/equipment';
 import '../../styles/SearchControlEquipmentTab.css';
-
-interface EquipmentStats {
-  total: number;
-  specialSearch: number;
-  measurementControl: number;
-}
-
-interface EquipmentItem {
-  id: number;
-  category: string;
-  name: string;
-  serialNumber: string;
-  invertarNumber: string;
-  releaseYear: number;
-  technicalCondition: string;
-  pricePerUnit: string; // ✅ Змінено на string для точності
-  notes: string;
-  verifications?: Array<{
-    id: number;
-    deviceName: string;
-    serialNumber: string;
-    certificateRegNumber: string;
-    verificationDate: string;
-    validUntil: string;
-    verificationCost: number;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
 
 const SearchControlEquipmentTab = () => {
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
@@ -78,7 +51,37 @@ const SearchControlEquipmentTab = () => {
 
       const data = await response.json();
       setEquipment(data.items || []);
-      setStats(data.stats);
+
+      // Calculate verification statistics
+      const verificationsWarning = (data.items || []).filter(
+        (item: EquipmentItem) => {
+          if (!item.verifications || item.verifications.length === 0)
+            return false;
+          const nearestExpiration = item.verifications
+            .map((v) => new Date(v.validUntil).getTime())
+            .sort((a, b) => a - b)[0];
+          const status = getVerificationStatus(new Date(nearestExpiration));
+          return status.status === 'warning';
+        },
+      ).length;
+
+      const verificationsCritical = (data.items || []).filter(
+        (item: EquipmentItem) => {
+          if (!item.verifications || item.verifications.length === 0)
+            return false;
+          const nearestExpiration = item.verifications
+            .map((v) => new Date(v.validUntil).getTime())
+            .sort((a, b) => a - b)[0];
+          const status = getVerificationStatus(new Date(nearestExpiration));
+          return status.status === 'critical' || status.status === 'expired';
+        },
+      ).length;
+
+      setStats({
+        ...data.stats,
+        verificationsWarning,
+        verificationsCritical,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);
@@ -197,6 +200,22 @@ const SearchControlEquipmentTab = () => {
             <div className='stat-value'>{stats.measurementControl}</div>
             <div className='stat-label'>Контрольно-вимірювальна техніка</div>
           </div>
+          {stats.verificationsCritical !== undefined &&
+            stats.verificationsCritical > 0 && (
+              <div className='stat-card stat-critical'>
+                <div className='stat-icon'>🔴</div>
+                <div className='stat-value'>{stats.verificationsCritical}</div>
+                <div className='stat-label'>Критично (до 7 днів)</div>
+              </div>
+            )}
+          {stats.verificationsWarning !== undefined &&
+            stats.verificationsWarning > 0 && (
+              <div className='stat-card stat-warning'>
+                <div className='stat-icon'>🟡</div>
+                <div className='stat-value'>{stats.verificationsWarning}</div>
+                <div className='stat-label'>Скоро (до 30 днів)</div>
+              </div>
+            )}
         </div>
       )}
 

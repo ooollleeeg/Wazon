@@ -442,18 +442,68 @@ router.get('/search-control-equipment', (req, res) => {
         console.error('❌ Error fetching search control equipment:', err);
         res.status(500).json({ error: err.message });
       } else {
-        // Отримати статистику
-        db.all(
-          `SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN category = 'Спеціальна пошукова техніка' THEN 1 ELSE 0 END) as specialSearch,
-            SUM(CASE WHEN category = 'Контрольно-вимірювальна техніка' THEN 1 ELSE 0 END) as measurementControl
-          FROM search_control_equipment`,
-          (statsErr, statsRows) => {
-            const stats = statsErr ? null : statsRows[0];
-            res.json({ items: rows || [], stats });
-          },
-        );
+        // ✅ Завантажити верифікації для кожної техніки
+        const equipmentWithVerifications = [];
+        let completed = 0;
+
+        if (!rows || rows.length === 0) {
+          // Отримати статистику
+          db.all(
+            `SELECT 
+              COUNT(*) as total,
+              SUM(CASE WHEN category = 'Спеціальна пошукова техніка' THEN 1 ELSE 0 END) as specialSearch,
+              SUM(CASE WHEN category = 'Контрольно-вимірювальна техніка' THEN 1 ELSE 0 END) as measurementControl
+            FROM search_control_equipment`,
+            (statsErr, statsRows) => {
+              const stats = statsErr ? null : statsRows[0];
+              res.json({ items: [], stats });
+            },
+          );
+        } else {
+          rows.forEach((equipment, index) => {
+            console.log(
+              `✅ Fetching verifications for equipment ${equipment.id}`,
+            );
+            db.all(
+              'SELECT * FROM search_control_equipment_verification WHERE equipmentId = ? ORDER BY verificationDate DESC',
+              [equipment.id],
+              (verifyErr, verifications) => {
+                console.log(
+                  `  Verifications for ID ${equipment.id}:`,
+                  verifications,
+                );
+                equipmentWithVerifications[index] = {
+                  ...equipment,
+                  verifications: verifications || [],
+                };
+                completed++;
+                console.log(`  Completed: ${completed}/${rows.length}`);
+
+                if (completed === rows.length) {
+                  console.log(
+                    '✅ All verifications loaded, returning response',
+                  );
+                  // Отримати статистику
+                  db.all(
+                    `SELECT 
+                      COUNT(*) as total,
+                      SUM(CASE WHEN category = 'Спеціальна пошукова техніка' THEN 1 ELSE 0 END) as specialSearch,
+                      SUM(CASE WHEN category = 'Контрольно-вимірювальна техніка' THEN 1 ELSE 0 END) as measurementControl
+                    FROM search_control_equipment`,
+                    (statsErr, statsRows) => {
+                      const stats = statsErr ? null : statsRows[0];
+                      console.log(
+                        '📤 Response items:',
+                        equipmentWithVerifications.length,
+                      );
+                      res.json({ items: equipmentWithVerifications, stats });
+                    },
+                  );
+                }
+              },
+            );
+          });
+        }
       }
     });
   } catch (err) {
