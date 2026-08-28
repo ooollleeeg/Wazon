@@ -513,6 +513,8 @@ export const objectTypes = {
     fields: [
       'systemClass',
       'systemName',
+      'subdivisionName',
+      'subdivisionType',
       'accessMode',
       'kzzName',
       'kzzSerial',

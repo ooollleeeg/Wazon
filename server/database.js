@@ -514,6 +514,8 @@ function initializeDatabase() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         systemClass TEXT NOT NULL,
         systemName TEXT NOT NULL,
+        subdivisionName TEXT,
+        subdivisionType TEXT,
         accessMode TEXT,
         kzzName TEXT,
         kzzSerial TEXT,
@@ -875,6 +877,53 @@ function initializeDatabase() {
         },
       );
     });
+
+    // ✅ Додати колони для iks (якщо їх ще немає)
+    db.all(
+      `
+      PRAGMA table_info(iks)
+    `,
+      [],
+      (err, columns) => {
+        if (!err && columns && Array.isArray(columns)) {
+          const columnNames = columns.map((c) => c.name);
+
+          if (!columnNames.includes('subdivisionName')) {
+            console.log('➕ Adding column subdivisionName to iks table...');
+            db.run(
+              `ALTER TABLE iks ADD COLUMN subdivisionName TEXT`,
+              (alterErr) => {
+                if (alterErr) {
+                  console.log(
+                    'ℹ️ subdivisionName already exists or error:',
+                    alterErr.message,
+                  );
+                } else {
+                  console.log('✅ Added subdivisionName to iks table');
+                }
+              },
+            );
+          }
+
+          if (!columnNames.includes('subdivisionType')) {
+            console.log('➕ Adding column subdivisionType to iks table...');
+            db.run(
+              `ALTER TABLE iks ADD COLUMN subdivisionType TEXT`,
+              (alterErr) => {
+                if (alterErr) {
+                  console.log(
+                    'ℹ️ subdivisionType already exists or error:',
+                    alterErr.message,
+                  );
+                } else {
+                  console.log('✅ Added subdivisionType to iks table');
+                }
+              },
+            );
+          }
+        }
+      },
+    );
   });
 }
 

@@ -691,3 +691,144 @@ export const checkProtectionMeanDuplicate = async (
     throw err;
   }
 };
+
+/**
+ * Отримати агреговані дані про антивіруса з обох таблиць (class_a_systems та iks)
+ * Повертає масив об'єктів з інформацією про антивіруса та об'єкти, де він встановлений
+ */
+export const getAntivirusData = () => {
+  return new Promise((resolve, reject) => {
+    const query = `
+      -- Дані з АС класу 1, 2, 3
+      SELECT 
+        'class_a_systems' AS sourceTable,
+        id AS sourceId,
+        systemClass,
+        systemName,
+        subdivisionName,
+        subdivisionType,
+        antivirus,
+        antivirusOpinionNumber,
+        antivirusOpinionDate,
+        address
+      FROM class_a_systems
+      WHERE antivirus IS NOT NULL AND antivirus != ''
+      
+      UNION ALL
+      
+      -- Дані з ІКС
+      SELECT 
+        'iks' AS sourceTable,
+        id AS sourceId,
+        systemClass,
+        systemName,
+        subdivisionName,
+        subdivisionType,
+        antivirus,
+        antivirusOpinionNumber,
+        antivirusOpinionDate,
+        NULL AS address
+      FROM iks
+      WHERE antivirus IS NOT NULL AND antivirus != ''
+      
+      ORDER BY antivirus ASC, systemClass ASC, subdivisionName ASC
+    `;
+
+    db.all(query, [], (err, rows) => {
+      if (err) {
+        console.error('❌ Error getting antivirus data:', err.message);
+        reject(err);
+      } else {
+        console.log(`✅ Retrieved ${rows?.length || 0} antivirus records`);
+        resolve(rows || []);
+      }
+    });
+  });
+};
+
+/**
+ * Оновити експертний висновок антивіруса на всіх об'єктах, які його використовують
+ * @param {string} antivirusName - назва антивіруса
+ * @param {string} opinionNumber - новий номер експертного висновку
+ * @param {string} opinionDate - нова дата експертного висновку
+ */
+export const updateAntivirusOnAllObjects = (
+  antivirusName,
+  opinionNumber,
+  opinionDate,
+) => {
+  return new Promise((resolve, reject) => {
+    if (!antivirusName) {
+      return reject(new Error('Назва антивіруса не вказана'));
+    }
+
+    let completed = 0;
+    const results = { classA: 0, iks: 0, errors: [] };
+
+    // Оновити в class_a_systems
+    const classAQuery = `
+      UPDATE class_a_systems 
+      SET antivirusOpinionNumber = ?, antivirusOpinionDate = ?, updatedAt = CURRENT_TIMESTAMP
+      WHERE antivirus = ?
+    `;
+
+    db.run(
+      classAQuery,
+      [opinionNumber || null, opinionDate || null, antivirusName],
+      function (err) {
+        if (err) {
+          console.error('❌ Error updating class_a_systems:', err.message);
+          results.errors.push(`class_a_systems: ${err.message}`);
+          results.classA = 0;
+        } else {
+          results.classA = this.changes;
+          console.log(`✅ Updated ${this.changes} records in class_a_systems`);
+        }
+
+        completed++;
+        if (completed === 2) {
+          if (results.errors.length > 0) {
+            console.error('⚠️ Partial update with errors:', results.errors);
+            reject(new Error(results.errors.join('; ')));
+          } else {
+            console.log(`✅ Successfully updated all antivirus records`);
+            resolve(results);
+          }
+        }
+      },
+    );
+
+    // Оновити в iks
+    const iksQuery = `
+      UPDATE iks 
+      SET antivirusOpinionNumber = ?, antivirusOpinionDate = ?, updatedAt = CURRENT_TIMESTAMP
+      WHERE antivirus = ?
+    `;
+
+    db.run(
+      iksQuery,
+      [opinionNumber || null, opinionDate || null, antivirusName],
+      function (err) {
+        if (err) {
+          console.error('❌ Error updating iks:', err.message);
+          results.errors.push(`iks: ${err.message}`);
+          results.iks = 0;
+        } else {
+          results.iks = this.changes;
+          console.log(`✅ Updated ${this.changes} records in iks`);
+        }
+
+        completed++;
+        if (completed === 2) {
+          if (results.errors.length > 0) {
+            console.error('⚠️ Partial update with errors:', results.errors);
+            reject(new Error(results.errors.join('; ')));
+          } else {
+            console.log(`✅ Successfully updated all antivirus records`);
+            resolve(results);
+          }
+        }
+      },
+    );
+  });
+};

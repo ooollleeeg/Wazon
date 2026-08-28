@@ -1,0 +1,99 @@
+.antivirus-stats-section {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.antivirus-stats-section h2 {
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.antivirus-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.antivirus-stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.antivirus-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+.antivirus-stat-card.stat-total {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.antivirus-stat-card.stat-unique {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.antivirus-stat-card.stat-class {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.antivirus-stat-card.stat-iks {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.antivirus-stat-card.stat-department {
+  background: linear-gradient(135deg, #30b0c0 0%, #a8edea 100%);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.stats-group {
+  margin-bottom: 2rem;
+}
+
+.stats-group h3 {
+  color: #34495e;
+  font-size: 1.125rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .antivirus-stats-section {
+    padding: 1rem;
+  }
+
+  .antivirus-stats-row {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+  }
+}

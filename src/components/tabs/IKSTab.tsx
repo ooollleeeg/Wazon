@@ -12,6 +12,26 @@ const iksFormConfig: FormConfig = {
       title: '🏢 Основна інформація',
       fields: [
         {
+          name: 'subdivisionName',
+          label: 'Назва підрозділу',
+          type: 'text',
+          required: true,
+          placeholder: 'Наприклад: УОТЗ',
+        },
+        {
+          name: 'subdivisionType',
+          label: 'Тип підрозділу',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'підрозділ апарату', label: 'підрозділ апарату' },
+            {
+              value: 'територіальний підрозділ',
+              label: 'територіальний підрозділ',
+            },
+          ],
+        },
+        {
           name: 'systemClass',
           label: 'Клас системи',
           type: 'select',

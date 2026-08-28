@@ -15,6 +15,8 @@ import {
   updateObjectWithNested,
   deleteNestedItem,
   checkProtectionMeanDuplicate,
+  getAntivirusData,
+  updateAntivirusOnAllObjects,
 } from './utils/dbHelpers.js';
 import { db } from './database.js';
 
@@ -945,5 +947,100 @@ router.delete(
     }
   },
 );
+
+// ===== ANTIVIRUS DATA ENDPOINTS =====
+
+/**
+ * GET /api/antivirus - Отримати всі записи про встановлені антивіруси
+ * Агрегує дані з class_a_systems та iks таблиць
+ * Повертає масив об'єктів з інформацією про антивіруса та системи
+ */
+router.get('/antivirus', async (req, res) => {
+  try {
+    console.log('📥 GET /api/antivirus');
+    const data = await getAntivirusData();
+
+    // Обчислити статистику
+    const stats = {
+      total: data.length,
+      byClass: {
+        'АС класу 1': 0,
+        'АС класу 2': 0,
+        'АС класу 3': 0,
+        'ІКС класу 1': 0,
+        'ІКС класу 2': 0,
+        'ІКС класу 3': 0,
+      },
+      byDepartmentType: {
+        'підрозділ апарату': 0,
+        'територіальний підрозділ': 0,
+      },
+      uniqueAntivirus: new Set(),
+    };
+
+    data.forEach((item) => {
+      if (stats.byClass[item.systemClass] !== undefined) {
+        stats.byClass[item.systemClass]++;
+      }
+      if (stats.byDepartmentType[item.subdivisionType] !== undefined) {
+        stats.byDepartmentType[item.subdivisionType]++;
+      }
+      if (item.antivirus) {
+        stats.uniqueAntivirus.add(item.antivirus);
+      }
+    });
+
+    stats.uniqueAntivirus = Array.from(stats.uniqueAntivirus);
+
+    console.log(`✅ Retrieved ${data.length} antivirus records`);
+    res.json({ items: data, stats });
+  } catch (err) {
+    console.error('❌ Error in GET /api/antivirus:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /api/antivirus/update-opinion - Оновити експертний висновок для всіх об'єктів з конкретним антивіруса
+ * Очікує: { antivirusName, opinionNumber, opinionDate }
+ * Оновлює поля antivirusOpinionNumber та antivirusOpinionDate на всіх дотичних об'єктах
+ */
+router.put('/antivirus/update-opinion', async (req, res) => {
+  try {
+    const { antivirusName, opinionNumber, opinionDate } = req.body;
+
+    console.log('✏️ PUT /api/antivirus/update-opinion', {
+      antivirusName,
+      opinionNumber,
+      opinionDate,
+    });
+
+    if (!antivirusName) {
+      return res.status(400).json({
+        error: "Назва антивіруса обов'язкова",
+      });
+    }
+
+    const result = await updateAntivirusOnAllObjects(
+      antivirusName,
+      opinionNumber,
+      opinionDate,
+    );
+
+    console.log('✅ Antivirus opinion updated:', result);
+    res.json({
+      success: true,
+      message: `Експертний висновок для "${antivirusName}" успішно оновлено`,
+      updated: {
+        classA: result.classA,
+        iks: result.iks,
+        total: result.classA + result.iks,
+      },
+    });
+  } catch (err) {
+    console.error('❌ Error in PUT /api/antivirus/update-opinion:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default router;
