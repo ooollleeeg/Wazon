@@ -199,6 +199,27 @@
   transform: scale(1.1);
 }
 
+/* Verification Cell with Archive Counter */
+.verification-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.verification-archive-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #e0e0e0;
+  color: #666;
+  white-space: nowrap;
+  border: 1px solid #bdbdbd;
+}
+
 .btn-details:active {
   transform: scale(0.95);
 }

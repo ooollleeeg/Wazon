@@ -6,7 +6,7 @@ import SearchControlEquipmentModal from './SearchControlEquipmentModal';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import SuccessModal from '../modals/SuccessModal';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { getVerificationStatus } from '../../utils/verificationStatusUtils';
+import { getEquipmentVerificationStatus } from '../../utils/verificationStatusUtils';
 import { EquipmentItem, EquipmentStats } from '../../types/equipment';
 import '../../styles/SearchControlEquipmentTab.css';
 
@@ -52,27 +52,17 @@ const SearchControlEquipmentTab = () => {
       const data = await response.json();
       setEquipment(data.items || []);
 
-      // Calculate verification statistics
+      // ✅ Calculate verification statistics based on LATEST verifications only
       const verificationsWarning = (data.items || []).filter(
         (item: EquipmentItem) => {
-          if (!item.verifications || item.verifications.length === 0)
-            return false;
-          const nearestExpiration = item.verifications
-            .map((v) => new Date(v.validUntil).getTime())
-            .sort((a, b) => a - b)[0];
-          const status = getVerificationStatus(new Date(nearestExpiration));
+          const status = getEquipmentVerificationStatus(item.verifications);
           return status.status === 'warning';
         },
       ).length;
 
       const verificationsCritical = (data.items || []).filter(
         (item: EquipmentItem) => {
-          if (!item.verifications || item.verifications.length === 0)
-            return false;
-          const nearestExpiration = item.verifications
-            .map((v) => new Date(v.validUntil).getTime())
-            .sort((a, b) => a - b)[0];
-          const status = getVerificationStatus(new Date(nearestExpiration));
+          const status = getEquipmentVerificationStatus(item.verifications);
           return status.status === 'critical' || status.status === 'expired';
         },
       ).length;

@@ -1,9 +1,10 @@
 import './styles/SearchControlEquipmentTable.css';
 import {
-  getVerificationStatus,
   getStatusIcon,
   getStatusLabel,
   formatDaysRemaining,
+  getEquipmentVerificationStatus,
+  getLatestVerificationsPerPart,
 } from '../../utils/verificationStatusUtils';
 import { EquipmentItem } from '../../types/equipment';
 
@@ -11,21 +12,6 @@ interface SearchControlEquipmentTableProps {
   equipment: EquipmentItem[];
   onViewDetails: (item: EquipmentItem) => Promise<void>;
 }
-
-// Helper function to get the nearest expiration date from verifications
-const getNearestVerificationExpiration = (
-  verifications?: Array<{ validUntil: string }>,
-) => {
-  if (!verifications || verifications.length === 0) return null;
-
-  const validDates = verifications
-    .map((v) => v.validUntil)
-    .filter((date) => date)
-    .map((date) => new Date(date).getTime())
-    .sort((a, b) => a - b);
-
-  return validDates.length > 0 ? new Date(validDates[0]) : null;
-};
 
 const SearchControlEquipmentTable = ({
   equipment,
@@ -48,12 +34,20 @@ const SearchControlEquipmentTable = ({
         </thead>
         <tbody>
           {equipment.map((item) => {
-            const nearestExpiration = getNearestVerificationExpiration(
+            // ✅ Розраховуємо статус на основі ОСТАННІХ свідоцтв
+            const statusInfo = getEquipmentVerificationStatus(
               item.verifications,
             );
-            const statusInfo = nearestExpiration
-              ? getVerificationStatus(nearestExpiration)
-              : { status: 'ok' as const, days: Infinity };
+
+            // ✅ Отримуємо останні свідоцтва
+            const latestVerifications = getLatestVerificationsPerPart(
+              item.verifications,
+            );
+
+            // ✅ Рахуємо архівні свідоцтва
+            const totalArchived = item.verifications
+              ? item.verifications.length - latestVerifications.length
+              : 0;
 
             return (
               <tr key={item.id} className={`verification-${statusInfo.status}`}>
@@ -85,14 +79,25 @@ const SearchControlEquipmentTable = ({
                     : '—'}
                 </td>
                 <td className='verification-status'>
-                  {item.verifications && item.verifications.length > 0 ? (
-                    <span
-                      className='verification-badge'
-                      title={getStatusLabel(statusInfo.status)}
-                    >
-                      {getStatusIcon(statusInfo.status)}{' '}
-                      {formatDaysRemaining(statusInfo.days)}
-                    </span>
+                  {latestVerifications.length > 0 ? (
+                    <div className='verification-cell'>
+                      <span
+                        className='verification-badge'
+                        title={getStatusLabel(statusInfo.status)}
+                      >
+                        {getStatusIcon(statusInfo.status)}{' '}
+                        {formatDaysRemaining(statusInfo.days)}
+                      </span>
+                      {/* ✅ Лічильник архівних свідоцтв */}
+                      {totalArchived > 0 && (
+                        <span
+                          className='verification-archive-badge'
+                          title={`${totalArchived} архівних свідоцтв`}
+                        >
+                          +{totalArchived}
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <span className='verification-badge verification-none'>
                       —

@@ -248,6 +248,259 @@
   gap: 0.5rem;
 }
 
+/* ========== VERIFICATION GROUPING & ARCHIVAL ========== */
+
+/* Verification section header with filter */
+.search-control-info-modal .verification-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.search-control-info-modal .verification-section-header h3 {
+  margin: 0;
+}
+
+/* Verification filter */
+.search-control-info-modal .verification-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.search-control-info-modal .verification-filter label {
+  font-weight: 600;
+  color: #555;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.search-control-info-modal .verification-filter select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.search-control-info-modal .verification-filter select:hover {
+  border-color: #3498db;
+}
+
+.search-control-info-modal .verification-filter select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Verification group container */
+.search-control-info-modal .verification-group {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  background: #fafbfc;
+}
+
+/* Group header with component name and status */
+.search-control-info-modal .group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e0e0e0;
+  gap: 1rem;
+}
+
+.search-control-info-modal .component-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.search-control-info-modal .component-status {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.search-control-info-modal .component-status.active {
+  color: #27ae60;
+}
+
+.search-control-info-modal .component-status.inactive {
+  color: #e74c3c;
+}
+
+/* Latest verification badge and styling */
+.search-control-info-modal .verification-record.latest {
+  position: relative;
+  border: 2px solid #3498db;
+  background: #ecf7ff;
+  border-left: 5px solid #3498db;
+  margin-bottom: 1rem;
+}
+
+.search-control-info-modal .latest-badge {
+  display: inline-block;
+  position: absolute;
+  top: -12px;
+  left: 10px;
+  background: #3498db;
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Archived verifications section */
+.search-control-info-modal .archived-verifications {
+  margin-top: 1rem;
+}
+
+.search-control-info-modal .archived-verifications summary {
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  background: #f0f0f0;
+  font-weight: 600;
+  color: #555;
+  user-select: none;
+  transition: background 0.2s ease;
+  list-style: none;
+}
+
+.search-control-info-modal
+  .archived-verifications
+  summary::-webkit-details-marker {
+  display: none;
+}
+
+.search-control-info-modal .archived-verifications summary::before {
+  content: '▶ ';
+  display: inline-block;
+  margin-right: 0.5rem;
+  transition: transform 0.2s ease;
+  color: #666;
+}
+
+.search-control-info-modal .archived-verifications[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.search-control-info-modal .archived-verifications summary:hover {
+  background: #e8e8e8;
+}
+
+/* Archived list container */
+.search-control-info-modal .archived-list {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #e8e8e8;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Archived verification record */
+.search-control-info-modal .verification-record.archived {
+  position: relative;
+  opacity: 0.85;
+  background: #fafafa;
+  border-left-width: 3px;
+}
+
+.search-control-info-modal .verification-record.archived:hover {
+  opacity: 1;
+}
+
+/* Old verification badge (10+ years) */
+.search-control-info-modal .old-badge {
+  display: inline-block;
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: #e0e0e0;
+  color: #666;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.search-control-info-modal .verification-record.old-verification {
+  opacity: 0.7;
+}
+
+/* Verification info row layout */
+.search-control-info-modal .info-row {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0;
+}
+
+.search-control-info-modal .info-row label {
+  font-weight: 600;
+  color: #555;
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+.search-control-info-modal .info-row strong {
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.search-control-info-modal .info-row.validity-row {
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+}
+
+.search-control-info-modal .validity-row .validity-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-control-info-modal .validity-date {
+  font-weight: 600;
+}
+
+.search-control-info-modal .days-remaining {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.search-control-info-modal .days-remaining.status-ok {
+  color: #2e7d32;
+}
+
+.search-control-info-modal .days-remaining.status-warning {
+  color: #f57c00;
+}
+
+.search-control-info-modal .days-remaining.status-critical {
+  color: #d32f2f;
+}
+
+.search-control-info-modal .days-remaining.status-expired {
+  color: #666;
+}
+
 .search-control-info-modal .validity-date {
   font-weight: 600;
   font-size: 0.95rem;
