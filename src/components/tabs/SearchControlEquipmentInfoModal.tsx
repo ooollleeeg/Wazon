@@ -148,6 +148,20 @@ const SearchControlEquipmentInfoModal: React.FC<
 
                     if (filteredGroupVerifications.length === 0) return null;
 
+                    // ✅ Перевіряємо, чи latest входить у фільтровані
+                    const hasLatestInFiltered =
+                      filteredGroupVerifications.includes(group.latest);
+
+                    // ✅ Правильно рахуємо архівні залежно від фільтру
+                    const archivedCount = hasLatestInFiltered
+                      ? filteredGroupVerifications.length - 1
+                      : filteredGroupVerifications.length;
+
+                    // ✅ Визначаємо архівні для відображення
+                    const archivedToDisplay = hasLatestInFiltered
+                      ? filteredGroupVerifications.slice(1)
+                      : filteredGroupVerifications;
+
                     return (
                       <div
                         key={group.devicePart}
@@ -166,7 +180,7 @@ const SearchControlEquipmentInfoModal: React.FC<
                         </div>
 
                         {/* ✅ ОСТАННЄ свідоцтво - виділено */}
-                        {filteredGroupVerifications.includes(group.latest) && (
+                        {hasLatestInFiltered && (
                           <div
                             className={`verification-record latest verification-${group.latestStatus}`}
                           >
@@ -179,46 +193,38 @@ const SearchControlEquipmentInfoModal: React.FC<
                         )}
 
                         {/* ✅ АРХІВНІ свідоцтва - згорнуто */}
-                        {group.archivedCount > 0 &&
-                          (filteredGroupVerifications.length > 1 ||
-                            selectedYear) && (
-                            <details className='archived-verifications'>
-                              <summary>
-                                📋 Архівні свідоцтва (
-                                {filteredGroupVerifications.length - 1})
-                              </summary>
-                              <div className='archived-list'>
-                                {filteredGroupVerifications
-                                  .slice(1)
-                                  .map((v) => {
-                                    const statusInfo = getVerificationStatus(
-                                      v.validUntil,
-                                    );
-                                    const isOld =
-                                      isVerificationOlderThan10Years(
-                                        v.verificationDate,
-                                      );
+                        {archivedCount > 0 && (
+                          <details className='archived-verifications'>
+                            <summary>
+                              📋 Архівні свідоцтва ({archivedCount})
+                            </summary>
+                            <div className='archived-list'>
+                              {archivedToDisplay.map((v) => {
+                                const statusInfo = getVerificationStatus(
+                                  v.validUntil,
+                                );
+                                const isOld = isVerificationOlderThan10Years(
+                                  v.verificationDate,
+                                );
 
-                                    return (
-                                      <div
-                                        key={v.id}
-                                        className={`verification-record archived verification-${statusInfo.status}${isOld ? ' old-verification' : ''}`}
-                                      >
-                                        {isOld && (
-                                          <div className='old-badge'>
-                                            10+ років
-                                          </div>
-                                        )}
-                                        <VerificationDetails
-                                          verification={v}
-                                          formatDate={formatDate}
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            </details>
-                          )}
+                                return (
+                                  <div
+                                    key={v.id}
+                                    className={`verification-record archived verification-${statusInfo.status}${isOld ? ' old-verification' : ''}`}
+                                  >
+                                    {isOld && (
+                                      <div className='old-badge'>10+ років</div>
+                                    )}
+                                    <VerificationDetails
+                                      verification={v}
+                                      formatDate={formatDate}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </details>
+                        )}
                       </div>
                     );
                   })}
