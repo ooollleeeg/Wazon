@@ -30,6 +30,15 @@ interface Order {
   publisher: string;
 }
 
+interface SpecialResearch {
+  id?: number;
+  registrationNumber: string;
+  registrationDate: string;
+  performer: string;
+  eventDate: string;
+  permissionDetails: string;
+}
+
 interface ClassASFormData {
   address: string;
   subdivisionName: string;
@@ -62,6 +71,7 @@ interface ClassASFormData {
   documents: Document[];
   protectionMeans: ProtectionMean[];
   software: Software[];
+  specialResearch: SpecialResearch[];
   orders: Order[];
 }
 
@@ -114,6 +124,7 @@ export default function ClassASForm({
         documents: initialData.documents || [],
         protectionMeans: initialData.protectionMeans || [],
         software: initialData.software || [],
+        specialResearch: initialData.specialResearch || [],
         orders: initialData.orders || [],
       };
     }
@@ -150,6 +161,7 @@ export default function ClassASForm({
       documents: [],
       protectionMeans: [],
       software: [],
+      specialResearch: [],
       orders: [],
     };
   });
@@ -245,7 +257,37 @@ export default function ClassASForm({
       software: prev.software.filter((_, i) => i !== index),
     }));
   };
+  // ===== ПРОТОКОЛ СПЕЦІАЛЬНИХ ДОСЛІДЖЕНЬ =====
+  const addSpecialResearch = () => {
+    setFormData((prev) => ({
+      ...prev,
+      specialResearch: [
+        ...prev.specialResearch,
+        {
+          registrationNumber: '',
+          registrationDate: '',
+          performer: '',
+          eventDate: '',
+          permissionDetails: '',
+        },
+      ],
+    }));
+  };
 
+  const updateSpecialResearch = (index: number, field: string, value: any) => {
+    setFormData((prev) => {
+      const newResearch = [...prev.specialResearch];
+      newResearch[index] = { ...newResearch[index], [field]: value };
+      return { ...prev, specialResearch: newResearch };
+    });
+  };
+
+  const removeSpecialResearch = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      specialResearch: prev.specialResearch.filter((_, i) => i !== index),
+    }));
+  };
   // ===== НАКАЗИ =====
   const addOrder = () => {
     setFormData((prev) => ({
@@ -502,6 +544,115 @@ export default function ClassASForm({
               placeholder='№'
             />
           </div>
+        </div>
+      </section>
+
+      {/* ПРОТОКОЛ СПЕЦІАЛЬНИХ ДОСЛІДЖЕНЬ */}
+      <section className='form-section'>
+        <div className='section-header'>
+          <h3>📋 Протокол спеціальних досліджень</h3>
+          <button
+            type='button'
+            className='btn-add'
+            onClick={addSpecialResearch}
+          >
+            + Додати протокол
+          </button>
+        </div>
+
+        <div className='nested-items'>
+          {formData.specialResearch &&
+            formData.specialResearch.map((research, index) => (
+              <div key={index} className='nested-item'>
+                <div className='nested-header'>
+                  <span className='item-number'>Протокол {index + 1}</span>
+                  <button
+                    type='button'
+                    className='btn-remove'
+                    onClick={() => removeSpecialResearch(index)}
+                    title='Видалити'
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className='form-grid'>
+                  <div className='form-group'>
+                    <label>Реєстраційний номер</label>
+                    <input
+                      type='text'
+                      value={research.registrationNumber || ''}
+                      onChange={(e) =>
+                        updateSpecialResearch(
+                          index,
+                          'registrationNumber',
+                          e.target.value,
+                        )
+                      }
+                      placeholder='№'
+                    />
+                  </div>
+                  <div className='form-group'>
+                    <label>Дата реєстрації</label>
+                    <input
+                      type='date'
+                      value={research.registrationDate || ''}
+                      onChange={(e) =>
+                        updateSpecialResearch(
+                          index,
+                          'registrationDate',
+                          e.target.value,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className='form-group'>
+                    <label>Виконавець</label>
+                    <input
+                      type='text'
+                      value={research.performer || ''}
+                      onChange={(e) =>
+                        updateSpecialResearch(
+                          index,
+                          'performer',
+                          e.target.value,
+                        )
+                      }
+                      placeholder='ПІБ або назва організації'
+                    />
+                  </div>
+                  <div className='form-group'>
+                    <label>Дата проведення заходу</label>
+                    <input
+                      type='date'
+                      value={research.eventDate || ''}
+                      onChange={(e) =>
+                        updateSpecialResearch(
+                          index,
+                          'eventDate',
+                          e.target.value,
+                        )
+                      }
+                    />
+                  </div>
+                  <div className='form-group full-width'>
+                    <label>Реквізити Дозволу (ліцензії)</label>
+                    <input
+                      type='text'
+                      value={research.permissionDetails || ''}
+                      onChange={(e) =>
+                        updateSpecialResearch(
+                          index,
+                          'permissionDetails',
+                          e.target.value,
+                        )
+                      }
+                      placeholder='№ і дата виданого дозволу'
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
         </div>
       </section>
 

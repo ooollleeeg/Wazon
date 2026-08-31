@@ -383,6 +383,52 @@ const classASFormConfig: FormConfig = {
       ],
     },
     {
+      name: 'specialResearch',
+      title: '📋 Протокол спеціальних досліджень',
+      icon: '📋',
+      dateField: 'eventDate',
+      defaultItem: {
+        registrationNumber: '',
+        registrationDate: '',
+        performer: '',
+        eventDate: '',
+        permissionDetails:
+          'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
+      },
+      fields: [
+        {
+          name: 'registrationNumber',
+          label: 'Реєстраційний номер',
+          type: 'text',
+          placeholder: 'Наприклад: ПСД-2024-001',
+        },
+        {
+          name: 'registrationDate',
+          label: 'Дата реєстрації',
+          type: 'date',
+        },
+        {
+          name: 'performer',
+          label: 'Виконавець',
+          type: 'text',
+          placeholder: 'ПІБ або назва організації',
+        },
+        {
+          name: 'eventDate',
+          label: 'Дата проведення заходу',
+          type: 'date',
+          required: true,
+        },
+        {
+          name: 'permissionDetails',
+          label: 'Реквізити Дозволу (ліцензії)',
+          type: 'text',
+          fullWidth: true,
+          placeholder: '№ і дата виданого дозволу',
+        },
+      ],
+    },
+    {
       name: 'atestation',
       title: 'Акт атестації комплексу ТЗІ',
       icon: '✅',
@@ -910,6 +956,29 @@ const classASCardConfig: CardConfig = {
         {
           label: 'Реквізити Дозволу (ліцензії)',
           value: 'checkPermissionPerformer',
+          fullWidth: true,
+        },
+      ],
+    },
+    {
+      name: 'specialResearch',
+      title: '📋 Протокол спеціальних досліджень',
+      icon: '📋',
+      itemTitle: 'registrationNumber',
+      dateField: 'registrationDate',
+      showPreviousVersions: true,
+      fields: [
+        { label: 'Реєстраційний номер', value: 'registrationNumber' },
+        { label: 'Дата реєстрації', value: 'registrationDate', format: 'date' },
+        { label: 'Виконавець', value: 'performer' },
+        {
+          label: 'Дата проведення заходу',
+          value: 'eventDate',
+          format: 'date',
+        },
+        {
+          label: 'Реквізити Дозволу (ліцензії)',
+          value: 'permissionDetails',
           fullWidth: true,
         },
       ],

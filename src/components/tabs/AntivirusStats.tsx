@@ -26,7 +26,7 @@ const AntivirusStats = ({ stats }: AntivirusStatsProps) => {
 
       {/* Статистика по класам АС */}
       <div className='stats-group'>
-        <h3>🖥️ АС класу</h3>
+        <h3>🖥️ Автоматизовані системи</h3>
         <div className='antivirus-stats-row'>
           <div className='antivirus-stat-card stat-class'>
             <div className='stat-value'>{stats.byClass['АС класу 1'] || 0}</div>
@@ -45,7 +45,7 @@ const AntivirusStats = ({ stats }: AntivirusStatsProps) => {
 
       {/* Статистика по класам ІКС */}
       <div className='stats-group'>
-        <h3>🌐 ІКС класу</h3>
+        <h3>🌐 Інформаційно-комунікаційні системи</h3>
         <div className='antivirus-stats-row'>
           <div className='antivirus-stat-card stat-iks'>
             <div className='stat-value'>

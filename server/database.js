@@ -215,6 +215,20 @@ function initializeDatabase() {
     `);
 
     db.run(`
+      CREATE TABLE IF NOT EXISTS class_a_systems_special_research (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        systemId INTEGER NOT NULL,
+        registrationNumber TEXT,
+        registrationDate TEXT,
+        performer TEXT,
+        eventDate TEXT,
+        permissionDetails TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
       CREATE TABLE IF NOT EXISTS class_a_systems_atestation (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         systemId INTEGER NOT NULL,

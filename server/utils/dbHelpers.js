@@ -357,7 +357,10 @@ export const createObjectWithNested = (config, data) => {
     const mainData = { ...data };
     delete mainData.id;
     const nestedKeys = Object.keys(nestedTables || {});
+    console.log(`🔍 DEBUG: nestedKeys from config:`, nestedKeys);
+    console.log(`🔍 DEBUG: data before delete:`, Object.keys(data));
     nestedKeys.forEach((key) => delete mainData[key]);
+    console.log(`🔍 DEBUG: mainData after delete:`, Object.keys(mainData));
 
     const fields = Object.keys(mainData);
     const placeholders = fields.map(() => '?').join(',');

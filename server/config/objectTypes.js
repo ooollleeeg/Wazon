@@ -162,6 +162,7 @@ export const objectTypes = {
       categorization: {
         table: 'class_a_systems_categorization',
         fields: [
+          'categorizationType',
           'categorizationActDate',
           'categorizationActNumber',
           'categorizationRank',
@@ -181,6 +182,7 @@ export const objectTypes = {
           'controlDate',
           'controlTermin',
           'controlPerformer',
+          'controlEventDate',
           'permissionPerformer',
         ],
       },
@@ -190,7 +192,18 @@ export const objectTypes = {
           'checkNumber',
           'checkDate',
           'checkPerformer',
+          'checkEventDate',
           'checkPermissionPerformer',
+        ],
+      },
+      specialResearch: {
+        table: 'class_a_systems_special_research',
+        fields: [
+          'registrationNumber',
+          'registrationDate',
+          'performer',
+          'eventDate',
+          'permissionDetails',
         ],
       },
       atestation: {

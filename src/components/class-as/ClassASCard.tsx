@@ -36,6 +36,7 @@ interface ClassASCardProps {
   documents?: any[];
   protectionMeans?: any[];
   software?: any[];
+  specialResearch?: any[];
   orders?: any[];
   onEdit: () => void;
   onDelete: () => void;
@@ -75,6 +76,7 @@ export default function ClassASCard({
   documents = [],
   protectionMeans = [],
   software = [],
+  specialResearch = [],
   orders = [],
   onEdit,
   onDelete,
@@ -290,6 +292,56 @@ export default function ClassASCard({
               )}
             </div>
           </section>
+
+          {/* ПРОТОКОЛ СПЕЦІАЛЬНИХ ДОСЛІДЖЕНЬ */}
+          {specialResearch && specialResearch.length > 0 && (
+            <section className='card-section'>
+              <h4 className='section-title'>
+                📋 Протокол спеціальних досліджень ({specialResearch.length})
+              </h4>
+              <div className='nested-list'>
+                {specialResearch.map((research, index) => (
+                  <div key={index} className='nested-item'>
+                    <div className='nested-item-header'>
+                      <span className='item-number'>{index + 1}.</span>
+                      <span className='item-title'>
+                        {research.registrationNumber || `Протокол ${index + 1}`}
+                      </span>
+                    </div>
+                    <div className='nested-item-content'>
+                      {research.registrationDate && (
+                        <p>
+                          <strong>Дата реєстрації:</strong>{' '}
+                          {new Date(
+                            research.registrationDate,
+                          ).toLocaleDateString('uk-UA')}
+                        </p>
+                      )}
+                      {research.performer && (
+                        <p>
+                          <strong>Виконавець:</strong> {research.performer}
+                        </p>
+                      )}
+                      {research.eventDate && (
+                        <p>
+                          <strong>Дата проведення заходу:</strong>{' '}
+                          {new Date(research.eventDate).toLocaleDateString(
+                            'uk-UA',
+                          )}
+                        </p>
+                      )}
+                      {research.permissionDetails && (
+                        <p>
+                          <strong>Реквізити Дозволу (ліцензії):</strong>{' '}
+                          {research.permissionDetails}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* ДХОВЕДЕМЕ ДССЗЗІ */}
           {documents && documents.length > 0 && (
