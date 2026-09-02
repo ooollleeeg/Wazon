@@ -27,6 +27,7 @@ export interface EquipmentStats {
   total: number;
   specialSearch: number;
   measurementControl: number;
-  verificationsWarning?: number;
+  verificationsExpired?: number;
   verificationsCritical?: number;
+  verificationsWarning?: number;
 }

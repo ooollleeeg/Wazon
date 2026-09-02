@@ -53,6 +53,20 @@ const SearchControlEquipmentTab = () => {
       setEquipment(data.items || []);
 
       // ✅ Calculate verification statistics based on LATEST verifications only
+      const verificationsExpired = (data.items || []).filter(
+        (item: EquipmentItem) => {
+          const status = getEquipmentVerificationStatus(item.verifications);
+          return status.status === 'expired';
+        },
+      ).length;
+
+      const verificationsCritical = (data.items || []).filter(
+        (item: EquipmentItem) => {
+          const status = getEquipmentVerificationStatus(item.verifications);
+          return status.status === 'critical';
+        },
+      ).length;
+
       const verificationsWarning = (data.items || []).filter(
         (item: EquipmentItem) => {
           const status = getEquipmentVerificationStatus(item.verifications);
@@ -60,17 +74,11 @@ const SearchControlEquipmentTab = () => {
         },
       ).length;
 
-      const verificationsCritical = (data.items || []).filter(
-        (item: EquipmentItem) => {
-          const status = getEquipmentVerificationStatus(item.verifications);
-          return status.status === 'critical' || status.status === 'expired';
-        },
-      ).length;
-
       setStats({
         ...data.stats,
-        verificationsWarning,
+        verificationsExpired,
         verificationsCritical,
+        verificationsWarning,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -190,6 +198,14 @@ const SearchControlEquipmentTab = () => {
             <div className='stat-value'>{stats.measurementControl}</div>
             <div className='stat-label'>Контрольно-вимірювальна техніка</div>
           </div>
+          {stats.verificationsExpired !== undefined &&
+            stats.verificationsExpired > 0 && (
+              <div className='stat-card stat-expired'>
+                <div className='stat-icon'>⚫</div>
+                <div className='stat-value'>{stats.verificationsExpired}</div>
+                <div className='stat-label'>Закінчилась</div>
+              </div>
+            )}
           {stats.verificationsCritical !== undefined &&
             stats.verificationsCritical > 0 && (
               <div className='stat-card stat-critical'>

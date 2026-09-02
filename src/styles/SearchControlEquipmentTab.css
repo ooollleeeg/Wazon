@@ -41,6 +41,15 @@
 }
 
 /* Status-based stat cards */
+.stat-card.stat-expired {
+  background: linear-gradient(135deg, #424242 0%, #212121 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.stat-card.stat-expired:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
 .stat-card.stat-critical {
   background: linear-gradient(135deg, #ef5350 0%, #e53935 100%);
   box-shadow: 0 4px 12px rgba(244, 67, 54, 0.2);
