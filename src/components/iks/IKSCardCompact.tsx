@@ -6,6 +6,7 @@ interface IKSCardCompactProps {
   systemName?: string;
   systemClass?: string;
   accessMode?: string;
+  isProcessingSuspended?: boolean;
   onClick: () => void;
   [key: string]: any;
 }
@@ -14,10 +15,14 @@ const IKSCardCompact: React.FC<IKSCardCompactProps> = ({
   systemName = 'Без назви',
   systemClass = '',
   accessMode = '',
+  isProcessingSuspended = false,
   onClick,
 }) => {
   return (
-    <div className='iks-card-compact' onClick={onClick}>
+    <div
+      className={`iks-card-compact ${isProcessingSuspended ? 'suspended' : ''}`}
+      onClick={onClick}
+    >
       <div className='iks-card-avatar'>🌐</div>
       <div className='iks-card-content'>
         <div className='iks-card-title'>{systemName}</div>

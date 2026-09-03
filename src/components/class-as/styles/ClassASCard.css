@@ -290,3 +290,52 @@
     font-size: 14px;
   }
 }
+
+/* ============================================================================
+   SUSPENDED STATE
+   ============================================================================ */
+
+.class-as-card.suspended .card-header {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.class-as-card.suspended .card-header.suspended {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.class-as-card .suspension-notice {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: #fff;
+  font-weight: 500;
+  opacity: 0.95;
+}
+
+.class-as-card .card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.class-as-card .suspension-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.class-as-card .suspension-checkbox input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.class-as-card .suspension-checkbox .checkbox-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}

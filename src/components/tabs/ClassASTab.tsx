@@ -1098,7 +1098,12 @@ const classASListConfig: ListConfig = {
   ],
   compactThreshold: 2,
   CardComponent: (props) => (
-    <GenericCard config={classASCardConfig} data={props} {...props} />
+    <GenericCard
+      config={classASCardConfig}
+      data={props}
+      {...props}
+      objectType='class_a_systems'
+    />
   ),
   CompactCardComponent: ClassASCardCompact,
   emptyMessage:

@@ -57,6 +57,22 @@
   flex-shrink: 0;
 }
 
+/* ============================================================================
+   SUSPENDED STATE
+   ============================================================================ */
+
+.iks-card-compact.suspended {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.iks-card-compact.suspended:hover {
+  box-shadow: 0 6px 12px rgba(107, 114, 128, 0.25);
+}
+
+.iks-card-compact.suspended .iks-card-avatar {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 /* Tablet - 768px */
 @media (max-width: 768px) {
   .iks-card-compact {

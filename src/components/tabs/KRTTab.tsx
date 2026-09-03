@@ -684,7 +684,12 @@ const krtListConfig: ListConfig = {
   searchFields: ['subdivisionName', 'premisesNumber', 'systemName', 'address'],
   compactThreshold: 2,
   CardComponent: (props) => (
-    <GenericCard config={krtCardConfig} data={props} {...props} />
+    <GenericCard
+      config={krtCardConfig}
+      data={props}
+      objectType='krt'
+      {...props}
+    />
   ),
   CompactCardComponent: KRTCardCompact,
   emptyMessage:

@@ -216,6 +216,7 @@ export default function GenericTab({
         isLoading={isLoading}
         isSaving={isSaving}
         expandedItemId={expandedItemId}
+        onRefreshData={fetchItems}
       />
     </div>
   );

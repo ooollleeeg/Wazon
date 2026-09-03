@@ -938,6 +938,78 @@ function initializeDatabase() {
         }
       },
     );
+
+    // ============================================================================
+    // ADD PROCESSING SUSPENSION STATUS COLUMNS
+    // ============================================================================
+
+    // Add isProcessingSuspended to class_a_systems
+    db.run(
+      `
+      ALTER TABLE class_a_systems
+      ADD COLUMN isProcessingSuspended INTEGER DEFAULT 0
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log(
+            'ℹ️ isProcessingSuspended колона вже існує в class_a_systems',
+          );
+        } else if (!err) {
+          console.log(
+            '✅ Added isProcessingSuspended to class_a_systems table',
+          );
+        }
+      },
+    );
+
+    // Add isProcessingSuspended to service_premises
+    db.run(
+      `
+      ALTER TABLE service_premises
+      ADD COLUMN isProcessingSuspended INTEGER DEFAULT 0
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log(
+            'ℹ️ isProcessingSuspended колона вже існує в service_premises',
+          );
+        } else if (!err) {
+          console.log(
+            '✅ Added isProcessingSuspended to service_premises table',
+          );
+        }
+      },
+    );
+
+    // Add isProcessingSuspended to krt
+    db.run(
+      `
+      ALTER TABLE krt
+      ADD COLUMN isProcessingSuspended INTEGER DEFAULT 0
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ isProcessingSuspended колона вже існує в krt');
+        } else if (!err) {
+          console.log('✅ Added isProcessingSuspended to krt table');
+        }
+      },
+    );
+
+    // Add isProcessingSuspended to iks
+    db.run(
+      `
+      ALTER TABLE iks
+      ADD COLUMN isProcessingSuspended INTEGER DEFAULT 0
+    `,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.log('ℹ️ isProcessingSuspended колона вже існує в iks');
+        } else if (!err) {
+          console.log('✅ Added isProcessingSuspended to iks table');
+        }
+      },
+    );
   });
 }
 

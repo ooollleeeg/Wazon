@@ -191,6 +191,39 @@ router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
 });
 
 /**
+ * PATCH /api/objects/:type/:id - Частично обновить объект (только переданные поля)
+ */
+router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
+  try {
+    console.log(`🔄 PATCH /api/objects/${req.params.type}/${req.params.id}`);
+    console.log(`📦 Payload:`, req.body);
+
+    let result;
+
+    if (req.objectConfig.nestedTables) {
+      result = await updateObjectWithNested(
+        req.objectConfig,
+        req.params.id,
+        req.body,
+      );
+    } else {
+      result = await updateObject(
+        req.objectConfig.table,
+        req.params.id,
+        req.body,
+      );
+    }
+
+    console.log(`✅ Object patched`);
+    res.json(result);
+  } catch (err) {
+    console.error(`❌ Error in PATCH /objects:`, err);
+    const status = err.status || 500;
+    res.status(status).json({ error: err.message });
+  }
+});
+
+/**
  * DELETE /api/objects/:type/:id/nested/:nestedType/:nestedId - Удалить вложенный элемент
  */
 router.delete(

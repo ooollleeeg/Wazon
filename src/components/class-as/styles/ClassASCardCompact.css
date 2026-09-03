@@ -194,7 +194,40 @@
 .class-as-compact-card:hover .class-as-compact-arrow {
   background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
   color: white;
-  /* ============================================================================
+  transform: translateX(4px);
+}
+
+/* ============================================================================
+   SUSPENDED STATE
+   ============================================================================ */
+
+.class-as-compact-card.suspended .class-as-compact-avatar {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
+}
+
+.class-as-compact-card.suspended:hover .class-as-compact-avatar {
+  box-shadow: 0 6px 16px rgba(107, 114, 128, 0.35);
+  transform: scale(1.08);
+}
+
+.class-as-compact-card.suspended .class-as-compact-name {
+  color: #6b7280;
+}
+
+.class-as-compact-card.suspended:hover .class-as-compact-name {
+  color: #6b7280;
+}
+
+.class-as-compact-card.suspended .class-as-compact-class {
+  color: #9ca3af;
+}
+
+.class-as-compact-card.suspended:hover .class-as-compact-class {
+  color: #9ca3af;
+}
+
+/* ============================================================================
    RESPONSIVE DESIGN
    ============================================================================ */
 

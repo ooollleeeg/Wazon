@@ -151,6 +151,33 @@
 }
 
 /* ============================================================================
+   SUSPENDED STATE
+   ============================================================================ */
+
+.service-premises-compact-card.suspended .service-premises-compact-avatar {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.25);
+}
+
+.service-premises-compact-card.suspended:hover
+  .service-premises-compact-avatar {
+  box-shadow: 0 6px 16px rgba(107, 114, 128, 0.35);
+}
+
+.service-premises-compact-card.suspended .service-premises-compact-subdivision {
+  color: #6b7280;
+}
+
+.service-premises-compact-card.suspended:hover
+  .service-premises-compact-subdivision {
+  color: #6b7280;
+}
+
+.service-premises-compact-card.suspended .service-premises-compact-premises {
+  color: #9ca3af;
+}
+
+/* ============================================================================
    RESPONSIVE DESIGN
    ============================================================================ */
 

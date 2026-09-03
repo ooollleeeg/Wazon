@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import './styles/ClassASCard.css';
 
@@ -38,6 +38,7 @@ interface ClassASCardProps {
   software?: any[];
   specialResearch?: any[];
   orders?: any[];
+  isProcessingSuspended?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onClose?: () => void;
@@ -78,6 +79,7 @@ export default function ClassASCard({
   software = [],
   specialResearch = [],
   orders = [],
+  isProcessingSuspended = false,
   onEdit,
   onDelete,
   onClose,
@@ -85,6 +87,12 @@ export default function ClassASCard({
 }: ClassASCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expandedProtectionMeans, setExpandedProtectionMeans] = useState(false);
+  const [isSuspended, setIsSuspended] = useState(isProcessingSuspended);
+
+  // Синхронізувати локальний стан з пропсом при змінах
+  useEffect(() => {
+    setIsSuspended(isProcessingSuspended);
+  }, [isProcessingSuspended]);
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
@@ -93,6 +101,46 @@ export default function ClassASCard({
   const handleConfirmDelete = () => {
     setShowDeleteModal(false);
     onDelete();
+  };
+
+  const handleSuspensionChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const newSuspendedState = e.target.checked;
+    setIsSuspended(newSuspendedState);
+
+    try {
+      console.log(`🔄 Збереження паузи для АС ID=${_id}:`, newSuspendedState);
+
+      const response = await fetch(`/api/objects/class_a_systems/${_id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isProcessingSuspended: newSuspendedState ? 1 : 0,
+        }),
+      });
+
+      console.log(`📡 Статус відповіді:`, response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          '❌ Помилка при збереженні стану паузи:',
+          response.status,
+          errorText,
+        );
+        setIsSuspended(!newSuspendedState);
+        return;
+      }
+
+      const result = await response.json();
+      console.log('✅ Успішно збережено:', result);
+    } catch (error) {
+      console.error('❌ Помилка при отправці запиту:', error);
+      setIsSuspended(!newSuspendedState);
+    }
   };
 
   // const formatDocument = (doc: any) => {
@@ -125,13 +173,18 @@ export default function ClassASCard({
 
   return (
     <>
-      <div className='class-as-card'>
-        <div className='card-header'>
+      <div className={`class-as-card ${isSuspended ? 'suspended' : ''}`}>
+        <div className={`card-header ${isSuspended ? 'suspended' : ''}`}>
           <div className='card-title'>
             <h3>{subdivisionName}</h3>
             <p className='system-info'>
               {systemClass} • {systemName}
             </p>
+            {isSuspended && (
+              <p className='suspension-notice'>
+                ⏸️ обробка інформації тимчасово призупинена
+              </p>
+            )}
           </div>
           <div className='card-actions'>
             <button
@@ -491,6 +544,15 @@ export default function ClassASCard({
 
         {/* FOOTER */}
         <div className='card-footer'>
+          <label className='suspension-checkbox'>
+            <input
+              type='checkbox'
+              checked={isSuspended}
+              onChange={handleSuspensionChange}
+              title='Тимчасово призупинити обробку інформації'
+            />
+            <span className='checkbox-label'>Тимчасове призупинення</span>
+          </label>
           <button className='btn-delete-record' onClick={handleDeleteClick}>
             🗑️ Видалити запис про АС
           </button>

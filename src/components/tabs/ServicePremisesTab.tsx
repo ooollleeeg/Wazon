@@ -732,7 +732,12 @@ const servicePremisesListConfig: ListConfig = {
   searchFields: ['subdivisionName', 'premisesNumber', 'serviceName', 'address'],
   compactThreshold: 2,
   CardComponent: (props) => (
-    <GenericCard config={servicePremisesCardConfig} data={props} {...props} />
+    <GenericCard
+      config={servicePremisesCardConfig}
+      data={props}
+      objectType='service_premises'
+      {...props}
+    />
   ),
   CompactCardComponent: ServicePremisesCardCompact,
   emptyMessage: 'Немає записів про службові приміщення. Додайте перший запис.',

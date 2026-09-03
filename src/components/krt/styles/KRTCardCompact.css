@@ -78,6 +78,35 @@
   transform: translateX(4px);
 }
 
+/* ============================================================================
+   SUSPENDED STATE
+   ============================================================================ */
+
+.krt-compact-card.suspended {
+  border-left-color: #9ca3af;
+}
+
+.krt-compact-card.suspended .krt-compact-avatar {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.25);
+}
+
+.krt-compact-card.suspended:hover .krt-compact-avatar {
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.35);
+}
+
+.krt-compact-card.suspended .krt-compact-title {
+  color: #6b7280;
+}
+
+.krt-compact-card.suspended .krt-compact-premises {
+  color: #9ca3af;
+}
+
+.krt-compact-card.suspended .krt-compact-address {
+  color: #d1d5db;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .krt-compact-avatar {

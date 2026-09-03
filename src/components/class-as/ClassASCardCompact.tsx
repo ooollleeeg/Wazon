@@ -7,6 +7,7 @@ interface ClassASCardCompactProps {
   systemClass: string;
   subdivisionName?: string;
   objectType?: string;
+  isProcessingSuspended?: boolean;
   onClick: () => void;
 }
 
@@ -16,10 +17,14 @@ export default function ClassASCardCompact({
   systemClass,
   subdivisionName,
   objectType,
+  isProcessingSuspended = false,
   onClick,
 }: ClassASCardCompactProps) {
   return (
-    <div className='class-as-compact-card' onClick={onClick}>
+    <div
+      className={`class-as-compact-card ${isProcessingSuspended ? 'suspended' : ''}`}
+      onClick={onClick}
+    >
       <div className='class-as-compact-avatar'>🖥️</div>
       <div className='class-as-compact-content'>
         <h4 className='class-as-compact-name'>{systemName}</h4>

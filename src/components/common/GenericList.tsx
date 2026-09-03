@@ -22,6 +22,7 @@ interface GenericListProps {
   isLoading: boolean;
   isSaving?: boolean;
   expandedItemId?: number | null;
+  onRefreshData?: () => Promise<void>; // Callback to refresh data
 }
 
 export default function GenericList({
@@ -33,6 +34,7 @@ export default function GenericList({
   isLoading,
   isSaving = false,
   expandedItemId,
+  onRefreshData,
 }: GenericListProps) {
   const [filteredItems, setFilteredItems] = useState<any[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(
@@ -110,6 +112,7 @@ export default function GenericList({
               searchTerm={searchTerm}
               onEdit={() => onEdit(item)}
               onDelete={() => onDelete(item.id)}
+              onRefreshData={onRefreshData}
               showCloseButton={false}
             />
           ))}
@@ -134,6 +137,7 @@ export default function GenericList({
                           onDelete(item.id);
                           setExpandedId(null);
                         }}
+                        onRefreshData={onRefreshData}
                         onClose={() => setExpandedId(null)}
                         showCloseButton={true}
                         shouldExpandAll={true}

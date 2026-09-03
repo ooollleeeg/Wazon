@@ -5,6 +5,7 @@ interface ServicePremisesCardCompactProps {
   subdivisionName: string;
   premisesNumber: string;
   address: string;
+  isProcessingSuspended?: boolean;
   onClick: () => void;
 }
 
@@ -12,10 +13,14 @@ export default function ServicePremisesCardCompact({
   subdivisionName,
   premisesNumber,
   address,
+  isProcessingSuspended = false,
   onClick,
 }: ServicePremisesCardCompactProps) {
   return (
-    <div className='service-premises-compact-card' onClick={onClick}>
+    <div
+      className={`service-premises-compact-card ${isProcessingSuspended ? 'suspended' : ''}`}
+      onClick={onClick}
+    >
       <div className='service-premises-compact-avatar'>🏠</div>
       <div className='service-premises-compact-content'>
         <h4 className='service-premises-compact-subdivision'>

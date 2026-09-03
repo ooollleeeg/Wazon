@@ -743,7 +743,12 @@ const iksListConfig: ListConfig = {
   searchFields: ['systemName', 'systemClass', 'accessMode'],
   compactThreshold: 2,
   CardComponent: (props) => (
-    <GenericCard config={iksCardConfig} data={props} {...props} />
+    <GenericCard
+      config={iksCardConfig}
+      data={props}
+      objectType='iks'
+      {...props}
+    />
   ),
   CompactCardComponent: IKSCardCompact,
   emptyMessage:
