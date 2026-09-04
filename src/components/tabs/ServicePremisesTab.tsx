@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
 import GenericTab, { TabConfig } from '../common/GenericTab';
 import GenericForm, { FormConfig } from '../common/GenericForm';
 import GenericList, { ListConfig } from '../common/GenericList';
 import GenericCard, { CardConfig } from '../common/GenericCard';
 import ServicePremisesCardCompact from '../service-premises/ServicePremisesCardCompact';
+import ServicePremisesStats from '../service-premises/ServicePremisesStats';
+import ServicePremisesFilters from '../service-premises/ServicePremisesFilters';
 
 // ===== FORM CONFIG =====
 const servicePremisesFormConfig: FormConfig = {
@@ -758,15 +761,113 @@ const servicePremisesTabConfig: TabConfig = {
   ),
 };
 
+// ===== COMPONENT =====
+interface ServicePremisesFilterValues {
+  categorizationRank: string[];
+  subdivisionType: string[];
+}
+
 export default function ServicePremisesTab({
   expandedItemId,
 }: {
   expandedItemId?: number | null;
 }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [filteredItems, setFilteredItems] = useState<any[]>([]);
+  const [filters, setFilters] = useState<ServicePremisesFilterValues>({
+    categorizationRank: [],
+    subdivisionType: [],
+  });
+
+  // Завантажуємо дані службових приміщень з сервера при завантаженні компоненту
+  const fetchItems = async () => {
+    try {
+      const response = await fetch('/api/objects/service_premises');
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data);
+      }
+    } catch (error) {
+      console.error('Error fetching service premises items:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  // Обробник оновлення даних при змінах у GenericTab
+  const handleDataChanged = () => {
+    fetchItems();
+  };
+
+  // Застосовуємо фільтри до службових приміщень
+  useEffect(() => {
+    let filtered = items;
+
+    if (filters.subdivisionType.length > 0) {
+      filtered = filtered.filter((s) =>
+        filters.subdivisionType.includes(s.subdivisionType),
+      );
+    }
+    if (filters.categorizationRank.length > 0) {
+      filtered = filtered.filter((s) => {
+        // Беремо останній (поточний) акт категоріювання
+        if (
+          !s.categorization ||
+          !Array.isArray(s.categorization) ||
+          s.categorization.length === 0
+        ) {
+          return false;
+        }
+        const currentCategorization =
+          s.categorization[s.categorization.length - 1];
+        return (
+          currentCategorization &&
+          filters.categorizationRank.includes(
+            currentCategorization.categorizationRank,
+          )
+        );
+      });
+    }
+
+    setFilteredItems(filtered);
+  }, [items, filters]);
+
+  // Отримуємо унікальні значення для фільтрів
+  const getUniqueValues = () => {
+    // Показуємо всі можливі категорії (I, II, III, IV)
+    // незалежно від того, чи є вони в даних
+    const allCategorizationRanks = ['I', 'II', 'III', 'IV'];
+
+    const subdivisionTypes = [
+      ...new Set(items.map((s) => s.subdivisionType)),
+    ].sort();
+
+    return {
+      categorizationRanks: allCategorizationRanks,
+      subdivisionTypes,
+    };
+  };
+
   return (
-    <GenericTab
-      config={servicePremisesTabConfig}
-      expandedItemId={expandedItemId}
-    />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {/* Статистика */}
+      <ServicePremisesStats items={filteredItems} />
+
+      {/* Фільтри */}
+      <ServicePremisesFilters
+        onFiltersChange={setFilters}
+        uniqueValues={getUniqueValues()}
+      />
+
+      {/* Основна вкладка з даними */}
+      <GenericTab
+        config={servicePremisesTabConfig}
+        expandedItemId={expandedItemId}
+        onDataChanged={handleDataChanged}
+        preFilteredItems={filteredItems}
+      />
+    </div>
   );
 }
