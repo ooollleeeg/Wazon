@@ -67,14 +67,6 @@ export default function GenericCard({
   objectType,
 }: GenericCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isSuspended, setIsSuspended] = useState(
-    data?.isProcessingSuspended || false,
-  );
-
-  // Синхронізувати локальний стан з пропсом при змінах
-  useEffect(() => {
-    setIsSuspended(data?.isProcessingSuspended || false);
-  }, [data?.isProcessingSuspended]);
 
   // Controls visibility of previous versions (toggle button)
   const [expandedPreviousVersions, setExpandedPreviousVersions] = useState<{
@@ -180,62 +172,9 @@ export default function GenericCard({
     }));
   };
 
-  const handleSuspensionChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const newSuspendedState = e.target.checked;
-    setIsSuspended(newSuspendedState);
-
-    // Only save if objectType is provided
-    if (!objectType || !data.id) {
-      console.warn('⚠️ Missing objectType or data.id:', {
-        objectType,
-        dataId: data?.id,
-      });
-      return;
-    }
-
-    const url = `/api/objects/${objectType}/${data.id}`;
-    const payload = { isProcessingSuspended: newSuspendedState ? 1 : 0 };
-
-    try {
-      console.log(`🔄 PATCH ${url}`, payload);
-
-      const response = await fetch(url, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      console.log(`📡 Response status: ${response.status}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          '❌ Помилка при збереженні стану паузи:',
-          response.status,
-          errorText,
-        );
-        setIsSuspended(!newSuspendedState);
-      } else {
-        const result = await response.json();
-        console.log('✅ Успішно збережено:', result);
-        // Refresh data after successful PATCH
-        if (onRefreshData) {
-          console.log('🔄 Перезагружаю дані...');
-          await onRefreshData();
-        }
-      }
-    } catch (error) {
-      console.error('❌ Помилка при отправці запиту:', error);
-      setIsSuspended(!newSuspendedState);
-    }
-  };
-
   const title = getFieldValue(config.title);
   const subtitle = config.subtitle ? getFieldValue(config.subtitle) : null;
+  const isSuspended = data?.isProcessingSuspended || false;
 
   return (
     <>
@@ -411,15 +350,6 @@ export default function GenericCard({
 
         {/* FOOTER */}
         <div className='card-footer'>
-          <label className='suspension-checkbox'>
-            <input
-              type='checkbox'
-              checked={isSuspended}
-              onChange={handleSuspensionChange}
-              title='Тимчасово призупинити обробку інформації'
-            />
-            <span className='checkbox-label'>Тимчасове призупинення</span>
-          </label>
           <button className='btn-delete-record' onClick={handleDeleteClick}>
             🗑️ {config.deleteLabel}
           </button>

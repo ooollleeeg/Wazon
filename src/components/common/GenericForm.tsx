@@ -6,7 +6,15 @@ import LoadingSpinner from './LoadingSpinner';
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'date' | 'number' | 'email' | 'tel' | 'textarea' | 'select';
+  type:
+    | 'text'
+    | 'date'
+    | 'number'
+    | 'email'
+    | 'tel'
+    | 'textarea'
+    | 'select'
+    | 'checkbox';
   required?: boolean;
   placeholder?: string;
   min?: string | number;
@@ -130,7 +138,16 @@ export default function GenericForm({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
   ) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+
+    // ✅ ДЛЯ CHECKBOX ВИКОРИСТОВУЄМО checked, А НЕ value
+    let value: any;
+    if ((e.target as HTMLInputElement).type === 'checkbox') {
+      value = (e.target as HTMLInputElement).checked;
+    } else {
+      value = e.target.value;
+    }
+
     setFormData((prev: any) => {
       const updated = { ...prev, [name]: value };
 
@@ -339,6 +356,13 @@ export default function GenericForm({
     // ✅ ОЧИЩАЄМО ДАНІ ВІД ФЛАГА __isNew ПЕРЕД ВІДПРАВКОЮ
     const cleanedData = { ...formData };
 
+    // ✅ ПЕРЕТВОРЮЄМО BOOLEAN ЗНАЧЕННЯ ДЛЯ isProcessingSuspended
+    if (cleanedData.isProcessingSuspended === true) {
+      cleanedData.isProcessingSuspended = 1;
+    } else if (cleanedData.isProcessingSuspended === false) {
+      cleanedData.isProcessingSuspended = 0;
+    }
+
     config.nestedFields?.forEach((nestedConfig) => {
       if (cleanedData[nestedConfig.name]) {
         // Очищуємо від __isNew
@@ -360,6 +384,64 @@ export default function GenericForm({
 
   const renderField = (field: FormField, value: any) => {
     const fieldClass = field.fullWidth ? 'full-width' : '';
+
+    if (field.type === 'checkbox') {
+      // ✅ КНОПКА ДЛЯ ПАУЗИ ОБРОБКИ ЗАМІСТЬ ЧЕКБОКСА
+      if (field.name === 'isProcessingSuspended') {
+        const isSuspended = value ? true : false;
+        const buttonLabel = isSuspended
+          ? 'Відновити обробку ІзОД'
+          : 'Призупинити обробку ІзОД';
+        const buttonClass = isSuspended ? 'suspended' : 'active';
+
+        const handlePauseToggle = () => {
+          setFormData((prev: any) => ({
+            ...prev,
+            [field.name]: !isSuspended,
+          }));
+        };
+
+        return (
+          <div
+            key={field.name}
+            className={`form-group pause-button-group pause-button-small ${fieldClass}`}
+          >
+            <button
+              type='button'
+              className={`pause-button pause-button-${buttonClass}`}
+              onClick={handlePauseToggle}
+            >
+              {buttonLabel}
+            </button>
+          </div>
+        );
+      }
+
+      // ✅ ЗВИЧАЙНИЙ ЧЕКБОКС ДЛЯ ІНШИХ ПОЛІВ
+      const isChecked = value ? true : false;
+      const displayLabel = field.label;
+
+      return (
+        <div
+          key={field.name}
+          className={`form-group checkbox-group ${fieldClass}`}
+        >
+          <label className='checkbox-label'>
+            <input
+              type='checkbox'
+              name={field.name}
+              checked={isChecked}
+              onChange={handleInputChange}
+            />
+            <span>{displayLabel}</span>
+            {field.required && <span className='required-mark'> *</span>}
+          </label>
+          {field.helperText && (
+            <small className='helper-text'>{field.helperText}</small>
+          )}
+        </div>
+      );
+    }
 
     if (field.type === 'select') {
       return (

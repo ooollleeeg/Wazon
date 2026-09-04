@@ -87,12 +87,7 @@ export default function ClassASCard({
 }: ClassASCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [expandedProtectionMeans, setExpandedProtectionMeans] = useState(false);
-  const [isSuspended, setIsSuspended] = useState(isProcessingSuspended);
-
-  // Синхронізувати локальний стан з пропсом при змінах
-  useEffect(() => {
-    setIsSuspended(isProcessingSuspended);
-  }, [isProcessingSuspended]);
+  const isSuspended = isProcessingSuspended || false;
 
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
@@ -101,46 +96,6 @@ export default function ClassASCard({
   const handleConfirmDelete = () => {
     setShowDeleteModal(false);
     onDelete();
-  };
-
-  const handleSuspensionChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const newSuspendedState = e.target.checked;
-    setIsSuspended(newSuspendedState);
-
-    try {
-      console.log(`🔄 Збереження паузи для АС ID=${_id}:`, newSuspendedState);
-
-      const response = await fetch(`/api/objects/class_a_systems/${_id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isProcessingSuspended: newSuspendedState ? 1 : 0,
-        }),
-      });
-
-      console.log(`📡 Статус відповіді:`, response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          '❌ Помилка при збереженні стану паузи:',
-          response.status,
-          errorText,
-        );
-        setIsSuspended(!newSuspendedState);
-        return;
-      }
-
-      const result = await response.json();
-      console.log('✅ Успішно збережено:', result);
-    } catch (error) {
-      console.error('❌ Помилка при отправці запиту:', error);
-      setIsSuspended(!newSuspendedState);
-    }
   };
 
   // const formatDocument = (doc: any) => {
@@ -544,15 +499,6 @@ export default function ClassASCard({
 
         {/* FOOTER */}
         <div className='card-footer'>
-          <label className='suspension-checkbox'>
-            <input
-              type='checkbox'
-              checked={isSuspended}
-              onChange={handleSuspensionChange}
-              title='Тимчасово призупинити обробку інформації'
-            />
-            <span className='checkbox-label'>Тимчасове призупинення</span>
-          </label>
           <button className='btn-delete-record' onClick={handleDeleteClick}>
             🗑️ Видалити запис про АС
           </button>

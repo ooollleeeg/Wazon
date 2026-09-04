@@ -538,4 +538,79 @@ mark {
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
   }
+
+  .pause-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ============================================================================
+   PAUSE BUTTON STYLES
+   ============================================================================ */
+
+.pause-button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pause-button-group.pause-button-small {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
+.pause-button {
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: capitalize;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pause-button-group.pause-button-small .pause-button {
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: none;
+}
+
+/* Active state - normal color (green) */
+.pause-button-active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-color: #059669;
+}
+
+.pause-button-active:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.pause-button-active:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+/* Suspended state - red/warning color */
+.pause-button-suspended {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-color: #dc2626;
+}
+
+.pause-button-suspended:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+.pause-button-suspended:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
