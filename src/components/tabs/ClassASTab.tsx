@@ -1133,6 +1133,7 @@ interface ClassASFilterValues {
   systemClass: string[];
   subdivisionType: string[];
   objectType: string[];
+  categorizationRank: string[];
 }
 
 export default function ClassASTab({
@@ -1146,6 +1147,7 @@ export default function ClassASTab({
     systemClass: [],
     subdivisionType: [],
     objectType: [],
+    categorizationRank: [],
   });
 
   // Завантажуємо дані АС з сервера при завантаженні компоненту
@@ -1189,6 +1191,26 @@ export default function ClassASTab({
         filters.objectType.includes(s.objectType),
       );
     }
+    if (filters.categorizationRank.length > 0) {
+      filtered = filtered.filter((s) => {
+        // Беремо останній (поточний) акт категоріювання
+        if (
+          !s.categorization ||
+          !Array.isArray(s.categorization) ||
+          s.categorization.length === 0
+        ) {
+          return false;
+        }
+        const currentCategorization =
+          s.categorization[s.categorization.length - 1];
+        return (
+          currentCategorization &&
+          filters.categorizationRank.includes(
+            currentCategorization.categorizationRank,
+          )
+        );
+      });
+    }
 
     setFilteredSystems(filtered);
   }, [systems, filters]);
@@ -1203,10 +1225,15 @@ export default function ClassASTab({
     ].sort();
     const objectTypes = [...new Set(systems.map((s) => s.objectType))].sort();
 
+    // Показуємо всі можливі категорії (I, II, III, IV)
+    // незалежно від того, чи є вони в даних
+    const allCategorizationRanks = ['I', 'II', 'III', 'IV'];
+
     return {
       systemClasses,
       subdivisionTypes,
       objectTypes,
+      categorizationRanks: allCategorizationRanks,
     };
   };
 

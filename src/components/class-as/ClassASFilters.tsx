@@ -5,6 +5,7 @@ interface ClassASFilterValues {
   systemClass: string[];
   subdivisionType: string[];
   objectType: string[];
+  categorizationRank: string[];
 }
 
 interface ClassASFiltersProps {
@@ -13,6 +14,7 @@ interface ClassASFiltersProps {
     systemClasses: string[];
     subdivisionTypes: string[];
     objectTypes: string[];
+    categorizationRanks: string[];
   };
 }
 
@@ -24,6 +26,7 @@ export default function ClassASFilters({
     systemClass: [],
     subdivisionType: [],
     objectType: [],
+    categorizationRank: [],
   });
 
   const handleCheckboxChange = (
@@ -47,6 +50,7 @@ export default function ClassASFilters({
       systemClass: [],
       subdivisionType: [],
       objectType: [],
+      categorizationRank: [],
     };
     setFilters(emptyFilters);
     onFiltersChange(emptyFilters);
@@ -83,6 +87,25 @@ export default function ClassASFilters({
                   }
                 />
                 <span>{systemClass}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Фільтр по категоріям */}
+        <div className='filter-group'>
+          <h3>Категорія ОІД</h3>
+          <div className='filter-options'>
+            {uniqueValues.categorizationRanks.map((rank) => (
+              <label key={rank} className='filter-checkbox'>
+                <input
+                  type='checkbox'
+                  checked={filters.categorizationRank.includes(rank)}
+                  onChange={() =>
+                    handleCheckboxChange('categorizationRank', rank)
+                  }
+                />
+                <span>{rank}</span>
               </label>
             ))}
           </div>
