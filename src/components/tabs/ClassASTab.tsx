@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
 import GenericTab, { TabConfig } from '../common/GenericTab';
 import GenericForm, { FormConfig } from '../common/GenericForm';
 import GenericList, { ListConfig } from '../common/GenericList';
 import GenericCard, { CardConfig } from '../common/GenericCard';
 import ClassASCardCompact from '../class-as/ClassASCardCompact';
+import ClassASStats from '../class-as/ClassASStats';
+import ClassASFilters from '../class-as/ClassASFilters';
 
 // ===== FORM CONFIG =====
 const classASFormConfig: FormConfig = {
@@ -1126,12 +1129,106 @@ const classASTabConfig: TabConfig = {
 };
 
 // ===== COMPONENT =====
+interface ClassASFilterValues {
+  systemClass: string[];
+  subdivisionType: string[];
+  objectType: string[];
+}
+
 export default function ClassASTab({
   expandedItemId,
 }: {
   expandedItemId?: number | null;
 }) {
+  const [systems, setSystems] = useState<any[]>([]);
+  const [filteredSystems, setFilteredSystems] = useState<any[]>([]);
+  const [filters, setFilters] = useState<ClassASFilterValues>({
+    systemClass: [],
+    subdivisionType: [],
+    objectType: [],
+  });
+
+  // Завантажуємо дані АС з сервера при завантаженні компоненту
+  const fetchSystems = async () => {
+    try {
+      const response = await fetch('/api/objects/class_a_systems');
+      if (response.ok) {
+        const data = await response.json();
+        setSystems(data);
+      }
+    } catch (error) {
+      console.error('Error fetching systems:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSystems();
+  }, []);
+
+  // Обробник оновлення даних при змінах у GenericTab
+  const handleDataChanged = () => {
+    fetchSystems();
+  };
+
+  // Застосовуємо фільтри до систем
+  useEffect(() => {
+    let filtered = systems;
+
+    if (filters.systemClass.length > 0) {
+      filtered = filtered.filter((s) =>
+        filters.systemClass.includes(s.systemClass),
+      );
+    }
+    if (filters.subdivisionType.length > 0) {
+      filtered = filtered.filter((s) =>
+        filters.subdivisionType.includes(s.subdivisionType),
+      );
+    }
+    if (filters.objectType.length > 0) {
+      filtered = filtered.filter((s) =>
+        filters.objectType.includes(s.objectType),
+      );
+    }
+
+    setFilteredSystems(filtered);
+  }, [systems, filters]);
+
+  // Отримуємо унікальні значення для фільтрів
+  const getUniqueValues = () => {
+    const systemClasses = [
+      ...new Set(systems.map((s) => s.systemClass)),
+    ].sort();
+    const subdivisionTypes = [
+      ...new Set(systems.map((s) => s.subdivisionType)),
+    ].sort();
+    const objectTypes = [...new Set(systems.map((s) => s.objectType))].sort();
+
+    return {
+      systemClasses,
+      subdivisionTypes,
+      objectTypes,
+    };
+  };
+
   return (
-    <GenericTab config={classASTabConfig} expandedItemId={expandedItemId} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {/* Статистика */}
+      <ClassASStats
+        systems={filteredSystems.length > 0 ? filteredSystems : systems}
+      />
+
+      {/* Фільтри */}
+      <ClassASFilters
+        onFiltersChange={setFilters}
+        uniqueValues={getUniqueValues()}
+      />
+
+      {/* Основна вкладка з даними */}
+      <GenericTab
+        config={classASTabConfig}
+        expandedItemId={expandedItemId}
+        onDataChanged={handleDataChanged}
+      />
+    </div>
   );
 }

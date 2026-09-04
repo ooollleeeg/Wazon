@@ -13,11 +13,13 @@ export interface TabConfig {
 interface GenericTabProps {
   config: TabConfig;
   expandedItemId?: number | null;
+  onDataChanged?: () => void;
 }
 
 export default function GenericTab({
   config,
   expandedItemId,
+  onDataChanged,
 }: GenericTabProps) {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,6 +99,7 @@ export default function GenericTab({
       await fetchItems();
       setShowForm(false);
       setEditingId(null);
+      onDataChanged?.();
       console.log('=== SUBMIT END (SUCCESS) ===');
     } catch (err) {
       console.error('=== SUBMIT ERROR ===', err);
@@ -122,6 +125,7 @@ export default function GenericTab({
 
       console.log('Item deleted successfully');
       await fetchItems();
+      onDataChanged?.();
     } catch (err) {
       console.error('Delete error:', err);
       setError(`Помилка видалення: ${(err as Error).message}`);

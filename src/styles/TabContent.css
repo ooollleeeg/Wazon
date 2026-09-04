@@ -1,7 +1,7 @@
 .tab-content-wrapper {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+
   scroll-behavior: smooth;
 }
 
