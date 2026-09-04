@@ -14,12 +14,14 @@ interface GenericTabProps {
   config: TabConfig;
   expandedItemId?: number | null;
   onDataChanged?: () => void;
+  preFilteredItems?: any[];
 }
 
 export default function GenericTab({
   config,
   expandedItemId,
   onDataChanged,
+  preFilteredItems,
 }: GenericTabProps) {
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -213,7 +215,7 @@ export default function GenericTab({
       )}
 
       <config.ListComponent
-        items={items}
+        items={preFilteredItems || items}
         searchTerm={searchTerm}
         onEdit={handleEdit}
         onDelete={handleDelete}

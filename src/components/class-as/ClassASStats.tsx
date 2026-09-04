@@ -81,6 +81,21 @@ export default function ClassASStats({ systems }: ClassASStatsProps) {
 
   const stats = calculateStats();
 
+  // Якщо немає даних для показу
+  if (systems.length === 0) {
+    return (
+      <div className='class-as-stats-section'>
+        <h2>📊 Статистика</h2>
+        <div className='stats-empty-message'>
+          <p>📭 Жодних даних для відображення</p>
+          <p style={{ fontSize: '0.9rem', color: '#999', marginTop: '0.5rem' }}>
+            Виберіть інші фільтри або додайте нові автоматизовані системи
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='class-as-stats-section'>
       <h2>📊 Статистика</h2>

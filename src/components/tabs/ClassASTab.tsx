@@ -1213,9 +1213,7 @@ export default function ClassASTab({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       {/* Статистика */}
-      <ClassASStats
-        systems={filteredSystems.length > 0 ? filteredSystems : systems}
-      />
+      <ClassASStats systems={filteredSystems} />
 
       {/* Фільтри */}
       <ClassASFilters
@@ -1228,6 +1226,7 @@ export default function ClassASTab({
         config={classASTabConfig}
         expandedItemId={expandedItemId}
         onDataChanged={handleDataChanged}
+        preFilteredItems={filteredSystems}
       />
     </div>
   );
