@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
 import GenericTab, { TabConfig } from '../common/GenericTab';
 import GenericForm, { FormConfig } from '../common/GenericForm';
 import GenericList, { ListConfig } from '../common/GenericList';
 import GenericCard, { CardConfig } from '../common/GenericCard';
 import KRTCardCompact from '../krt/KRTCardCompact';
+import KRTStats from '../krt/KRTStats';
+import KRTFilters from '../krt/KRTFilters';
 
 // ===== FORM CONFIG =====
 const krtFormConfig: FormConfig = {
@@ -707,10 +710,113 @@ const krtTabConfig: TabConfig = {
   ListComponent: (props) => <GenericList config={krtListConfig} {...props} />,
 };
 
+// ===== COMPONENT =====
+interface KRTFilterValues {
+  categorizationRank: string[];
+  subdivisionType: string[];
+}
+
 export default function KRTTab({
   expandedItemId,
 }: {
   expandedItemId?: number | null;
 }) {
-  return <GenericTab config={krtTabConfig} expandedItemId={expandedItemId} />;
+  const [items, setItems] = useState<any[]>([]);
+  const [filteredItems, setFilteredItems] = useState<any[]>([]);
+  const [filters, setFilters] = useState<KRTFilterValues>({
+    categorizationRank: [],
+    subdivisionType: [],
+  });
+
+  // Завантажуємо дані КРТ з сервера при завантаженні компоненту
+  const fetchItems = async () => {
+    try {
+      const response = await fetch('/api/objects/krt');
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data);
+      }
+    } catch (error) {
+      console.error('Error fetching KRT items:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  // Обробник оновлення даних при змінах у GenericTab
+  const handleDataChanged = () => {
+    fetchItems();
+  };
+
+  // Застосовуємо фільтри до КРТ
+  useEffect(() => {
+    let filtered = items;
+
+    if (filters.subdivisionType.length > 0) {
+      filtered = filtered.filter((s) =>
+        filters.subdivisionType.includes(s.subdivisionType),
+      );
+    }
+    if (filters.categorizationRank.length > 0) {
+      filtered = filtered.filter((s) => {
+        // Беремо останній (поточний) акт категоріювання
+        if (
+          !s.categorization ||
+          !Array.isArray(s.categorization) ||
+          s.categorization.length === 0
+        ) {
+          return false;
+        }
+        const currentCategorization =
+          s.categorization[s.categorization.length - 1];
+        return (
+          currentCategorization &&
+          filters.categorizationRank.includes(
+            currentCategorization.categorizationRank,
+          )
+        );
+      });
+    }
+
+    setFilteredItems(filtered);
+  }, [items, filters]);
+
+  // Отримуємо унікальні значення для фільтрів
+  const getUniqueValues = () => {
+    // Показуємо всі можливі категорії (I, II, III, IV)
+    // незалежно від того, чи є вони в даних
+    const allCategorizationRanks = ['I', 'II', 'III', 'IV'];
+
+    const subdivisionTypes = [
+      ...new Set(items.map((s) => s.subdivisionType)),
+    ].sort();
+
+    return {
+      categorizationRanks: allCategorizationRanks,
+      subdivisionTypes,
+    };
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {/* Статистика */}
+      <KRTStats items={filteredItems} />
+
+      {/* Фільтри */}
+      <KRTFilters
+        onFiltersChange={setFilters}
+        uniqueValues={getUniqueValues()}
+      />
+
+      {/* Основна вкладка з даними */}
+      <GenericTab
+        config={krtTabConfig}
+        expandedItemId={expandedItemId}
+        onDataChanged={handleDataChanged}
+        preFilteredItems={filteredItems}
+      />
+    </div>
+  );
 }
