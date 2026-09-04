@@ -30,6 +30,29 @@ interface StatsData {
 }
 
 export default function ClassASStats({ systems }: ClassASStatsProps) {
+  // Перевіряє, чи система має валідну категоріювання (I, II, III)
+  // Об'єкти без категоріювання або з категорією IV не рахуються в КТЗІ
+  const hasValidCategorization = (system: ClassASData): boolean => {
+    // Якщо немає категоріювання взагалі
+    if (!system.categorization || !Array.isArray(system.categorization)) {
+      return false;
+    }
+
+    // Беремо останній (поточний) акт категоріювання
+    const currentCategorization =
+      system.categorization[system.categorization.length - 1];
+
+    if (!currentCategorization) {
+      return false;
+    }
+
+    const rank = currentCategorization.categorizationRank;
+
+    // Рахуємо тільки об'єкти з категоріями I, II, III
+    // Категорія IV або відсутня - не рахуємо
+    return rank && (rank === 'I' || rank === 'II' || rank === 'III');
+  };
+
   const calculateStats = (): StatsData => {
     const stats: StatsData = {
       totalSystems: systems.length,
@@ -60,17 +83,20 @@ export default function ClassASStats({ systems }: ClassASStatsProps) {
 
       // КТЗІ Статистика
       // Групуємо по (premisesNumber + subdivisionName)
-      const ktziKey = `${system.premisesNumber || 'unknown'}|${system.subdivisionName}`;
-      if (!ktziMap.has(ktziKey)) {
-        ktziMap.set(ktziKey, system);
+      // Рахуємо тільки об'єкти з категоріями I, II, III
+      if (hasValidCategorization(system)) {
+        const ktziKey = `${system.premisesNumber || 'unknown'}|${system.subdivisionName}`;
+        if (!ktziMap.has(ktziKey)) {
+          ktziMap.set(ktziKey, system);
 
-        // По типам підрозділів
-        stats.ktziBySubdivisionType[system.subdivisionType] =
-          (stats.ktziBySubdivisionType[system.subdivisionType] || 0) + 1;
+          // По типам підрозділів
+          stats.ktziBySubdivisionType[system.subdivisionType] =
+            (stats.ktziBySubdivisionType[system.subdivisionType] || 0) + 1;
 
-        // По типам об'єктів
-        stats.ktziByObjectType[system.objectType] =
-          (stats.ktziByObjectType[system.objectType] || 0) + 1;
+          // По типам об'єктів
+          stats.ktziByObjectType[system.objectType] =
+            (stats.ktziByObjectType[system.objectType] || 0) + 1;
+        }
       }
     });
 
