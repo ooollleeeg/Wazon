@@ -1076,4 +1076,198 @@ router.put('/antivirus/update-opinion', async (req, res) => {
   }
 });
 
+// ===== GUNP RESEARCH REPORT ENDPOINT =====
+
+/**
+ * GET /api/gunp-research-report - Отримати звіт про інструментальні дослідження ГУНП
+ * Query params: dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD
+ * Групує дані по: дата + підрозділ + виконавець
+ * Повертає таблицю з рядків, кожна - це комбінація: дата + підрозділ + виконавець
+ */
+router.get('/gunp-research-report', async (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+
+    console.log('📥 GET /api/gunp-research-report', { dateFrom, dateTo });
+
+    if (!dateFrom || !dateTo) {
+      return res.status(400).json({
+        error: 'Вимагаються параметри dateFrom та dateTo (YYYY-MM-DD)',
+      });
+    }
+
+    // Використовуємо Promise.all для паралельного отримання даних з 5 таблиць
+    const [
+      spResults,
+      asSpecialResults,
+      asInstrResults,
+      krtInstrResults,
+      asSpecialCheckResults,
+    ] = await Promise.all([
+      // 1. Service Premises Instrumental Control
+      new Promise((resolve, reject) => {
+        db.all(
+          `SELECT sp.subdivisionName, spic.controlPerformer as performer, 
+                    spic.controlEventDate as eventDate, COUNT(*) as count
+             FROM service_premises_instrumental_control spic
+             JOIN service_premises sp ON spic.premisesId = sp.id
+             WHERE spic.controlEventDate BETWEEN ? AND ?
+             GROUP BY spic.controlEventDate, sp.subdivisionName, spic.controlPerformer`,
+          [dateFrom, dateTo],
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          },
+        );
+      }),
+      // 2. Class A Systems Special Research
+      new Promise((resolve, reject) => {
+        db.all(
+          `SELECT cas.subdivisionName, casr.performer, casr.eventDate,
+                    COUNT(*) as count
+             FROM class_a_systems_special_research casr
+             JOIN class_a_systems cas ON casr.systemId = cas.id
+             WHERE casr.eventDate BETWEEN ? AND ?
+             GROUP BY casr.eventDate, cas.subdivisionName, casr.performer`,
+          [dateFrom, dateTo],
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          },
+        );
+      }),
+      // 3. Class A Systems Instrumental Control
+      new Promise((resolve, reject) => {
+        db.all(
+          `SELECT cas.subdivisionName, caic.controlPerformer as performer,
+                    caic.controlEventDate as eventDate, COUNT(*) as count
+             FROM class_a_systems_instrumental_control caic
+             JOIN class_a_systems cas ON caic.systemId = cas.id
+             WHERE caic.controlEventDate BETWEEN ? AND ?
+             GROUP BY caic.controlEventDate, cas.subdivisionName, caic.controlPerformer`,
+          [dateFrom, dateTo],
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          },
+        );
+      }),
+      // 4. KRT Instrumental Control
+      new Promise((resolve, reject) => {
+        db.all(
+          `SELECT k.subdivisionName, kic.controlPerformer as performer,
+                    kic.controlEventDate as eventDate, COUNT(*) as count
+             FROM krt_instrumental_control kic
+             JOIN krt k ON kic.krtId = k.id
+             WHERE kic.controlEventDate BETWEEN ? AND ?
+             GROUP BY kic.controlEventDate, k.subdivisionName, kic.controlPerformer`,
+          [dateFrom, dateTo],
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          },
+        );
+      }),
+      // 5. Class A Systems Special Check (КСП)
+      new Promise((resolve, reject) => {
+        db.all(
+          `SELECT cas.subdivisionName, casc.checkPerformer as performer,
+                    casc.checkEventDate as eventDate, COUNT(*) as count
+             FROM class_a_systems_special_check casc
+             JOIN class_a_systems cas ON casc.systemId = cas.id
+             WHERE casc.checkEventDate BETWEEN ? AND ?
+             GROUP BY casc.checkEventDate, cas.subdivisionName, casc.checkPerformer`,
+          [dateFrom, dateTo],
+          (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows || []);
+          },
+        );
+      }),
+    ]);
+
+    // Структура для групування: { "YYYY-MM-DD|subdivisionName|performer": { counts } }
+    const groupedData = {};
+
+    // Функція для додання даних до групування
+    const addToGrouped = (results, typeKey) => {
+      results.forEach((row) => {
+        const key = `${row.eventDate}|${row.subdivisionName}|${row.performer || ''}`;
+        if (!groupedData[key]) {
+          groupedData[key] = {
+            eventDate: row.eventDate,
+            subdivisionName: row.subdivisionName,
+            performer: row.performer || 'Не вказано',
+            sp_instrumental: 0,
+            as_special_research: 0,
+            as_instrumental: 0,
+            krt_instrumental: 0,
+            as_special_check: 0,
+          };
+        }
+        groupedData[key][typeKey] = row.count;
+      });
+    };
+
+    addToGrouped(spResults, 'sp_instrumental');
+    addToGrouped(asSpecialResults, 'as_special_research');
+    addToGrouped(asInstrResults, 'as_instrumental');
+    addToGrouped(krtInstrResults, 'krt_instrumental');
+    addToGrouped(asSpecialCheckResults, 'as_special_check');
+
+    // Конвертуємо в масив та сортуємо по eventDate
+    const reportData = Object.values(groupedData).sort(
+      (a, b) => new Date(a.eventDate) - new Date(b.eventDate),
+    );
+
+    // Додаємо номери з/п та рядок підсумків
+    const reportWithNumbers = reportData.map((row, index) => ({
+      ...row,
+      rowNumber: index + 1,
+    }));
+
+    // Рядок підсумків
+    const totalsRow = {
+      rowNumber: '∑',
+      eventDate: 'ПІДСУМОК',
+      subdivisionName: '',
+      performer: '',
+      sp_instrumental: reportData.reduce(
+        (sum, r) => sum + r.sp_instrumental,
+        0,
+      ),
+      as_special_research: reportData.reduce(
+        (sum, r) => sum + r.as_special_research,
+        0,
+      ),
+      as_instrumental: reportData.reduce(
+        (sum, r) => sum + r.as_instrumental,
+        0,
+      ),
+      krt_instrumental: reportData.reduce(
+        (sum, r) => sum + r.krt_instrumental,
+        0,
+      ),
+      as_special_check: reportData.reduce(
+        (sum, r) => sum + r.as_special_check,
+        0,
+      ),
+    };
+
+    console.log(
+      `✅ GUNP research report generated: ${reportWithNumbers.length} rows`,
+    );
+    res.json({
+      success: true,
+      dateFrom,
+      dateTo,
+      rows: reportWithNumbers,
+      totals: totalsRow,
+    });
+  } catch (err) {
+    console.error('❌ Error in GET /api/gunp-research-report:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

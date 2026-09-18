@@ -1,233 +1,211 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import '../../styles/TabContent.css';
+import '../../styles/GUNPResearchTab.css';
+
+interface ReportRow {
+  rowNumber: number;
+  eventDate: string;
+  subdivisionName: string;
+  performer: string;
+  sp_instrumental: number;
+  as_special_research: number;
+  as_instrumental: number;
+  krt_instrumental: number;
+  as_special_check: number;
+}
+
+interface ReportData {
+  success: boolean;
+  dateFrom: string;
+  dateTo: string;
+  rows: ReportRow[];
+  totals: ReportRow;
+}
 
 function GUNPResearchTab() {
-  const [research, setResearch] = useState([]);
-  const [selectedResearch, setSelectedResearch] = useState(null);
-  const [showForm, setShowForm] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchResearch();
-  }, []);
-
-  const fetchResearch = async () => {
-    try {
-      const response = await fetch('/api/gunp-research');
-      const data = await response.json();
-      setResearch(data);
-    } catch (error) {
-      console.error('Ошибка загрузки:', error);
-    }
+  // Валідація дати в форматі YYYY-MM-DD
+  const validateDate = (dateStr: string): boolean => {
+    if (!dateStr) return false;
+    // Date input повертає дату в форматі YYYY-MM-DD
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    return dateRegex.test(dateStr);
   };
 
-  const handleAddResearch = async (data) => {
-    try {
-      const response = await fetch('/api/gunp-research', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const newResearch = await response.json();
-      setResearch([...research, newResearch]);
-      setShowForm(false);
-    } catch (error) {
-      console.error('Ошибка добавления:', error);
+  const handleGenerateReport = async () => {
+    if (!dateFrom || !dateTo) {
+      setError('Будь ласка, виберіть обидві дати');
+      return;
     }
-  };
 
-  const handleUpdateResearch = async (id, data) => {
-    try {
-      const response = await fetch(`/api/gunp-research/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const updated = await response.json();
-      setResearch(research.map((r) => (r.id === id ? updated : r)));
-      setSelectedResearch(null);
-    } catch (error) {
-      console.error('Ошибка обновления:', error);
+    if (!validateDate(dateFrom) || !validateDate(dateTo)) {
+      setError('Невірний формат дати');
+      return;
     }
-  };
 
-  const handleDeleteResearch = async (id) => {
-    if (window.confirm('Видалити дослідження?')) {
-      try {
-        await fetch(`/api/gunp-research/${id}`, { method: 'DELETE' });
-        setResearch(research.filter((r) => r.id !== id));
-        setSelectedResearch(null);
-      } catch (error) {
-        console.error('Ошибка удаления:', error);
+    if (dateFrom > dateTo) {
+      setError('Дата "від" не може бути пізніше дати "до"');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setReportData(null);
+
+    try {
+      const response = await fetch(
+        `/api/gunp-research-report?dateFrom=${dateFrom}&dateTo=${dateTo}`,
+      );
+      if (!response.ok) {
+        throw new Error('Помилка отримання звіту');
       }
+      const data = await response.json();
+      setReportData(data);
+    } catch (err) {
+      console.error('Помилка при отриманні звіту:', err);
+      setError('Помилка при отриманні звіту. Спробуйте ще раз.');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}.${month}.${year}`;
   };
 
   return (
-    <div className='tab-layout'>
-      <aside className='tab-sidebar'>
-        <button className='btn-add' onClick={() => setShowForm(!showForm)}>
-          {showForm ? '✕ Отменить' : '+ Додати дослідження'}
-        </button>
-        <div className='property-list'>
-          <div className='search-box'>
-            <input type='text' placeholder='🔍 Пошук...' />
+    <div className='gunp-research-container'>
+      <div className='gunp-header'>
+        <h2>🔬 Дослідження ГУНП</h2>
+      </div>
+
+      <div className='gunp-description'>
+        <p>
+          Для формування звіту щодо кількісних показників інструментальних
+          досліджень на власних ОІД, оберіть, будь ласка, відповідний період
+          часу.{' '}
+        </p>
+      </div>
+
+      <div className='gunp-controls'>
+        <div className='date-range-picker'>
+          <div className='date-group'>
+            <label htmlFor='dateFrom'>Період з (дата):</label>
+            <input
+              id='dateFrom'
+              type='date'
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              disabled={loading}
+            />
           </div>
-          <div className='property-items'>
-            {research.length === 0 ? (
-              <p className='empty'>Дослідження не знайдено</p>
-            ) : (
-              research.map((item) => (
-                <div
-                  key={item.id}
-                  className={`property-item ${selectedResearch?.id === item.id ? 'active' : ''}`}
-                  onClick={() => setSelectedResearch(item)}
-                >
-                  <div className='item-address'>🔬 {item.name}</div>
-                  <div className='item-meta'>
-                    <span className='badge'>{item.status}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          <div className='list-footer'>
-            <small>Всього: {research.length}</small>
+
+          <div className='date-group'>
+            <label htmlFor='dateTo'>по (дата):</label>
+            <input
+              id='dateTo'
+              type='date'
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              disabled={loading}
+            />
           </div>
         </div>
-      </aside>
 
-      <main className='tab-main'>
-        {showForm ? (
-          <form
-            className='property-form'
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleAddResearch({
-                name: formData.get('name'),
-                date: formData.get('date'),
-                status: formData.get('status'),
-                findings: formData.get('findings'),
-                notes: formData.get('notes'),
-              });
-            }}
-          >
-            <div className='form-section'>
-              <h2>🔬 Інструментальні дослідження ГУНП</h2>
-              <div className='form-group'>
-                <label>Назва дослідження *</label>
-                <input type='text' name='name' placeholder='Назва' required />
-              </div>
-              <div className='form-row'>
-                <div className='form-group'>
-                  <label>Дата проведення</label>
-                  <input type='date' name='date' />
-                </div>
-                <div className='form-group'>
-                  <label>Статус</label>
-                  <select name='status'>
-                    <option value='активна'>Активна</option>
-                    <option value='завершена'>Завершена</option>
-                    <option value='очікує'>Очікує</option>
-                  </select>
-                </div>
-              </div>
-              <div className='form-group'>
-                <label>Знахідки</label>
-                <textarea
-                  name='findings'
-                  placeholder='Результати та знахідки...'
-                  rows={4}
-                ></textarea>
-              </div>
-              <div className='form-group'>
-                <label>Примітки</label>
-                <textarea
-                  name='notes'
-                  placeholder='Додаткова інформація...'
-                  rows={3}
-                ></textarea>
-              </div>
-            </div>
-            <div className='form-actions'>
-              <button type='submit' className='btn-primary'>
-                ✓ Зберегти
-              </button>
-              <button
-                type='button'
-                className='btn-secondary'
-                onClick={() => setShowForm(false)}
-              >
-                ✕ Скасувати
-              </button>
-            </div>
-          </form>
-        ) : selectedResearch ? (
-          <div className='property-card'>
-            <div
-              className='card-header'
-              style={{
-                background: 'linear-gradient(135deg, #74b9ff 0%, #0984e3 100%)',
-              }}
-            >
-              <h2>🔬 {selectedResearch.name}</h2>
-              <div className='card-actions'>
-                <button
-                  className='btn-icon edit'
-                  onClick={() => setShowForm(true)}
-                  title='Редагувати'
-                >
-                  ✏️
-                </button>
-                <button
-                  className='btn-icon delete'
-                  onClick={() => handleDeleteResearch(selectedResearch.id)}
-                  title='Видалити'
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-            <div className='card-sections'>
-              <section className='card-section'>
-                <h3>📋 Інформація</h3>
-                <div className='info-grid'>
-                  <div className='info-row'>
-                    <span className='label'>Статус:</span>
-                    <span className='value act-badge'>
-                      {selectedResearch.status}
-                    </span>
-                  </div>
-                  {selectedResearch.date && (
-                    <div className='info-row'>
-                      <span className='label'>Дата:</span>
-                      <span className='value'>
-                        {new Date(selectedResearch.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </section>
-              {selectedResearch.findings && (
-                <section className='card-section'>
-                  <h3>📊 Знахідки</h3>
-                  <p className='notes'>{selectedResearch.findings}</p>
-                </section>
-              )}
-              {selectedResearch.notes && (
-                <section className='card-section'>
-                  <h3>📝 Примітки</h3>
-                  <p className='notes'>{selectedResearch.notes}</p>
-                </section>
-              )}
-            </div>
+        <button
+          className='btn-generate-report'
+          onClick={handleGenerateReport}
+          disabled={loading}
+        >
+          {loading ? '⏳ Завантаження...' : 'Сформувати звіт'}
+        </button>
+      </div>
+
+      {error && <div className='error-message'>{error}</div>}
+
+      {reportData && (
+        <div className='report-section'>
+          <div className='report-header'>
+            <h3>
+              Звіт про інструментальні дослідження ГУНП за період{' '}
+              {formatDate(dateFrom)} – {formatDate(dateTo)}
+            </h3>
+            <p className='report-count'>
+              Знайдено: {reportData.rows.length} записів
+            </p>
           </div>
-        ) : (
-          <div className='empty-state'>
-            <p>Виберіть дослідження зі списку або додайте нове</p>
+
+          <div className='table-wrapper'>
+            <table className='gunp-report-table'>
+              <thead>
+                <tr>
+                  <th className='col-number'>№ з/п</th>
+                  <th className='col-date'>Дата проведення робіт</th>
+                  <th className='col-subdivision'>Назва підрозділу</th>
+                  <th className='col-performer'>Організація-виконавець</th>
+                  <th className='col-count'>Інструментальні контролі СП</th>
+                  <th className='col-count'>Спеціальні дослідження ПЕОМ</th>
+                  <th className='col-count'>Інструментальні контролі ПЕОМ</th>
+                  <th className='col-count'>Інструментальні контролі КРТ</th>
+                  <th className='col-count'>КСП</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reportData.rows.map((row) => (
+                  <tr
+                    key={`${row.eventDate}-${row.subdivisionName}-${row.performer}`}
+                  >
+                    <td className='col-number'>{row.rowNumber}</td>
+                    <td className='col-date'>{formatDate(row.eventDate)}</td>
+                    <td className='col-subdivision'>{row.subdivisionName}</td>
+                    <td className='col-performer'>{row.performer}</td>
+                    <td className='col-count'>{row.sp_instrumental}</td>
+                    <td className='col-count'>{row.as_special_research}</td>
+                    <td className='col-count'>{row.as_instrumental}</td>
+                    <td className='col-count'>{row.krt_instrumental}</td>
+                    <td className='col-count'>{row.as_special_check}</td>
+                  </tr>
+                ))}
+                <tr className='totals-row'>
+                  <td className='col-number'>{reportData.totals.rowNumber}</td>
+                  <td className='col-date'>{reportData.totals.eventDate}</td>
+                  <td colSpan={2} className='totals-label'>
+                    ПІДСУМОК
+                  </td>
+                  <td className='col-count'>
+                    {reportData.totals.sp_instrumental}
+                  </td>
+                  <td className='col-count'>
+                    {reportData.totals.as_special_research}
+                  </td>
+                  <td className='col-count'>
+                    {reportData.totals.as_instrumental}
+                  </td>
+                  <td className='col-count'>
+                    {reportData.totals.krt_instrumental}
+                  </td>
+                  <td className='col-count'>
+                    {reportData.totals.as_special_check}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        )}
-      </main>
+        </div>
+      )}
+
+      {!reportData && !loading && !error && (
+        <div className='empty-state'>
+          <p>Звіт буде сформований після вибору періоду та натискання кнопки</p>
+        </div>
+      )}
     </div>
   );
 }
