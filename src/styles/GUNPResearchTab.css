@@ -162,9 +162,10 @@
 }
 
 .table-wrapper {
-  overflow-x: auto;
+  overflow: auto;
   border-radius: 6px;
   border: 1px solid #e0e0e0;
+  max-height: 600px;
 }
 
 .gunp-report-table {
@@ -176,6 +177,9 @@
 .gunp-report-table thead {
   background-color: #f8f9fa;
   border-bottom: 2px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .gunp-report-table th {
@@ -185,6 +189,7 @@
   color: #333;
   white-space: nowrap;
   border-right: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
 }
 
 .gunp-report-table th:last-child {
@@ -307,6 +312,10 @@
   .gunp-research-container {
     padding: 1rem;
     gap: 1rem;
+  }
+
+  .table-wrapper {
+    max-height: 400px;
   }
 
   .gunp-report-table {
