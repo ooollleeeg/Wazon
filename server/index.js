@@ -28,11 +28,11 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// API routes (MUST be before static files and SPA fallback)
+app.use('/api', router);
+
 // Static files
 app.use(express.static(path.join(__dirname, '../dist')));
-
-// API routes
-app.use('/api', router);
 
 // SPA fallback
 app.get('*', (req, res) => {

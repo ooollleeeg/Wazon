@@ -1010,6 +1010,37 @@ function initializeDatabase() {
         }
       },
     );
+
+    // ============================================================================
+    // NPU RESEARCH TABLE
+    // ============================================================================
+    db.run(
+      `
+      CREATE TABLE IF NOT EXISTS npu_research (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        startDate TEXT NOT NULL,
+        endDate TEXT NOT NULL,
+        organName TEXT NOT NULL,
+        orderNumber TEXT,
+        orderDate TEXT,
+        spInstrumental INTEGER DEFAULT 0,
+        specialResearch INTEGER DEFAULT 0,
+        peomInstrumental INTEGER DEFAULT 0,
+        krtInstrumental INTEGER DEFAULT 0,
+        ksp INTEGER DEFAULT 0,
+        attestationActs INTEGER DEFAULT 0,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+      (err) => {
+        if (err) {
+          console.error('❌ Error creating npu_research table:', err.message);
+        } else {
+          console.log('✅ NPU Research table initialized');
+        }
+      },
+    );
   });
 }
 

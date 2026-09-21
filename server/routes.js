@@ -1270,4 +1270,250 @@ router.get('/gunp-research-report', async (req, res) => {
   }
 });
 
+// ============================================================================
+// NPU RESEARCH ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/npu-research - Отримати записи про дослідження НПУ за період
+ */
+router.get('/npu-research', async (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+
+    console.log('📥 GET /api/npu-research', { dateFrom, dateTo });
+
+    let query = 'SELECT * FROM npu_research';
+    const params = [];
+
+    if (dateFrom && dateTo) {
+      query += ' WHERE (startDate BETWEEN ? AND ? OR endDate BETWEEN ? AND ?)';
+      params.push(dateFrom, dateTo, dateFrom, dateTo);
+    }
+
+    query += ' ORDER BY startDate ASC';
+
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        console.error('❌ Error in GET /api/npu-research:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Обробка рядків з додаванням номерів
+      const rowsWithNumbers = (rows || []).map((row, index) => ({
+        ...row,
+        rowNumber: index + 1,
+      }));
+
+      // Рядок підсумків
+      const totalsRow = {
+        rowNumber: '∑',
+        organName: 'ПІДСУМОК',
+        spInstrumental: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.spInstrumental || 0),
+          0,
+        ),
+        specialResearch: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.specialResearch || 0),
+          0,
+        ),
+        peomInstrumental: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.peomInstrumental || 0),
+          0,
+        ),
+        krtInstrumental: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.krtInstrumental || 0),
+          0,
+        ),
+        ksp: rowsWithNumbers.reduce((sum, r) => sum + (r.ksp || 0), 0),
+        attestationActs: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.attestationActs || 0),
+          0,
+        ),
+      };
+
+      console.log(
+        `✅ NPU research report retrieved: ${rowsWithNumbers.length} rows`,
+      );
+      res.json({
+        success: true,
+        dateFrom: dateFrom || null,
+        dateTo: dateTo || null,
+        rows: rowsWithNumbers,
+        totals: totalsRow,
+      });
+    });
+  } catch (err) {
+    console.error('❌ Error in GET /api/npu-research:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/npu-research - Додати новий запис про дослідження НПУ
+ */
+router.post('/npu-research', async (req, res) => {
+  try {
+    const {
+      startDate,
+      endDate,
+      organName,
+      orderNumber,
+      orderDate,
+      spInstrumental,
+      specialResearch,
+      peomInstrumental,
+      krtInstrumental,
+      ksp,
+      attestationActs,
+    } = req.body;
+
+    console.log('📝 POST /api/npu-research', req.body);
+
+    if (!startDate || !endDate || !organName) {
+      return res.status(400).json({
+        error: "Обов'язкові поля: startDate, endDate, organName",
+      });
+    }
+
+    db.run(
+      `INSERT INTO npu_research (
+        startDate, endDate, organName, orderNumber, orderDate,
+        spInstrumental, specialResearch, peomInstrumental, krtInstrumental, ksp, attestationActs
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        startDate,
+        endDate,
+        organName,
+        orderNumber || null,
+        orderDate || null,
+        spInstrumental || 0,
+        specialResearch || 0,
+        peomInstrumental || 0,
+        krtInstrumental || 0,
+        ksp || 0,
+        attestationActs || 0,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error in POST /api/npu-research:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        console.log('✅ NPU research record created with id:', this.lastID);
+        res.json({
+          success: true,
+          id: this.lastID,
+          message: 'Запис успішно додано',
+        });
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in POST /api/npu-research:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /api/npu-research/:id - Оновити запис про дослідження НПУ
+ */
+router.put('/npu-research/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      startDate,
+      endDate,
+      organName,
+      orderNumber,
+      orderDate,
+      spInstrumental,
+      specialResearch,
+      peomInstrumental,
+      krtInstrumental,
+      ksp,
+      attestationActs,
+    } = req.body;
+
+    console.log('✏️ PUT /api/npu-research/:id', { id, ...req.body });
+
+    if (!startDate || !endDate || !organName) {
+      return res.status(400).json({
+        error: "Обов'язкові поля: startDate, endDate, organName",
+      });
+    }
+
+    db.run(
+      `UPDATE npu_research SET
+        startDate = ?, endDate = ?, organName = ?, orderNumber = ?, orderDate = ?,
+        spInstrumental = ?, specialResearch = ?, peomInstrumental = ?, krtInstrumental = ?, ksp = ?, attestationActs = ?,
+        updatedAt = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        startDate,
+        endDate,
+        organName,
+        orderNumber || null,
+        orderDate || null,
+        spInstrumental || 0,
+        specialResearch || 0,
+        peomInstrumental || 0,
+        krtInstrumental || 0,
+        ksp || 0,
+        attestationActs || 0,
+        id,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error in PUT /api/npu-research/:id:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Запис не знайдено' });
+        }
+
+        console.log('✅ NPU research record updated:', id);
+        res.json({
+          success: true,
+          message: 'Запис успішно оновлено',
+        });
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in PUT /api/npu-research/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/npu-research/:id - Видалити запис про дослідження НПУ
+ */
+router.delete('/npu-research/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('🗑️ DELETE /api/npu-research/:id', { id });
+
+    db.run('DELETE FROM npu_research WHERE id = ?', [id], function (err) {
+      if (err) {
+        console.error('❌ Error in DELETE /api/npu-research/:id:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Запис не знайдено' });
+      }
+
+      console.log('✅ NPU research record deleted:', id);
+      res.json({
+        success: true,
+        message: 'Запис успішно видалено',
+      });
+    });
+  } catch (err) {
+    console.error('❌ Error in DELETE /api/npu-research/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
