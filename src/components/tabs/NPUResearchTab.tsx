@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import '../../styles/TabContent.css';
 import '../../styles/NPUResearchTab.css';
+import DeleteConfirmModal from '../modals/DeleteConfirmModal';
+import SuccessModal from '../modals/SuccessModal';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 interface NPURecord {
   id?: number;
@@ -47,6 +50,15 @@ function NPUResearchTab() {
     attestationActs: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState<'report' | 'all'>('report');
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  // States for delete confirmation modal and success modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [recordToDelete, setRecordToDelete] = useState<NPURecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const validateDate = (dateStr: string): boolean => {
     if (!dateStr) return false;
@@ -54,38 +66,44 @@ function NPUResearchTab() {
     return dateRegex.test(dateStr);
   };
 
-  const handleGenerateReport = async () => {
-    if (!dateFrom || !dateTo) {
-      setError('Будь ласка, виберіть обидві дати');
-      return;
-    }
+  const handleGenerateReport = async (mode: 'report' | 'all' = viewMode) => {
+    if (mode === 'report') {
+      if (!dateFrom || !dateTo) {
+        setError('Будь ласка, виберіть обидві дати');
+        return;
+      }
 
-    if (!validateDate(dateFrom) || !validateDate(dateTo)) {
-      setError('Невірний формат дати');
-      return;
-    }
+      if (!validateDate(dateFrom) || !validateDate(dateTo)) {
+        setError('Невірний формат дати');
+        return;
+      }
 
-    if (dateFrom > dateTo) {
-      setError('Дата "від" не може бути пізніше дати "до"');
-      return;
+      if (dateFrom > dateTo) {
+        setError('Дата "від" не може бути пізніше дати "до"');
+        return;
+      }
     }
 
     setLoading(true);
     setError('');
     setReportData(null);
+    setViewMode(mode);
 
     try {
-      const response = await fetch(
-        `/api/npu-research?dateFrom=${dateFrom}&dateTo=${dateTo}`,
-      );
+      const url =
+        mode === 'report'
+          ? `/api/npu-research?dateFrom=${dateFrom}&dateTo=${dateTo}`
+          : '/api/npu-research';
+
+      const response = await fetch(url);
       if (!response.ok) {
-        throw new Error('Помилка отримання звіту');
+        throw new Error('Помилка отримання даних');
       }
       const data = await response.json();
       setReportData(data);
     } catch (err) {
-      console.error('Помилка при отриманні звіту:', err);
-      setError('Помилка при отриманні звіту. Спробуйте ще раз.');
+      console.error('Помилка при отриманні даних:', err);
+      setError('Помилка при отриманні даних. Спробуйте ще раз.');
     } finally {
       setLoading(false);
     }
@@ -119,6 +137,54 @@ function NPUResearchTab() {
     }));
   };
 
+  const handleEdit = (row: NPURecord) => {
+    setEditingId(row.id || null);
+    setFormData({
+      startDate: row.startDate,
+      endDate: row.endDate,
+      organName: row.organName,
+      orderNumber: row.orderNumber || '',
+      orderDate: row.orderDate || '',
+      spInstrumental: row.spInstrumental,
+      specialResearch: row.specialResearch,
+      peomInstrumental: row.peomInstrumental,
+      krtInstrumental: row.krtInstrumental,
+      ksp: row.ksp,
+      attestationActs: row.attestationActs,
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteClick = (row: NPURecord) => {
+    setRecordToDelete(row);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!recordToDelete || !recordToDelete.id) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/npu-research/${recordToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Помилка при видаленні');
+
+      setShowDeleteModal(false);
+      setRecordToDelete(null);
+      setSuccessMessage('Запис успішно видалено');
+      setShowSuccessModal(true);
+
+      await handleGenerateReport(viewMode);
+    } catch (err) {
+      console.error('Помилка при видаленні:', err);
+      setError('Помилка при видаленні запису.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -127,24 +193,26 @@ function NPUResearchTab() {
       return;
     }
 
+    const isEditing = !!editingId;
     setIsSubmitting(true);
     setError('');
 
     try {
-      const response = await fetch('/api/npu-research', {
-        method: 'POST',
+      const url = editingId
+        ? `/api/npu-research/${editingId}`
+        : '/api/npu-research';
+      const method = editingId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
-        throw new Error('Помилка при додаванні запису');
+        throw new Error('Помилка при збереженні запису');
       }
 
-      const result = await response.json();
-      console.log('✅ Запис додано:', result);
-
-      // Очищення форми та закриття модального вікна
       setFormData({
         startDate: '',
         endDate: '',
@@ -158,15 +226,18 @@ function NPUResearchTab() {
         ksp: 0,
         attestationActs: 0,
       });
+      setEditingId(null);
       setShowModal(false);
 
-      // Оновлення звіту (якщо він відображається)
-      if (dateFrom && dateTo) {
-        handleGenerateReport();
-      }
+      setSuccessMessage(
+        isEditing ? 'Запис успішно відредаговано' : 'Запис успішно додано',
+      );
+      setShowSuccessModal(true);
+
+      await handleGenerateReport(viewMode);
     } catch (err) {
       console.error('Помилка:', err);
-      setError('Помилка при додаванні запису. Спробуйте ще раз.');
+      setError('Помилка при збереженні запису.');
     } finally {
       setIsSubmitting(false);
     }
@@ -213,15 +284,39 @@ function NPUResearchTab() {
 
         <button
           className='btn-generate-report'
-          onClick={handleGenerateReport}
+          onClick={() => handleGenerateReport('report')}
           disabled={loading}
         >
           {loading ? '⏳ Завантаження...' : 'Сформувати звіт'}
         </button>
 
         <button
+          className='btn-view-all'
+          onClick={() => handleGenerateReport('all')}
+          disabled={loading}
+        >
+          📋 Переглянути всі
+        </button>
+
+        <button
           className='btn-add-record'
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setEditingId(null);
+            setFormData({
+              startDate: '',
+              endDate: '',
+              organName: '',
+              orderNumber: '',
+              orderDate: '',
+              spInstrumental: 0,
+              specialResearch: 0,
+              peomInstrumental: 0,
+              krtInstrumental: 0,
+              ksp: 0,
+              attestationActs: 0,
+            });
+            setShowModal(true);
+          }}
           disabled={loading}
         >
           ➕ Додати запис
@@ -230,13 +325,20 @@ function NPUResearchTab() {
 
       {error && <div className='error-message'>{error}</div>}
 
-      {reportData && (
+      {/* Loading Spinner */}
+      {loading && (
+        <div className='npu-loading-wrapper'>
+          <LoadingSpinner label='Завантаження досліджень НПУ...' />
+        </div>
+      )}
+
+      {reportData && !loading && (
         <div className='report-section'>
           <div className='report-header'>
             <h3>
-              Звіт щодо проведених інструментальних досліджень на об'єктах
-              інформаційної діяльності, проведених за дорученнями НПУ в період{' '}
-              {formatDate(dateFrom)} – {formatDate(dateTo)}
+              {viewMode === 'report'
+                ? `Звіт щодо проведених інструментальних досліджень за дорученнями НПУ в період ${formatDate(dateFrom)} – ${formatDate(dateTo)}`
+                : 'Всі записи про дослідження за дорученнями НПУ'}
             </h3>
             <p className='report-count'>
               Знайдено: {reportData.rows.length} записів
@@ -250,13 +352,19 @@ function NPUResearchTab() {
                   <th className='col-number'>№ з/п</th>
                   <th className='col-date'>Період проведення</th>
                   <th className='col-organ'>Назва органу НП України</th>
-                  <th className='col-order'>№ і дата доручення НПУ</th>
-                  <th className='col-count'>Приміщення ІК</th>
-                  <th className='col-count'>Спец. досл. ПЕОМ</th>
-                  <th className='col-count'>ПЕОМ ІК</th>
-                  <th className='col-count'>КРТ ІК</th>
-                  <th className='col-count'>КСП</th>
-                  <th className='col-count'>Актів атестації</th>
+
+                  {viewMode === 'report' && (
+                    <>
+                      <th className='col-order'>№ і дата доручення НПУ</th>
+                      <th className='col-count'>Приміщення ІК</th>
+                      <th className='col-count'>Спец. досл. ПЕОМ</th>
+                      <th className='col-count'>ПЕОМ ІК</th>
+                      <th className='col-count'>КРТ ІК</th>
+                      <th className='col-count'>КСП</th>
+                      <th className='col-count'>Актів атестації</th>
+                    </>
+                  )}
+                  <th className='col-actions'>Дії</th>
                 </tr>
               </thead>
               <tbody>
@@ -267,42 +375,69 @@ function NPUResearchTab() {
                       {formatDate(row.startDate)} – {formatDate(row.endDate)}
                     </td>
                     <td className='col-organ'>{row.organName}</td>
-                    <td className='col-order'>
-                      {row.orderNumber
-                        ? `${row.orderNumber} від ${formatDate(row.orderDate || '')}`
-                        : '–'}
+
+                    {viewMode === 'report' && (
+                      <>
+                        <td className='col-order'>
+                          {row.orderNumber
+                            ? `${row.orderNumber} від ${formatDate(row.orderDate || '')}`
+                            : '–'}
+                        </td>
+                        <td className='col-count'>{row.spInstrumental}</td>
+                        <td className='col-count'>{row.specialResearch}</td>
+                        <td className='col-count'>{row.peomInstrumental}</td>
+                        <td className='col-count'>{row.krtInstrumental}</td>
+                        <td className='col-count'>{row.ksp}</td>
+                        <td className='col-count'>{row.attestationActs}</td>
+                      </>
+                    )}
+                    <td className='col-actions'>
+                      <button
+                        className='btn-action-edit'
+                        onClick={() => handleEdit(row)}
+                        title='Редагувати'
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className='btn-action-delete'
+                        onClick={() => handleDeleteClick(row)}
+                        title='Видалити'
+                      >
+                        🗑️
+                      </button>
                     </td>
-                    <td className='col-count'>{row.spInstrumental}</td>
-                    <td className='col-count'>{row.specialResearch}</td>
-                    <td className='col-count'>{row.peomInstrumental}</td>
-                    <td className='col-count'>{row.krtInstrumental}</td>
-                    <td className='col-count'>{row.ksp}</td>
-                    <td className='col-count'>{row.attestationActs}</td>
                   </tr>
                 ))}
-                <tr className='totals-row'>
-                  <td className='col-number'>{reportData.totals.rowNumber}</td>
-                  <td className='col-date'>{reportData.totals.organName}</td>
-                  <td colSpan={2} className='totals-label'>
-                    ПІДСУМОК
-                  </td>
-                  <td className='col-count'>
-                    {reportData.totals.spInstrumental}
-                  </td>
-                  <td className='col-count'>
-                    {reportData.totals.specialResearch}
-                  </td>
-                  <td className='col-count'>
-                    {reportData.totals.peomInstrumental}
-                  </td>
-                  <td className='col-count'>
-                    {reportData.totals.krtInstrumental}
-                  </td>
-                  <td className='col-count'>{reportData.totals.ksp}</td>
-                  <td className='col-count'>
-                    {reportData.totals.attestationActs}
-                  </td>
-                </tr>
+                {viewMode === 'report' && (
+                  <tr className='totals-row'>
+                    <td className='col-number'>
+                      {reportData.totals.rowNumber}
+                    </td>
+                    <td className='col-date'>{reportData.totals.organName}</td>
+
+                    <td colSpan={2} className='totals-label'>
+                      ПІДСУМОК
+                    </td>
+                    <td className='col-count'>
+                      {reportData.totals.spInstrumental}
+                    </td>
+                    <td className='col-count'>
+                      {reportData.totals.specialResearch}
+                    </td>
+                    <td className='col-count'>
+                      {reportData.totals.peomInstrumental}
+                    </td>
+                    <td className='col-count'>
+                      {reportData.totals.krtInstrumental}
+                    </td>
+                    <td className='col-count'>{reportData.totals.ksp}</td>
+                    <td className='col-count'>
+                      {reportData.totals.attestationActs}
+                    </td>
+                    <td className='col-actions'></td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -311,19 +446,29 @@ function NPUResearchTab() {
 
       {!reportData && !loading && !error && (
         <div className='empty-state'>
-          <p>Звіт буде сформований після вибору періоду та натискання кнопки</p>
+          <p>
+            Звіт буде сформований після вибору періоду та натискання кнопки або
+            перегляньте всі записи
+          </p>
         </div>
       )}
 
-      {/* MODAL WINDOW FOR ADDING RECORDS */}
+      {/* MODAL WINDOW FOR ADDING / EDITING RECORDS */}
       {showModal && (
         <div className='modal-overlay' onClick={() => setShowModal(false)}>
           <div className='modal-content' onClick={(e) => e.stopPropagation()}>
             <div className='modal-header'>
-              <h3>➕ Додати запис про дослідження в органах НПУ</h3>
+              <h3>
+                {editingId
+                  ? '✏️ Редагувати запис'
+                  : '➕ Додати запис про дослідження в органах НПУ'}
+              </h3>
               <button
                 className='modal-close'
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingId(null);
+                }}
               >
                 ✕
               </button>
@@ -345,7 +490,7 @@ function NPUResearchTab() {
                     />
                   </div>
                   <div className='form-group'>
-                    <label>Дата кінця *</label>
+                    <label>Дата закінчення *</label>
                     <input
                       type='date'
                       name='endDate'
@@ -357,32 +502,34 @@ function NPUResearchTab() {
                 </div>
               </div>
 
-              {/* Organ Info Section */}
+              {/* Organ Name Section */}
               <div className='form-section'>
-                <h4>Інформація про орган НПУ</h4>
-                <div className='form-grid'>
-                  <div className='form-group'>
-                    <label>Назва органу НП України *</label>
-                    <input
-                      type='text'
-                      name='organName'
-                      value={formData.organName}
-                      onChange={handleInputChange}
-                      placeholder='Наприклад: ГУНП в Воронезькій області'
-                      required
-                    />
-                  </div>
+                <h4>Орган Національної поліції України</h4>
+                <div className='form-group'>
+                  <label>Назва органу НПУ *</label>
+                  <input
+                    type='text'
+                    name='organName'
+                    value={formData.organName}
+                    onChange={handleInputChange}
+                    placeholder='наприклад: ГУНП в Одеській області'
+                    required
+                  />
                 </div>
+              </div>
 
+              {/* Order Info Section */}
+              <div className='form-section'>
+                <h4>Доручення НПУ (за наявності)</h4>
                 <div className='form-grid two-column'>
                   <div className='form-group'>
-                    <label>№ доручення НПУ</label>
+                    <label>Номер доручення</label>
                     <input
                       type='text'
                       name='orderNumber'
-                      value={formData.orderNumber}
+                      value={formData.orderNumber || ''}
                       onChange={handleInputChange}
-                      placeholder='Наприклад: 1234'
+                      placeholder='наприклад: 123/45'
                     />
                   </div>
                   <div className='form-group'>
@@ -390,17 +537,17 @@ function NPUResearchTab() {
                     <input
                       type='date'
                       name='orderDate'
-                      value={formData.orderDate}
+                      value={formData.orderDate || ''}
                       onChange={handleInputChange}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Research Counts Section */}
+              {/* Research Types Section */}
               <div className='form-section'>
-                <h4>Кількість проведених інструментальних досліджень</h4>
-                <div className='form-grid three-column'>
+                <h4>Кількість проведених досліджень за видами</h4>
+                <div className='form-grid two-column'>
                   <div className='form-group'>
                     <label>Приміщення ІК</label>
                     <input
@@ -412,7 +559,7 @@ function NPUResearchTab() {
                     />
                   </div>
                   <div className='form-group'>
-                    <label>Спец. дослідження ПЕОМ</label>
+                    <label>Спеціальні дослідження ПЕОМ</label>
                     <input
                       type='number'
                       name='specialResearch'
@@ -422,7 +569,7 @@ function NPUResearchTab() {
                     />
                   </div>
                   <div className='form-group'>
-                    <label>ІК ПЕОМ </label>
+                    <label>ПЕОМ ІК</label>
                     <input
                       type='number'
                       name='peomInstrumental'
@@ -465,26 +612,65 @@ function NPUResearchTab() {
               </div>
 
               <div className='modal-buttons'>
-                <button
-                  type='button'
-                  className='btn-cancel'
-                  onClick={() => setShowModal(false)}
-                  disabled={isSubmitting}
-                >
-                  Скасувати
-                </button>
-                <button
-                  type='submit'
-                  className='btn-submit'
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? '⏳ Збереження...' : '✓ Додати запис'}
-                </button>
+                {isSubmitting ? (
+                  <div className='modal-submitting-status'>
+                    <LoadingSpinner
+                      size='small'
+                      label={
+                        editingId ? 'Збереження змін...' : 'Додавання запису...'
+                      }
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type='button'
+                      className='btn-cancel'
+                      onClick={() => {
+                        setShowModal(false);
+                        setEditingId(null);
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Скасувати
+                    </button>
+                    <button
+                      type='submit'
+                      className='btn-submit'
+                      disabled={isSubmitting}
+                    >
+                      {editingId ? '✓ Зберегти зміни' : '✓ Додати запис'}
+                    </button>
+                  </>
+                )}
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && recordToDelete && (
+        <DeleteConfirmModal
+          fullName={`${recordToDelete.organName} (${formatDate(recordToDelete.startDate)} – ${formatDate(recordToDelete.endDate)})`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setRecordToDelete(null);
+          }}
+          isLoading={isDeleting}
+        />
+      )}
+
+      {/* Success Notification Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        message={successMessage || ''}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setSuccessMessage(null);
+        }}
+      />
     </div>
   );
 }
