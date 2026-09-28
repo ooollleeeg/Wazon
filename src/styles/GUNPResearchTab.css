@@ -156,7 +156,7 @@
 }
 
 .report-count {
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   color: #888;
   margin: 0;
 }
@@ -184,7 +184,7 @@
 
 .gunp-report-table th {
   padding: 1rem;
-  text-align: left;
+  text-align: center;
   font-weight: 600;
   color: #333;
   white-space: nowrap;
@@ -224,15 +224,16 @@
 .gunp-report-table .col-date {
   text-align: center;
   width: 130px;
-  font-family: monospace;
 }
 
 .gunp-report-table .col-subdivision {
   min-width: 200px;
+  text-align: center;
 }
 
 .gunp-report-table .col-performer {
   min-width: 200px;
+  text-align: center;
 }
 
 .gunp-report-table .col-count {

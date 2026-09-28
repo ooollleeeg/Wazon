@@ -19,7 +19,7 @@ interface ExpirationDocument {
 const TABS_CONFIG = [
   {
     apiEndpoint: '/api/objects/class_a_systems',
-    label: 'АС класу 1,2,3',
+    label: 'АС',
     tabId: 'class-a',
   },
   {

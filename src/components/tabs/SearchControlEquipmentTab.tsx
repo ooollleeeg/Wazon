@@ -201,9 +201,9 @@ const SearchControlEquipmentTab = () => {
           {stats.verificationsExpired !== undefined &&
             stats.verificationsExpired > 0 && (
               <div className='stat-card stat-expired'>
-                <div className='stat-icon'>⚫</div>
+                {/* <div className='stat-icon'>⚫</div> */}
                 <div className='stat-value'>{stats.verificationsExpired}</div>
-                <div className='stat-label'>Закінчилась</div>
+                <div className='stat-label'>Сплив термін дії повірки</div>
               </div>
             )}
           {stats.verificationsCritical !== undefined &&

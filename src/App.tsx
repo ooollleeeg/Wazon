@@ -42,7 +42,7 @@ const TABS: Tab[] = [
   },
   {
     id: 'class-a',
-    label: 'АС класу 1,2,3',
+    label: 'АС',
     icon: ComputerIcon,
     component: ClassASTab,
     color: '#764ba2',

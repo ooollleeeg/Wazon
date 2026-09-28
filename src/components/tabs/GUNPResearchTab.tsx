@@ -150,10 +150,10 @@ function GUNPResearchTab() {
                   <th className='col-date'>Дата проведення робіт</th>
                   <th className='col-subdivision'>Назва підрозділу</th>
                   <th className='col-performer'>Організація-виконавець</th>
-                  <th className='col-count'>Інструментальні контролі СП</th>
-                  <th className='col-count'>Спеціальні дослідження ПЕОМ</th>
-                  <th className='col-count'>Інструментальні контролі ПЕОМ</th>
-                  <th className='col-count'>Інструментальні контролі КРТ</th>
+                  <th className='col-count'>ІК приміщеннь</th>
+                  <th className='col-count'>Спец. досл. ПЕОМ</th>
+                  <th className='col-count'>ІК ПЕОМ</th>
+                  <th className='col-count'>ІК КРТ</th>
                   <th className='col-count'>КСП</th>
                 </tr>
               </thead>
@@ -177,7 +177,7 @@ function GUNPResearchTab() {
                   <td className='col-number'>{reportData.totals.rowNumber}</td>
                   <td className='col-date'>{reportData.totals.eventDate}</td>
                   <td colSpan={2} className='totals-label'>
-                    ПІДСУМОК
+                    {/* ПІДСУМОК */}
                   </td>
                   <td className='col-count'>
                     {reportData.totals.sp_instrumental}
