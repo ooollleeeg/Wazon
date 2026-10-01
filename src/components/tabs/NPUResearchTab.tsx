@@ -53,6 +53,10 @@ function NPUResearchTab() {
   const [viewMode, setViewMode] = useState<'report' | 'all'>('report');
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  // States for view modal (read-only preview)
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingRecord, setViewingRecord] = useState<NPURecord | null>(null);
+
   // States for delete confirmation modal and success modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState<NPURecord | null>(null);
@@ -153,6 +157,23 @@ function NPUResearchTab() {
       attestationActs: row.attestationActs,
     });
     setShowModal(true);
+  };
+
+  const handleViewRecord = (row: NPURecord) => {
+    setViewingRecord(row);
+    setShowViewModal(true);
+  };
+
+  const handleEditFromView = () => {
+    if (!viewingRecord) return;
+    setShowViewModal(false);
+    handleEdit(viewingRecord);
+  };
+
+  const handleDeleteFromView = () => {
+    if (!viewingRecord) return;
+    setShowViewModal(false);
+    handleDeleteClick(viewingRecord);
   };
 
   const handleDeleteClick = (row: NPURecord) => {
@@ -393,11 +414,11 @@ function NPUResearchTab() {
                     )}
                     <td className='col-actions'>
                       <button
-                        className='btn-action-edit'
-                        onClick={() => handleEdit(row)}
-                        title='Редагувати'
+                        className='btn-action-view'
+                        onClick={() => handleViewRecord(row)}
+                        title='Переглянути'
                       >
-                        ✏️
+                        👁️
                       </button>
                       <button
                         className='btn-action-delete'
@@ -450,6 +471,113 @@ function NPUResearchTab() {
             Звіт буде сформований після вибору періоду та натискання кнопки або
             перегляньте всі записи
           </p>
+        </div>
+      )}
+
+      {/* VIEW MODAL (read-only preview) */}
+      {showViewModal && viewingRecord && (
+        <div className='modal-overlay' onClick={() => setShowViewModal(false)}>
+          <div
+            className='modal-content npu-view-modal'
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className='modal-header'>
+              <h3>👁️ Перегляд запису</h3>
+              <button
+                className='modal-close'
+                onClick={() => setShowViewModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className='npu-view-body'>
+              <div className='view-section'>
+                <h4>Період проведення</h4>
+                <div className='view-grid two-column'>
+                  <div className='view-item'>
+                    <label>Дата початку:</label>
+                    <strong>{formatDate(viewingRecord.startDate)}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>Дата закінчення:</label>
+                    <strong>{formatDate(viewingRecord.endDate)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className='view-section'>
+                <h4>Орган Національної поліції України</h4>
+                <div className='view-item'>
+                  <label>Назва органу НПУ:</label>
+                  <strong>{viewingRecord.organName}</strong>
+                </div>
+              </div>
+
+              <div className='view-section'>
+                <h4>Доручення НПУ</h4>
+                <div className='view-grid two-column'>
+                  <div className='view-item'>
+                    <label>Номер доручення:</label>
+                    <strong>{viewingRecord.orderNumber || '—'}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>Дата доручення:</label>
+                    <strong>
+                      {viewingRecord.orderDate
+                        ? formatDate(viewingRecord.orderDate)
+                        : '—'}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className='view-section'>
+                <h4>Кількість проведених досліджень за видами</h4>
+                <div className='view-grid two-column'>
+                  <div className='view-item'>
+                    <label>Приміщення ІК:</label>
+                    <strong>{viewingRecord.spInstrumental}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>Спеціальні дослідження ПЕОМ:</label>
+                    <strong>{viewingRecord.specialResearch}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>ПЕОМ ІК:</label>
+                    <strong>{viewingRecord.peomInstrumental}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>КРТ ІК:</label>
+                    <strong>{viewingRecord.krtInstrumental}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>КСП:</label>
+                    <strong>{viewingRecord.ksp}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>Акти атестації:</label>
+                    <strong>{viewingRecord.attestationActs}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className='modal-footer npu-view-footer'>
+              <button
+                className='btn-edit-from-view'
+                onClick={handleEditFromView}
+              >
+                ✏️ Редагувати
+              </button>
+              <button
+                className='btn-delete-from-view'
+                onClick={handleDeleteFromView}
+              >
+                🗑️ Видалити
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

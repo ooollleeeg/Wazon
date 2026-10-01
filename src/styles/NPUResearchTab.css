@@ -330,6 +330,7 @@
 }
 
 .btn-action-edit,
+.btn-action-view,
 .btn-action-delete {
   background: none;
   border: none;
@@ -341,7 +342,8 @@
   margin: 0 2px;
 }
 
-.btn-action-edit:hover {
+.btn-action-edit:hover,
+.btn-action-view:hover {
   background-color: #e2e8f0;
 }
 
@@ -790,5 +792,133 @@
   .btn-cancel,
   .btn-submit {
     width: 100%;
+  }
+}
+
+/* ============================================================================
+   VIEW MODAL (READ-ONLY PREVIEW)
+   ============================================================================ */
+
+.npu-view-modal {
+  max-width: 640px;
+}
+
+.npu-view-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.view-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.view-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.view-section h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a5568;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.view-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.view-grid.two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.view-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.view-item label {
+  font-size: 12px;
+  color: #718096;
+  font-weight: 500;
+}
+
+.view-item strong {
+  font-size: 14px;
+  color: #1a202c;
+  font-weight: 600;
+}
+
+/* MODAL FOOTER (view modal) */
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8f9fa;
+  justify-content: flex-end;
+}
+
+.btn-edit-from-view,
+.btn-delete-from-view {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit-from-view {
+  background-color: #667eea;
+  color: white;
+}
+
+.btn-edit-from-view:hover {
+  background-color: #5568d3;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-delete-from-view {
+  background-color: #fff5f5;
+  color: #c53030;
+  border: 1px solid #fc8181;
+}
+
+.btn-delete-from-view:hover {
+  background-color: #fed7d7;
+  border-color: #f56565;
+}
+
+@media (max-width: 480px) {
+  .view-grid.two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .btn-edit-from-view,
+  .btn-delete-from-view {
+    width: 100%;
+    text-align: center;
   }
 }
