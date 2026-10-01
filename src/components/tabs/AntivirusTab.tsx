@@ -105,11 +105,11 @@ const AntivirusTab = () => {
   const filteredItems = items.filter((item) => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      if (
-        !item.antivirus.toLowerCase().includes(searchLower) &&
-        !item.systemName.toLowerCase().includes(searchLower) &&
-        !item.subdivisionName.toLowerCase().includes(searchLower)
-      ) {
+      const matchesSearch =
+        item.antivirus?.toLowerCase().includes(searchLower) ||
+        item.systemName?.toLowerCase().includes(searchLower) ||
+        item.subdivisionName?.toLowerCase().includes(searchLower);
+      if (!matchesSearch) {
         return false;
       }
     }

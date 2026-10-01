@@ -349,7 +349,7 @@ body {
   background: white;
   padding: 1.5rem;
   border-radius: 12px;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   box-shadow: var(--shadow-sm);
   border-left: 4px solid var(--primary-color);
 }

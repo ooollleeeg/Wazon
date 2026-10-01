@@ -7,7 +7,7 @@
 
 .antivirus-stats-section h2 {
   color: #2c3e50;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-size: 1.5rem;
 }
 
@@ -15,7 +15,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .antivirus-stat-card {
@@ -67,7 +67,7 @@
 }
 
 .stats-group {
-  margin-bottom: 2rem;
+  margin-bottom: 0rem;
 }
 
 .stats-group h3 {
