@@ -1516,4 +1516,244 @@ router.delete('/npu-research/:id', async (req, res) => {
   }
 });
 
+// ============================================================================
+// TZI CHECK ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/tzi-check - Отримати записи про перевірки ТЗІ за період
+ */
+router.get('/tzi-check', async (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+
+    console.log('📥 GET /api/tzi-check', { dateFrom, dateTo });
+
+    let query = 'SELECT * FROM tzi_check';
+    const params = [];
+
+    if (dateFrom && dateTo) {
+      query += ' WHERE (startDate BETWEEN ? AND ? OR endDate BETWEEN ? AND ?)';
+      params.push(dateFrom, dateTo, dateFrom, dateTo);
+    }
+
+    query += ' ORDER BY startDate ASC';
+
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        console.error('❌ Error in GET /api/tzi-check:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      // Обробка рядків з додаванням номерів
+      const rowsWithNumbers = (rows || []).map((row, index) => ({
+        ...row,
+        rowNumber: index + 1,
+      }));
+
+      // Рядок підсумків
+      const totalsRow = {
+        rowNumber: '∑',
+        organName: 'ПІДСУМОК',
+        violationFirstCategory: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.violationFirstCategory || 0),
+          0,
+        ),
+        violationSecondCategory: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.violationSecondCategory || 0),
+          0,
+        ),
+        violationThirdCategory: rowsWithNumbers.reduce(
+          (sum, r) => sum + (r.violationThirdCategory || 0),
+          0,
+        ),
+      };
+
+      console.log(
+        `✅ TZI check report retrieved: ${rowsWithNumbers.length} rows`,
+      );
+      res.json({
+        success: true,
+        dateFrom: dateFrom || null,
+        dateTo: dateTo || null,
+        rows: rowsWithNumbers,
+        totals: totalsRow,
+      });
+    });
+  } catch (err) {
+    console.error('❌ Error in GET /api/tzi-check:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/tzi-check - Додати новий запис про перевірку ТЗІ
+ */
+router.post('/tzi-check', async (req, res) => {
+  try {
+    const {
+      checkType,
+      checkOrganName,
+      organName,
+      startDate,
+      endDate,
+      violationFirstCategory,
+      violationSecondCategory,
+      violationThirdCategory,
+      detailsViolation,
+      holdAccountable,
+    } = req.body;
+
+    console.log('📝 POST /api/tzi-check', req.body);
+
+    if (!startDate || !endDate || !organName) {
+      return res.status(400).json({
+        error: "Обов'язкові поля: startDate, endDate, organName",
+      });
+    }
+
+    db.run(
+      `INSERT INTO tzi_check (
+      checkType,
+      checkOrganName,
+      organName,
+      startDate,
+      endDate,
+      violationFirstCategory,
+      violationSecondCategory,
+      violationThirdCategory,
+      detailsViolation,
+      holdAccountable
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        checkType || null,
+        checkOrganName || null,
+        organName,
+        startDate,
+        endDate,
+        violationFirstCategory || 0,
+        violationSecondCategory || 0,
+        violationThirdCategory || 0,
+        detailsViolation || null,
+        holdAccountable || null,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error in POST /api/tzi-check:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        console.log('✅ TZI check record created with id:', this.lastID);
+        res.json({
+          success: true,
+          id: this.lastID,
+          message: 'Запис успішно додано',
+        });
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in POST /api/tzi-check:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /api/tzi-check/:id - Оновити запис про перевірку ТЗІ
+ */
+router.put('/tzi-check/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      checkType,
+      checkOrganName,
+      organName,
+      startDate,
+      endDate,
+      violationFirstCategory,
+      violationSecondCategory,
+      violationThirdCategory,
+      detailsViolation,
+      holdAccountable,
+    } = req.body;
+
+    console.log('✏️ PUT /api/tzi-check/:id', { id, ...req.body });
+
+    if (!startDate || !endDate || !organName) {
+      return res.status(400).json({
+        error: "Обов'язкові поля: organName, startDate, endDate",
+      });
+    }
+
+    db.run(
+      `UPDATE tzi_check SET
+        checkType = ?, checkOrganName = ?, organName = ?, startDate = ?, endDate = ?,  violationFirstCategory = ?, violationSecondCategory = ?, violationThirdCategory = ?, detailsViolation = ?, holdAccountable = ?,
+        updatedAt = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        checkType || null,
+        checkOrganName || null,
+        organName,
+        startDate,
+        endDate,
+        violationFirstCategory || 0,
+        violationSecondCategory || 0,
+        violationThirdCategory || 0,
+        detailsViolation || null,
+        holdAccountable || null,
+        id,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error in PUT /api/tzi-check/:id:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Запис не знайдено' });
+        }
+
+        console.log('✅ TZI check record updated:', id);
+        res.json({
+          success: true,
+          message: 'Запис успішно оновлено',
+        });
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in PUT /api/tzi-check/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/tzi-check/:id - Видалити запис про перевірку ТЗІ
+ */
+router.delete('/tzi-check/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('🗑️ DELETE /api/tzi-check/:id', { id });
+
+    db.run('DELETE FROM tzi_check WHERE id = ?', [id], function (err) {
+      if (err) {
+        console.error('❌ Error in DELETE /api/tzi-check/:id:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Запис не знайдено' });
+      }
+
+      console.log('✅ TZI check record deleted:', id);
+      res.json({
+        success: true,
+        message: 'Запис успішно видалено',
+      });
+    });
+  } catch (err) {
+    console.error('❌ Error in DELETE /api/tzi-check/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

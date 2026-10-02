@@ -270,7 +270,7 @@ export const createObject = (table, data) => {
 };
 
 /**
- * Обновити объект
+ * Оновити об'єкт
  */
 export const updateObject = (table, id, data) => {
   return new Promise((resolve, reject) => {
@@ -292,7 +292,7 @@ export const updateObject = (table, id, data) => {
 };
 
 /**
- * Удалити объект
+ * Видалити об'єкт
  */
 export const deleteObject = (table, id) => {
   return new Promise((resolve, reject) => {
@@ -305,7 +305,7 @@ export const deleteObject = (table, id) => {
 };
 
 /**
- * Получить объект со всеми вложенными данными
+ * Отримати об'єкт зі всіма вкладеними даними
  */
 export const getObjectWithNested = (config, id) => {
   return new Promise((resolve, reject) => {
@@ -347,7 +347,7 @@ export const getObjectWithNested = (config, id) => {
 };
 
 /**
- * Создать объект со всеми вложенными данными
+ * Створити об'єкт зі всіма вкладеними даними
  */
 export const createObjectWithNested = (config, data) => {
   return new Promise(async (resolve, reject) => {

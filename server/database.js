@@ -1042,6 +1042,36 @@ function initializeDatabase() {
       },
     );
   });
+
+  // ============================================================================
+  // TZI CHECK TABLE
+  // ============================================================================
+  db.run(
+    `
+      CREATE TABLE IF NOT EXISTS tzi_check (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        checkType TEXT,
+        checkOrganName TEXT,
+        organName TEXT NOT NULL,
+        startDate TEXT NOT NULL,
+        endDate TEXT NOT NULL,
+        violationFirstCategory INTEGER DEFAULT 0,
+        violationSecondCategory INTEGER DEFAULT 0,
+        violationThirdCategory INTEGER DEFAULT 0,
+        detailsViolation TEXT,
+        holdAccountable TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+    (err) => {
+      if (err) {
+        console.error('❌ Error creating tzi_check table:', err.message);
+      } else {
+        console.log('✅ TZI Check table initialized');
+      }
+    },
+  );
 }
 
 // Закрите базу даних при завершенні процеса

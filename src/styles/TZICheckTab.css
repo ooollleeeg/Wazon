@@ -2,6 +2,7 @@
    NPU RESEARCH TAB - Main Container
    ============================================================================ */
 
+.tzi-check-container,
 .npu-research-container {
   display: flex;
   flex-direction: column;
@@ -16,6 +17,7 @@
    HEADER SECTION
    ============================================================================ */
 
+.tzi-check-header,
 .npu-header {
   display: flex;
   align-items: center;
@@ -25,6 +27,7 @@
   padding-bottom: 12px;
 }
 
+.tzi-check-header h2,
 .npu-header h2 {
   font-size: 24px;
   font-weight: 600;
@@ -297,19 +300,31 @@
 /* COLUMN WIDTHS */
 
 .col-number {
-  width: 60px;
+  width: 50px;
   text-align: center;
   font-weight: 500;
 }
 
-.col-date {
-  /* width: 130px; */
+.col-check-type {
+  min-width: 110px;
   text-align: center;
+  font-weight: 500;
+}
+
+.col-check-organ {
+  min-width: 150px;
+  text-align: left;
 }
 
 .col-organ {
-  /* min-width: 200px; */
+  min-width: 150px;
+  text-align: left;
+}
+
+.col-date {
+  min-width: 150px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .col-order {
@@ -317,16 +332,38 @@
   font-size: 12px;
   text-align: center;
 }
+
 .col-count {
-  width: 90px;
+  width: 80px;
   text-align: center;
-  font-weight: 500;
+  font-weight: 600;
   color: #3f51b5;
 }
 
+.col-details {
+  min-width: 160px;
+  max-width: 220px;
+  font-size: 13px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-accountable {
+  min-width: 160px;
+  max-width: 220px;
+  font-size: 13px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .col-actions {
-  width: 100px;
+  width: 90px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .btn-action-edit,
@@ -846,10 +883,20 @@
   gap: 10px;
 }
 
+.view-grid.three-column {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
 .view-item {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.view-item.full-width {
+  grid-column: 1 / -1;
 }
 
 .view-item label {
@@ -862,6 +909,14 @@
   font-size: 14px;
   color: #1a202c;
   font-weight: 600;
+}
+
+.view-item p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #2d3748;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 /* MODAL FOOTER (view modal) */

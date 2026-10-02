@@ -487,7 +487,7 @@ function getCategoryIdFromCategory(categoryName) {
 
 /**
  * Встановити засіб ТЗІ з складу на конкретний об'єкт
- *移動засобу з таблиці protection_means_inventory до об'єкту (АС, СП, КРТ, ІКС)
+ * засобу з таблиці protection_means_inventory до об'єкту (АС, СП, КРТ, ІКС)
  */
 export function installProtectionMean(data, callback) {
   const { meanId, objectId, objectType, category } = data;

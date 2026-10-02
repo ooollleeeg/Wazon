@@ -1,5 +1,3 @@
-// import { useState, useEffect } from 'react';
-
 import React, { useState } from 'react';
 import '../../styles/TabContent.css';
 import '../../styles/TZICheckTab.css';
@@ -10,16 +8,16 @@ import LoadingSpinner from '../common/LoadingSpinner';
 interface TZICheckRecord {
   id?: number;
   rowNumber?: number | string;
-  checkType: string; //вид перевірки//
-  checkOrganName: string; //орган, що проводив перевірку//
-  organName: string; //підрозділ, що перевіріявся//
+  checkType: string; // вид перевірки //
+  checkOrganName: string; // орган, що проводив перевірку //
+  organName: string; // підрозділ, що перевірявся //
   startDate: string;
   endDate: string;
-  violationFirstCategory: number; //порушення першої категорії//
-  violationSecondCategory: number; //порушення другої категорії//
-  violationThirdCategory: number; //порушення третьої категорії//
-  detailsViolation?: string; //деталі порушень//
-  holdAccountable?: string; //притягнення до відповідальності за порушення//
+  violationFirstCategory: number; // порушення першої категорії //
+  violationSecondCategory: number; // порушення другої категорії //
+  violationThirdCategory: number; // порушення третьої категорії //
+  detailsViolation?: string; // деталі порушень //
+  holdAccountable?: string; // притягнення до відповідальності за порушення //
 }
 
 interface ReportData {
@@ -27,8 +25,27 @@ interface ReportData {
   dateFrom: string | null;
   dateTo: string | null;
   rows: TZICheckRecord[];
-  totals: TZICheckRecord;
+  totals: Partial<TZICheckRecord> & {
+    rowNumber?: number | string;
+    organName?: string;
+    violationFirstCategory?: number;
+    violationSecondCategory?: number;
+    violationThirdCategory?: number;
+  };
 }
+
+const initialFormData: TZICheckRecord = {
+  checkType: '',
+  checkOrganName: '',
+  organName: '',
+  startDate: '',
+  endDate: '',
+  violationFirstCategory: 0,
+  violationSecondCategory: 0,
+  violationThirdCategory: 0,
+  detailsViolation: '',
+  holdAccountable: '',
+};
 
 function TZICheckTab() {
   const [dateFrom, setDateFrom] = useState('');
@@ -37,33 +54,18 @@ function TZICheckTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState<TZICheckRecord>({
-    checkType: '',
-    checkOrganName: '',
-    organName: '',
-    startDate: '',
-    endDate: '',
-    violationFirstCategory: 0,
-    violationSecondCategory: 0,
-    violationThirdCategory: 0,
-    detailsViolation: '',
-    holdAccountable: '',
-  });
+  const [formData, setFormData] = useState<TZICheckRecord>(initialFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<'report' | 'all'>('report');
   const [editingId, setEditingId] = useState<number | null>(null);
 
   // States for view modal (read-only preview)
   const [showViewModal, setShowViewModal] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<TZICheckRecord | null>(
-    null,
-  );
+  const [viewingRecord, setViewingRecord] = useState<TZICheckRecord | null>(null);
 
   // States for delete confirmation modal and success modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [recordToDelete, setRecordToDelete] = useState<TZICheckRecord | null>(
-    null,
-  );
+  const [recordToDelete, setRecordToDelete] = useState<TZICheckRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -100,8 +102,8 @@ function TZICheckTab() {
     try {
       const url =
         mode === 'report'
-          ? `/api/npu-research?dateFrom=${dateFrom}&dateTo=${dateTo}`
-          : '/api/npu-research';
+          ? `/api/tzi-check?dateFrom=${dateFrom}&dateTo=${dateTo}`
+          : '/api/tzi-check';
 
       const response = await fetch(url);
       if (!response.ok) {
@@ -119,7 +121,9 @@ function TZICheckTab() {
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const [year, month, day] = dateStr.split('-');
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [year, month, day] = parts;
     return `${day}.${month}.${year}`;
   };
 
@@ -135,26 +139,33 @@ function TZICheckTab() {
 
     setFormData((prev) => ({
       ...prev,
-      [name]:
-        numericFields.includes(name) && value
-          ? parseInt(value, 10) || 0
-          : value,
+      [name]: numericFields.includes(name)
+        ? value === ''
+          ? 0
+          : parseInt(value, 10) || 0
+        : value,
     }));
+  };
+
+  const handleAddNew = () => {
+    setEditingId(null);
+    setFormData(initialFormData);
+    setShowModal(true);
   };
 
   const handleEdit = (row: TZICheckRecord) => {
     setEditingId(row.id || null);
     setFormData({
-      checkType: row.checkType,
-      checkOrganName: row.checkOrganName,
-      organName: row.organName,
-      startDate: row.startDate,
-      endDate: row.endDate,
-      violationFirstCategory: row.violationFirstCategory,
-      violationSecondCategory: row.violationSecondCategory,
-      violationThirdCategory: row.violationThirdCategory,
-      detailsViolation: row.detailsViolation,
-      holdAccountable: row.holdAccountable,
+      checkType: row.checkType || '',
+      checkOrganName: row.checkOrganName || '',
+      organName: row.organName || '',
+      startDate: row.startDate || '',
+      endDate: row.endDate || '',
+      violationFirstCategory: row.violationFirstCategory || 0,
+      violationSecondCategory: row.violationSecondCategory || 0,
+      violationThirdCategory: row.violationThirdCategory || 0,
+      detailsViolation: row.detailsViolation || '',
+      holdAccountable: row.holdAccountable || '',
     });
     setShowModal(true);
   };
@@ -210,7 +221,7 @@ function TZICheckTab() {
     e.preventDefault();
 
     if (!formData.startDate || !formData.endDate || !formData.organName) {
-      setError("Обов'язкові поля: Дата початку, Дата кінця, Назва органу");
+      setError("Обов'язкові поля: Дата початку, Дата закінчення, Підрозділ, що перевірявся");
       return;
     }
 
@@ -229,21 +240,11 @@ function TZICheckTab() {
       });
 
       if (!response.ok) {
-        throw new Error('Помилка при збереженні запису');
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Помилка при збереженні запису');
       }
 
-      setFormData({
-        checkType: '',
-        checkOrganName: '',
-        organName: '',
-        startDate: '',
-        endDate: '',
-        violationFirstCategory: 0,
-        violationSecondCategory: 0,
-        violationThirdCategory: 0,
-        detailsViolation: '',
-        holdAccountable: '',
-      });
+      setFormData(initialFormData);
       setEditingId(null);
       setShowModal(false);
 
@@ -255,7 +256,7 @@ function TZICheckTab() {
       await handleGenerateReport(viewMode);
     } catch (err) {
       console.error('Помилка:', err);
-      setError('Помилка при збереженні запису.');
+      setError((err as Error).message || 'Помилка при збереженні запису.');
     } finally {
       setIsSubmitting(false);
     }
@@ -270,8 +271,8 @@ function TZICheckTab() {
       <div className='npu-description'>
         <p>
           Для формування звіту щодо перевірок стану ТЗІ та контролю заходів з
-          ТЗІ, оберіть звітний період часу. Щоб додати новий запис, натисніть
-          відповідну кнопку.
+          ТЗІ, оберіть звітний період часу або перегляньте всі записи. Щоб додати
+          новий запис, натисніть кнопку "Додати запис".
         </p>
       </div>
 
@@ -318,22 +319,7 @@ function TZICheckTab() {
 
         <button
           className='btn-add-record'
-          onClick={() => {
-            setEditingId(null);
-            setFormData({
-              checkType: '',
-              checkOrganName: '',
-              organName: '',
-              startDate: '',
-              endDate: '',
-              violationFirstCategory: 0,
-              violationSecondCategory: 0,
-              violationThirdCategory: 0,
-              detailsViolation: '',
-              holdAccountable: '',
-            });
-            setShowModal(true);
-          }}
+          onClick={handleAddNew}
           disabled={loading}
         >
           ➕ Додати запис
@@ -367,22 +353,15 @@ function TZICheckTab() {
               <thead>
                 <tr>
                   <th className='col-number'>№ з/п</th>
-                  <th className='col-check-type'>Тип перевірки</th>
-                  <th className='col-check-organ'>Хто первіряв</th>
+                  <th className='col-check-type'>Вид перевірки</th>
+                  <th className='col-check-organ'>Хто перевіряв</th>
                   <th className='col-organ'>Кого перевіряли</th>
                   <th className='col-date'>Період проведення</th>
-
-                  {viewMode === 'report' && (
-                    <>
-                      <th className='col-count'>Поруш. І кат.</th>
-                      <th className='col-count'>Поруш. ІІ кат.</th>
-                      <th className='col-count'>Поруш. ІІІ кат.</th>
-                      <th className='col-order'>Зміст порушень</th>
-                      <th className='col-order'>
-                        Притягнуто до відповідальності
-                      </th>
-                    </>
-                  )}
+                  <th className='col-count'>Поруш. І кат.</th>
+                  <th className='col-count'>Поруш. ІІ кат.</th>
+                  <th className='col-count'>Поруш. ІІІ кат.</th>
+                  <th className='col-details'>Деталі порушень</th>
+                  <th className='col-accountable'>Притягнення до відпов.</th>
                   <th className='col-actions'>Дії</th>
                 </tr>
               </thead>
@@ -390,28 +369,21 @@ function TZICheckTab() {
                 {reportData.rows.map((row) => (
                   <tr key={`${row.id || row.rowNumber}`}>
                     <td className='col-number'>{row.rowNumber}</td>
-                    <td className='col-check-type'>{row.checkType}</td>
-                    <td className='col-check-organ'>{row.checkOrganName}</td>
+                    <td className='col-check-type'>{row.checkType || '—'}</td>
+                    <td className='col-check-organ'>{row.checkOrganName || '—'}</td>
                     <td className='col-organ'>{row.organName}</td>
                     <td className='col-date'>
                       {formatDate(row.startDate)} – {formatDate(row.endDate)}
                     </td>
-
-                    {viewMode === 'report' && (
-                      <>
-                        <td className='col-count'>
-                          {row.violationFirstCategory}
-                        </td>
-                        <td className='col-count'>
-                          {row.violationSecondCategory}
-                        </td>
-                        <td className='col-count'>
-                          {row.violationThirdCategory}
-                        </td>
-                        <td className='col-count'>{row.detailsViolation}</td>
-                        <td className='col-count'>{row.holdAccountable}</td>
-                      </>
-                    )}
+                    <td className='col-count'>{row.violationFirstCategory ?? 0}</td>
+                    <td className='col-count'>{row.violationSecondCategory ?? 0}</td>
+                    <td className='col-count'>{row.violationThirdCategory ?? 0}</td>
+                    <td className='col-details' title={row.detailsViolation || ''}>
+                      {row.detailsViolation || '—'}
+                    </td>
+                    <td className='col-accountable' title={row.holdAccountable || ''}>
+                      {row.holdAccountable || '—'}
+                    </td>
                     <td className='col-actions'>
                       <button
                         className='btn-action-view'
@@ -430,27 +402,25 @@ function TZICheckTab() {
                     </td>
                   </tr>
                 ))}
-                {viewMode === 'report' && (
+                {reportData.totals && (
                   <tr className='totals-row'>
                     <td className='col-number'>
-                      {reportData.totals.rowNumber}
+                      {reportData.totals.rowNumber || '∑'}
                     </td>
-                    <td className='col-date'>{reportData.totals.organName}</td>
-
-                    <td colSpan={2} className='totals-label'>
+                    <td colSpan={4} className='totals-label'>
                       ПІДСУМОК
                     </td>
                     <td className='col-count'>
-                      {reportData.totals.violationFirstCategory}
+                      {reportData.totals.violationFirstCategory ?? 0}
                     </td>
                     <td className='col-count'>
-                      {reportData.totals.violationSecondCategory}
+                      {reportData.totals.violationSecondCategory ?? 0}
                     </td>
                     <td className='col-count'>
-                      {reportData.totals.violationThirdCategory}
+                      {reportData.totals.violationThirdCategory ?? 0}
                     </td>
-
-                    {/* <td className='col-actions'></td> */}
+                    <td colSpan={2}></td>
+                    <td className='col-actions'></td>
                   </tr>
                 )}
               </tbody>
@@ -462,8 +432,8 @@ function TZICheckTab() {
       {!reportData && !loading && !error && (
         <div className='empty-state'>
           <p>
-            Звіт буде сформований після вибору періоду та натискання кнопки.
-            Також ви можете переглянуте всі записи
+            Звіт буде сформований після вибору періоду та натискання кнопки
+            або перегляньте всі записи.
           </p>
         </div>
       )}
@@ -476,7 +446,7 @@ function TZICheckTab() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className='modal-header'>
-              <h3>👁️ Перегляд запису</h3>
+              <h3>👁️ Перегляд відомостей перевірки ТЗІ</h3>
               <button
                 className='modal-close'
                 onClick={() => setShowViewModal(false)}
@@ -487,72 +457,74 @@ function TZICheckTab() {
 
             <div className='npu-view-body'>
               <div className='view-section'>
+                <h4>Загальна інформація про перевірку</h4>
+                <div className='view-grid two-column'>
+                  <div className='view-item'>
+                    <label>Вид перевірки:</label>
+                    <strong>{viewingRecord.checkType || '—'}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>Орган, що проводив перевірку:</label>
+                    <strong>{viewingRecord.checkOrganName || '—'}</strong>
+                  </div>
+                  <div className='view-item full-width'>
+                    <label>Підрозділ, що перевірявся:</label>
+                    <strong>{viewingRecord.organName || '—'}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className='view-section'>
                 <h4>Період проведення</h4>
                 <div className='view-grid two-column'>
                   <div className='view-item'>
                     <label>Дата початку:</label>
-                    <strong>{formatDate(viewingRecord.startDate)}</strong>
+                    <strong>{formatDate(viewingRecord.startDate) || '—'}</strong>
                   </div>
                   <div className='view-item'>
                     <label>Дата закінчення:</label>
-                    <strong>{formatDate(viewingRecord.endDate)}</strong>
+                    <strong>{formatDate(viewingRecord.endDate) || '—'}</strong>
                   </div>
                 </div>
               </div>
 
               <div className='view-section'>
-                <h4>Орган Національної поліції України</h4>
-                <div className='view-item'>
-                  <label>Назва органу НПУ:</label>
-                  <strong>{viewingRecord.organName}</strong>
+                <h4>Кількість виявлених порушень за категоріями</h4>
+                <div className='view-grid three-column'>
+                  <div className='view-item'>
+                    <label>Порушення І категорії:</label>
+                    <strong>{viewingRecord.violationFirstCategory ?? 0}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>Порушення ІІ категорії:</label>
+                    <strong>{viewingRecord.violationSecondCategory ?? 0}</strong>
+                  </div>
+                  <div className='view-item'>
+                    <label>Порушення ІІІ категорії:</label>
+                    <strong>{viewingRecord.violationThirdCategory ?? 0}</strong>
+                  </div>
+                </div>
+                <div className='view-item' style={{ marginTop: '8px' }}>
+                  <label>Всього порушень:</label>
+                  <strong style={{ color: '#e53e3e', fontSize: '15px' }}>
+                    {(viewingRecord.violationFirstCategory || 0) +
+                      (viewingRecord.violationSecondCategory || 0) +
+                      (viewingRecord.violationThirdCategory || 0)}
+                  </strong>
                 </div>
               </div>
 
               <div className='view-section'>
-                <h4>Доручення НПУ</h4>
-                <div className='view-grid two-column'>
-                  <div className='view-item'>
-                    <label>Номер доручення:</label>
-                    <strong>{viewingRecord.orderNumber || '—'}</strong>
-                  </div>
-                  <div className='view-item'>
-                    <label>Дата доручення:</label>
-                    <strong>
-                      {viewingRecord.orderDate
-                        ? formatDate(viewingRecord.orderDate)
-                        : '—'}
-                    </strong>
-                  </div>
+                <h4>Деталі порушень</h4>
+                <div className='view-item full-width'>
+                  <p>{viewingRecord.detailsViolation || 'Не зазначено'}</p>
                 </div>
               </div>
 
               <div className='view-section'>
-                <h4>Кількість проведених досліджень за видами</h4>
-                <div className='view-grid two-column'>
-                  <div className='view-item'>
-                    <label>Приміщення ІК:</label>
-                    <strong>{viewingRecord.spInstrumental}</strong>
-                  </div>
-                  <div className='view-item'>
-                    <label>Спеціальні дослідження ПЕОМ:</label>
-                    <strong>{viewingRecord.specialResearch}</strong>
-                  </div>
-                  <div className='view-item'>
-                    <label>ПЕОМ ІК:</label>
-                    <strong>{viewingRecord.peomInstrumental}</strong>
-                  </div>
-                  <div className='view-item'>
-                    <label>КРТ ІК:</label>
-                    <strong>{viewingRecord.krtInstrumental}</strong>
-                  </div>
-                  <div className='view-item'>
-                    <label>КСП:</label>
-                    <strong>{viewingRecord.ksp}</strong>
-                  </div>
-                  <div className='view-item'>
-                    <label>Акти атестації:</label>
-                    <strong>{viewingRecord.attestationActs}</strong>
-                  </div>
+                <h4>Притягнення до відповідальності за порушення</h4>
+                <div className='view-item full-width'>
+                  <p>{viewingRecord.holdAccountable || 'Не зазначено'}</p>
                 </div>
               </div>
             </div>
@@ -582,8 +554,8 @@ function TZICheckTab() {
             <div className='modal-header'>
               <h3>
                 {editingId
-                  ? '✏️ Редагувати запис'
-                  : '➕ Додати запис щодо проведення перевірки стану ТЗІ'}
+                  ? '✏️ Редагувати запис про перевірку ТЗІ'
+                  : '➕ Додати запис про перевірку стану ТЗІ'}
               </h3>
               <button
                 className='modal-close'
@@ -597,10 +569,61 @@ function TZICheckTab() {
             </div>
 
             <form onSubmit={handleSubmitForm} className='npu-form'>
+              {error && <div className='error-message'>{error}</div>}
+
+              {/* General Check Info Section */}
+              <div className='form-section'>
+                <h4>Загальні відомості про перевірку</h4>
+                <div className='form-group'>
+                  <label>Вид перевірки *</label>
+                  <input
+                    type='text'
+                    name='checkType'
+                    value={formData.checkType}
+                    onChange={handleInputChange}
+                    list='checkTypeOptions'
+                    placeholder='наприклад: Планова, Позапланова тощо'
+                    required
+                  />
+                  <datalist id='checkTypeOptions'>
+                    <option value='Планова' />
+                    <option value='Позапланова' />
+                    <option value='Комплексна' />
+                    <option value='Контрольна' />
+                    <option value='Цільова' />
+                  </datalist>
+                </div>
+
+                <div className='form-grid two-column'>
+                  <div className='form-group'>
+                    <label>Орган, що проводив перевірку *</label>
+                    <input
+                      type='text'
+                      name='checkOrganName'
+                      value={formData.checkOrganName}
+                      onChange={handleInputChange}
+                      placeholder='наприклад: ДССЗЗІ України'
+                      required
+                    />
+                  </div>
+                  <div className='form-group'>
+                    <label>Підрозділ, що перевірявся *</label>
+                    <input
+                      type='text'
+                      name='organName'
+                      value={formData.organName}
+                      onChange={handleInputChange}
+                      placeholder='наприклад: ГУНП в Одеській області'
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Date Range Section */}
               <div className='form-section'>
                 <h4>Період проведення</h4>
-                {/* <div className='form-grid two-column'>
+                <div className='form-grid two-column'>
                   <div className='form-group'>
                     <label>Дата початку *</label>
                     <input
@@ -621,117 +644,70 @@ function TZICheckTab() {
                       required
                     />
                   </div>
-                </div> */}
+                </div>
               </div>
 
-              {/* Organ Name Section */}
+              {/* Violations Count Section */}
               <div className='form-section'>
-                <h4>Орган Національної поліції України</h4>
+                <h4>Кількість виявлених порушень за категоріями</h4>
+                <div className='form-grid three-column'>
+                  <div className='form-group'>
+                    <label>Порушення І категорії</label>
+                    <input
+                      type='number'
+                      name='violationFirstCategory'
+                      value={formData.violationFirstCategory}
+                      onChange={handleInputChange}
+                      min='0'
+                    />
+                  </div>
+                  <div className='form-group'>
+                    <label>Порушення ІІ категорії</label>
+                    <input
+                      type='number'
+                      name='violationSecondCategory'
+                      value={formData.violationSecondCategory}
+                      onChange={handleInputChange}
+                      min='0'
+                    />
+                  </div>
+                  <div className='form-group'>
+                    <label>Порушення ІІІ категорії</label>
+                    <input
+                      type='number'
+                      name='violationThirdCategory'
+                      value={formData.violationThirdCategory}
+                      onChange={handleInputChange}
+                      min='0'
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Details & Accountability Section */}
+              <div className='form-section'>
+                <h4>Результати перевірки та вжиті заходи</h4>
                 <div className='form-group'>
-                  <label>Назва органу НПУ *</label>
-                  <input
-                    type='text'
-                    name='organName'
-                    value={formData.organName}
+                  <label>Деталі порушень</label>
+                  <textarea
+                    name='detailsViolation'
+                    value={formData.detailsViolation || ''}
                     onChange={handleInputChange}
-                    placeholder='наприклад: ГУНП в Одеській області'
-                    required
+                    rows={3}
+                    placeholder='Опис виявлених порушень, недоліків тощо...'
+                  />
+                </div>
+                <div className='form-group'>
+                  <label>Притягнення до відповідальності за порушення</label>
+                  <textarea
+                    name='holdAccountable'
+                    value={formData.holdAccountable || ''}
+                    onChange={handleInputChange}
+                    rows={2}
+                    placeholder='Відомості щодо притягнення до дисциплінарної відповідальності...'
                   />
                 </div>
               </div>
-
-              {/* Order Info Section */}
-              {/* <div className='form-section'>
-                <h4>Доручення НПУ (за наявності)</h4>
-                <div className='form-grid two-column'>
-                  <div className='form-group'>
-                    <label>Номер доручення</label>
-                    <input
-                      type='text'
-                      name='orderNumber'
-                      value={formData.orderNumber || ''}
-                      onChange={handleInputChange}
-                      placeholder='наприклад: 123/45'
-                    />
-                  </div>
-                  <div className='form-group'>
-                    <label>Дата доручення</label>
-                    <input
-                      type='date'
-                      name='orderDate'
-                      value={formData.orderDate || ''}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-              </div> */}
-
-              {/* Research Types Section */}
-              {/* <div className='form-section'>
-                <h4>Кількість проведених досліджень за видами</h4>
-                <div className='form-grid two-column'>
-                  <div className='form-group'>
-                    <label>Приміщення ІК</label>
-                    <input
-                      type='number'
-                      name='spInstrumental'
-                      value={formData.spInstrumental}
-                      onChange={handleInputChange}
-                      min='0'
-                    />
-                  </div>
-                  <div className='form-group'>
-                    <label>Спеціальні дослідження ПЕОМ</label>
-                    <input
-                      type='number'
-                      name='specialResearch'
-                      value={formData.specialResearch}
-                      onChange={handleInputChange}
-                      min='0'
-                    />
-                  </div>
-                  <div className='form-group'>
-                    <label>ПЕОМ ІК</label>
-                    <input
-                      type='number'
-                      name='peomInstrumental'
-                      value={formData.peomInstrumental}
-                      onChange={handleInputChange}
-                      min='0'
-                    />
-                  </div>
-                  <div className='form-group'>
-                    <label>КРТ ІК</label>
-                    <input
-                      type='number'
-                      name='krtInstrumental'
-                      value={formData.krtInstrumental}
-                      onChange={handleInputChange}
-                      min='0'
-                    />
-                  </div>
-                  <div className='form-group'>
-                    <label>КСП</label>
-                    <input
-                      type='number'
-                      name='ksp'
-                      value={formData.ksp}
-                      onChange={handleInputChange}
-                      min='0'
-                    />
-                  </div>
-                  <div className='form-group'>
-                    <label>Акти атестації</label>
-                    <input
-                      type='number'
-                      name='attestationActs'
-                      value={formData.attestationActs}
-                      onChange={handleInputChange}
-                      min='0'
-                    />
-                  </div>
-                </div>
-              </div> */}
 
               <div className='modal-buttons'>
                 {isSubmitting ? (
@@ -774,7 +750,7 @@ function TZICheckTab() {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && recordToDelete && (
         <DeleteConfirmModal
-          fullName={`${recordToDelete.organName} (${formatDate(recordToDelete.startDate)} – ${formatDate(recordToDelete.endDate)})`}
+          fullName={`${recordToDelete.organName} (${recordToDelete.checkType ? recordToDelete.checkType + ', ' : ''}${formatDate(recordToDelete.startDate)} – ${formatDate(recordToDelete.endDate)})`}
           onConfirm={handleConfirmDelete}
           onCancel={() => {
             setShowDeleteModal(false);
@@ -798,3 +774,4 @@ function TZICheckTab() {
 }
 
 export default TZICheckTab;
+
