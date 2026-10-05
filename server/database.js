@@ -1072,6 +1072,32 @@ function initializeDatabase() {
       }
     },
   );
+
+  // ============================================================================
+  // RADIO MONITORING TABLE
+  // ============================================================================
+  db.run(
+    `
+      CREATE TABLE IF NOT EXISTS radio_monitoring (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        monitoringType TEXT NOT NULL,
+        eventDate TEXT NOT NULL,
+        durationHours INTEGER DEFAULT 0,
+        durationMinutes INTEGER DEFAULT 0,
+        department TEXT NOT NULL,
+        equipment TEXT NOT NULL,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
+    (err) => {
+      if (err) {
+        console.error('❌ Error creating radio_monitoring table:', err.message);
+      } else {
+        console.log('✅ Radio Monitoring table initialized');
+      }
+    },
+  );
 }
 
 // Закрите базу даних при завершенні процеса

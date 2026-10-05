@@ -344,7 +344,7 @@
   min-width: 160px;
   max-width: 220px;
   font-size: 13px;
-  text-align: left;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -354,7 +354,7 @@
   min-width: 160px;
   max-width: 220px;
   font-size: 13px;
-  text-align: left;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

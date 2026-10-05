@@ -1756,4 +1756,310 @@ router.delete('/tzi-check/:id', async (req, res) => {
   }
 });
 
+// ============================================================================
+// RADIO MONITORING ENDPOINTS
+// ============================================================================
+
+const RADIO_MONITORING_TYPES = [
+  'контрольованої території під час проведення закритих нарад (бесід)',
+  'під час зустрічей іноземних делегацій, груп та окремих іноземців',
+  'плановий р/м контрольованої території',
+  "приміщень урядового та спеціального зв'язку",
+];
+
+function formatUADate(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+/**
+ * GET /api/radio-monitoring - Отримати записи або звіт щодо радіомоніторингу
+ */
+router.get('/radio-monitoring', async (req, res) => {
+  try {
+    const { dateFrom, dateTo, mode } = req.query;
+
+    console.log('📥 GET /api/radio-monitoring', { dateFrom, dateTo, mode });
+
+    let query = 'SELECT * FROM radio_monitoring';
+    const params = [];
+
+    if (dateFrom && dateTo) {
+      query += ' WHERE eventDate BETWEEN ? AND ?';
+      params.push(dateFrom, dateTo);
+    }
+
+    query += ' ORDER BY eventDate ASC, id ASC';
+
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        console.error('❌ Error in GET /api/radio-monitoring:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      const rowsWithNumbers = (rows || []).map((row, index) => {
+        const totalMinutes =
+          Number(row.durationHours || 0) * 60 +
+          Number(row.durationMinutes || 0);
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const durationFormatted = `${h} год ${m < 10 ? '0' : ''}${m} хв`;
+
+        return {
+          ...row,
+          rowNumber: index + 1,
+          totalMinutes,
+          durationFormatted,
+          formattedDate: formatUADate(row.eventDate),
+        };
+      });
+
+      // Формування 4 рядків звіту за фіксованими видами
+      const reportRows = RADIO_MONITORING_TYPES.map((type, index) => {
+        const matchingRecords = rowsWithNumbers.filter(
+          (r) => r.monitoringType === type,
+        );
+
+        const sortedDates = matchingRecords
+          .map((r) => r.eventDate)
+          .sort()
+          .map(formatUADate);
+
+        const totalMinutes = matchingRecords.reduce(
+          (sum, r) => sum + r.totalMinutes,
+          0,
+        );
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        const durationFormatted = `${h} год ${m < 10 ? '0' : ''}${m} хв`;
+
+        const datesFormatted =
+          matchingRecords.length === 0
+            ? '0'
+            : `${matchingRecords.length} (${sortedDates.join(', ')})`;
+
+        const uniqueDepts =
+          Array.from(
+            new Set(
+              matchingRecords
+                .map((r) => (r.department || '').trim())
+                .filter(Boolean),
+            ),
+          ).join(', ') || '—';
+
+        const uniqueEquipment =
+          Array.from(
+            new Set(
+              matchingRecords
+                .map((r) => (r.equipment || '').trim())
+                .filter(Boolean),
+            ),
+          ).join(', ') || '—';
+
+        return {
+          rowNumber: index + 1,
+          monitoringType: type,
+          eventsCount: matchingRecords.length,
+          datesFormatted,
+          totalMinutes,
+          durationFormatted,
+          departments: uniqueDepts,
+          equipment: uniqueEquipment,
+          records: matchingRecords,
+        };
+      });
+
+      const totalEvents = rowsWithNumbers.length;
+      const totalMinutesAll = rowsWithNumbers.reduce(
+        (sum, r) => sum + r.totalMinutes,
+        0,
+      );
+      const totalH = Math.floor(totalMinutesAll / 60);
+      const totalM = totalMinutesAll % 60;
+      const totalDurationFormatted = `${totalH} год ${totalM < 10 ? '0' : ''}${totalM} хв`;
+
+      const totals = {
+        rowNumber: '∑',
+        monitoringType: 'ПІДСУМОК',
+        eventsCount: totalEvents,
+        datesFormatted: `${totalEvents}`,
+        totalMinutes: totalMinutesAll,
+        durationFormatted: totalDurationFormatted,
+        departments: '—',
+        equipment: '—',
+      };
+
+      console.log(
+        `✅ Radio monitoring data retrieved: ${rowsWithNumbers.length} rows`,
+      );
+
+      res.json({
+        success: true,
+        dateFrom: dateFrom || null,
+        dateTo: dateTo || null,
+        rows: rowsWithNumbers,
+        report: reportRows,
+        totals,
+      });
+    });
+  } catch (err) {
+    console.error('❌ Error in GET /api/radio-monitoring:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /api/radio-monitoring - Додати запис про радіомоніторинг
+ */
+router.post('/radio-monitoring', async (req, res) => {
+  try {
+    const {
+      monitoringType,
+      eventDate,
+      durationHours,
+      durationMinutes,
+      department,
+      equipment,
+    } = req.body;
+
+    console.log('📝 POST /api/radio-monitoring', req.body);
+
+    if (!monitoringType || !eventDate || !department || !equipment) {
+      return res.status(400).json({
+        error:
+          "Обов'язкові поля: monitoringType, eventDate, department, equipment",
+      });
+    }
+
+    db.run(
+      `INSERT INTO radio_monitoring (
+        monitoringType, eventDate, durationHours, durationMinutes, department, equipment
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        monitoringType,
+        eventDate,
+        parseInt(durationHours, 10) || 0,
+        parseInt(durationMinutes, 10) || 0,
+        department.trim(),
+        equipment.trim(),
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error in POST /api/radio-monitoring:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        console.log('✅ Radio monitoring record created with id:', this.lastID);
+        res.json({
+          success: true,
+          id: this.lastID,
+          message: 'Запис успішно додано',
+        });
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in POST /api/radio-monitoring:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * PUT /api/radio-monitoring/:id - Оновити запис про радіомоніторинг
+ */
+router.put('/radio-monitoring/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      monitoringType,
+      eventDate,
+      durationHours,
+      durationMinutes,
+      department,
+      equipment,
+    } = req.body;
+
+    console.log('✏️ PUT /api/radio-monitoring/:id', { id, ...req.body });
+
+    if (!monitoringType || !eventDate || !department || !equipment) {
+      return res.status(400).json({
+        error:
+          "Обов'язкові поля: monitoringType, eventDate, department, equipment",
+      });
+    }
+
+    db.run(
+      `UPDATE radio_monitoring SET
+        monitoringType = ?,
+        eventDate = ?,
+        durationHours = ?,
+        durationMinutes = ?,
+        department = ?,
+        equipment = ?,
+        updatedAt = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        monitoringType,
+        eventDate,
+        parseInt(durationHours, 10) || 0,
+        parseInt(durationMinutes, 10) || 0,
+        department.trim(),
+        equipment.trim(),
+        id,
+      ],
+      function (err) {
+        if (err) {
+          console.error('❌ Error in PUT /api/radio-monitoring/:id:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Запис не знайдено' });
+        }
+
+        console.log('✅ Radio monitoring record updated:', id);
+        res.json({
+          success: true,
+          message: 'Запис успішно оновлено',
+        });
+      },
+    );
+  } catch (err) {
+    console.error('❌ Error in PUT /api/radio-monitoring/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * DELETE /api/radio-monitoring/:id - Видалити запис про радіомоніторинг
+ */
+router.delete('/radio-monitoring/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    console.log('🗑️ DELETE /api/radio-monitoring/:id', { id });
+
+    db.run('DELETE FROM radio_monitoring WHERE id = ?', [id], function (err) {
+      if (err) {
+        console.error('❌ Error in DELETE /api/radio-monitoring/:id:', err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Запис не знайдено' });
+      }
+
+      console.log('✅ Radio monitoring record deleted:', id);
+      res.json({
+        success: true,
+        message: 'Запис успішно видалено',
+      });
+    });
+  } catch (err) {
+    console.error('❌ Error in DELETE /api/radio-monitoring/:id:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

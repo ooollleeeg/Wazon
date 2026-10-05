@@ -61,11 +61,15 @@ function TZICheckTab() {
 
   // States for view modal (read-only preview)
   const [showViewModal, setShowViewModal] = useState(false);
-  const [viewingRecord, setViewingRecord] = useState<TZICheckRecord | null>(null);
+  const [viewingRecord, setViewingRecord] = useState<TZICheckRecord | null>(
+    null,
+  );
 
   // States for delete confirmation modal and success modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [recordToDelete, setRecordToDelete] = useState<TZICheckRecord | null>(null);
+  const [recordToDelete, setRecordToDelete] = useState<TZICheckRecord | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -221,7 +225,9 @@ function TZICheckTab() {
     e.preventDefault();
 
     if (!formData.startDate || !formData.endDate || !formData.organName) {
-      setError("Обов'язкові поля: Дата початку, Дата закінчення, Підрозділ, що перевірявся");
+      setError(
+        "Обов'язкові поля: Дата початку, Дата закінчення, Підрозділ, що перевірявся",
+      );
       return;
     }
 
@@ -271,8 +277,9 @@ function TZICheckTab() {
       <div className='npu-description'>
         <p>
           Для формування звіту щодо перевірок стану ТЗІ та контролю заходів з
-          ТЗІ, оберіть звітний період часу або перегляньте всі записи. Щоб додати
-          новий запис, натисніть кнопку "Додати запис".
+          ТЗІ, оберіть звітний період часу та натисніть кнопку "Сформувати
+          звіт". Для перегляду усіх записів - натисніть кнопку "Переглянути
+          всі". Щоб додати новий запис, натисніть кнопку "Додати запис".
         </p>
       </div>
 
@@ -370,18 +377,32 @@ function TZICheckTab() {
                   <tr key={`${row.id || row.rowNumber}`}>
                     <td className='col-number'>{row.rowNumber}</td>
                     <td className='col-check-type'>{row.checkType || '—'}</td>
-                    <td className='col-check-organ'>{row.checkOrganName || '—'}</td>
+                    <td className='col-check-organ'>
+                      {row.checkOrganName || '—'}
+                    </td>
                     <td className='col-organ'>{row.organName}</td>
                     <td className='col-date'>
                       {formatDate(row.startDate)} – {formatDate(row.endDate)}
                     </td>
-                    <td className='col-count'>{row.violationFirstCategory ?? 0}</td>
-                    <td className='col-count'>{row.violationSecondCategory ?? 0}</td>
-                    <td className='col-count'>{row.violationThirdCategory ?? 0}</td>
-                    <td className='col-details' title={row.detailsViolation || ''}>
+                    <td className='col-count'>
+                      {row.violationFirstCategory ?? 0}
+                    </td>
+                    <td className='col-count'>
+                      {row.violationSecondCategory ?? 0}
+                    </td>
+                    <td className='col-count'>
+                      {row.violationThirdCategory ?? 0}
+                    </td>
+                    <td
+                      className='col-details'
+                      title={row.detailsViolation || ''}
+                    >
                       {row.detailsViolation || '—'}
                     </td>
-                    <td className='col-accountable' title={row.holdAccountable || ''}>
+                    <td
+                      className='col-accountable'
+                      title={row.holdAccountable || ''}
+                    >
                       {row.holdAccountable || '—'}
                     </td>
                     <td className='col-actions'>
@@ -431,10 +452,7 @@ function TZICheckTab() {
 
       {!reportData && !loading && !error && (
         <div className='empty-state'>
-          <p>
-            Звіт буде сформований після вибору періоду та натискання кнопки
-            або перегляньте всі записи.
-          </p>
+          <p>Звіт буде сформований після натискання відповідної кнопки.</p>
         </div>
       )}
 
@@ -479,7 +497,9 @@ function TZICheckTab() {
                 <div className='view-grid two-column'>
                   <div className='view-item'>
                     <label>Дата початку:</label>
-                    <strong>{formatDate(viewingRecord.startDate) || '—'}</strong>
+                    <strong>
+                      {formatDate(viewingRecord.startDate) || '—'}
+                    </strong>
                   </div>
                   <div className='view-item'>
                     <label>Дата закінчення:</label>
@@ -497,7 +517,9 @@ function TZICheckTab() {
                   </div>
                   <div className='view-item'>
                     <label>Порушення ІІ категорії:</label>
-                    <strong>{viewingRecord.violationSecondCategory ?? 0}</strong>
+                    <strong>
+                      {viewingRecord.violationSecondCategory ?? 0}
+                    </strong>
                   </div>
                   <div className='view-item'>
                     <label>Порушення ІІІ категорії:</label>
@@ -774,4 +796,3 @@ function TZICheckTab() {
 }
 
 export default TZICheckTab;
-
