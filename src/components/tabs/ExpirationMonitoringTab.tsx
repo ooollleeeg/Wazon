@@ -158,7 +158,10 @@ function ExpirationMonitoringTab() {
                 categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
                 atestation: ['attestationValidUntil'],
-                complianceDocuments: ['validUntil'],
+                complianceDocuments: [
+                  'validUntil',
+                  'nextAuthorizationDeadline',
+                ],
               },
               'service-premises': {
                 categorization: ['categorizationValidUntil'],
@@ -174,7 +177,10 @@ function ExpirationMonitoringTab() {
                 categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
                 atestation: ['attestationValidUntil'],
-                complianceDocuments: ['validUntil'],
+                complianceDocuments: [
+                  'validUntil',
+                  'nextAuthorizationDeadline',
+                ],
               },
             };
 
