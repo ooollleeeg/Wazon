@@ -709,6 +709,27 @@ const iksCardConfig: CardConfig = {
         { label: 'Номер ДССЗЗІ', value: 'dsszzіNumber' },
         { label: 'Дата ДССЗЗІ', value: 'dsszzіDate', format: 'date' },
         { label: 'Дійсний до', value: 'validUntil', format: 'date' },
+        {
+          label: 'Реєстраційний номер експертного висновку',
+          value: 'expertOpinionNumber',
+        },
+        {
+          label: 'Дата реєстрації експертного висновку',
+          value: 'expertOpinionDate',
+          format: 'date',
+        },
+        {
+          label: 'Дата включення до Переліку авторизованих систем з безпеки',
+          value: 'inclusionDate',
+          format: 'date',
+        },
+        { label: 'Порядковий номер у Переліку', value: 'serialNumberInList' },
+        {
+          label:
+            'Кінцевий строк проведення планової авторизації системи з безпеки',
+          value: 'nextAuthorizationDeadline',
+          format: 'date',
+        },
       ],
     },
     {
