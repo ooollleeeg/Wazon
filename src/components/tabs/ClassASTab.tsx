@@ -234,7 +234,7 @@ const classASFormConfig: FormConfig = {
         },
         {
           name: 'categorizationValidUntil',
-          label: 'Термін дії категоріювання',
+          label: 'Термін дії акта категоріювання',
           type: 'date',
           calculateFrom: { field: 'categorizationActDate', years: 5 },
           helperText: 'Розраховується автоматично як дата реєстрації + 5 років',
@@ -397,7 +397,7 @@ const classASFormConfig: FormConfig = {
     },
     {
       name: 'specialResearch',
-      title: '📋 Протокол спеціальних досліджень',
+      title: 'Протокол спеціальних досліджень',
       icon: '📋',
       dateField: 'eventDate',
       defaultItem: {
@@ -422,7 +422,7 @@ const classASFormConfig: FormConfig = {
         },
         {
           name: 'performer',
-          label: 'Виконавець',
+          label: 'Виконавець робіт',
           type: 'text',
           placeholder: 'ПІБ або назва організації',
         },
@@ -864,7 +864,7 @@ const classASCardConfig: CardConfig = {
       ],
     },
     {
-      title: '📋 Документація',
+      title: '📋 Формуляр на АС',
       fields: [
         { label: 'Номер формуляру', value: 'formulaNumber' },
         {
@@ -872,6 +872,11 @@ const classASCardConfig: CardConfig = {
           value: 'formulaDate',
           format: 'date',
         },
+      ],
+    },
+    {
+      title: '📋 Паспорт на КТЗІ',
+      fields: [
         { label: 'Номер паспорту', value: 'passportNumber' },
         {
           label: 'Дата реєстрації паспорту',
@@ -975,7 +980,7 @@ const classASCardConfig: CardConfig = {
     },
     {
       name: 'specialResearch',
-      title: '📋 Протокол спеціальних досліджень',
+      title: 'Протокол спеціальних досліджень',
       icon: '📋',
       itemTitle: 'registrationNumber',
       dateField: 'registrationDate',
@@ -983,7 +988,7 @@ const classASCardConfig: CardConfig = {
       fields: [
         { label: 'Реєстраційний номер', value: 'registrationNumber' },
         { label: 'Дата реєстрації', value: 'registrationDate', format: 'date' },
-        { label: 'Виконавець', value: 'performer' },
+        { label: 'Виконавець робіт', value: 'performer' },
         {
           label: 'Дата проведення заходу',
           value: 'eventDate',
@@ -1048,6 +1053,25 @@ const classASCardConfig: CardConfig = {
         { label: 'Дата ДССЗЗІ', value: 'dsszzіDate', format: 'date' },
         { label: 'Дійсний до', value: 'validUntil', format: 'date' },
         { label: 'Номер експертного висновку', value: 'expertOpinionNumber' },
+        {
+          label: 'Дата експертного висновку',
+          value: 'expertOpinionDate',
+          format: 'date',
+        },
+        {
+          label: 'Дата включення до Переліку авторизованих систем',
+          value: 'inclusionDate',
+          format: 'date',
+        },
+        {
+          label: 'Порядковий номер у Переліку авторизованих систем',
+          value: 'serialNumberInList',
+        },
+        {
+          label: 'Кінцевий строк проведення планової авторизації',
+          value: 'nextAuthorizationDeadline',
+          format: 'date',
+        },
       ],
     },
     {

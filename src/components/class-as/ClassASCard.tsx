@@ -98,16 +98,6 @@ export default function ClassASCard({
     onDelete();
   };
 
-  // const formatDocument = (doc: any) => {
-  //   if (!doc) return '';
-  //   return [
-  //     doc.date && new Date(doc.date).toLocaleDateString('uk-UA'),
-  //     doc.number,
-  //   ]
-  //     .filter(Boolean)
-  //     .join(' - ');
-  // };
-
   const renderDocumentPair = (
     label: string,
     date?: string,
@@ -228,8 +218,8 @@ export default function ClassASCard({
                 ttCreateDate,
                 ttCreateNumber,
               )}
-              {renderDocumentPair('Формуляр на АС', formulaDate, formulaNumber)}
-              {renderDocumentPair('Паспорт КТЗІ', passportDate, passportNumber)}
+              {/* {renderDocumentPair('Формуляр на АС', formulaDate, formulaNumber)}
+              {renderDocumentPair('Паспорт КТЗІ', passportDate, passportNumber)} */}
             </div>
           </section>
 
@@ -266,7 +256,7 @@ export default function ClassASCard({
             </section>
           )}
 
-          {/* КЗЗ І АНТИВІРУСА */}
+          {/* КЗЗ І АНТИВІРУСИ */}
           <section className='card-section'>
             <h4 className='section-title'>Засоби захисту (встановлені)</h4>
             <div className='info-grid'>
@@ -351,7 +341,7 @@ export default function ClassASCard({
             </section>
           )}
 
-          {/* ДХОВЕДЕМЕ ДССЗЗІ */}
+          {/* ДОКУМЕНТИ ДССЗЗІ */}
           {documents && documents.length > 0 && (
             <section className='card-section'>
               <h4 className='section-title'>
