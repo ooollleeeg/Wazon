@@ -179,6 +179,7 @@ const ProtectionMeansTab = () => {
       const validationResult = await validateBeforeSave(
         mean.category,
         mean.serialNumber,
+        mean.id,
       );
 
       if (!validationResult.isValid && validationResult.duplicateAt) {

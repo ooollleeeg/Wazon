@@ -20,6 +20,7 @@ export interface DuplicateCheckResult {
 export const checkDuplicateProtectionMean = async (
   categoryName: string,
   serialNumber?: string,
+  excludeInventoryId?: string,
 ): Promise<DuplicateCheckResult> => {
   try {
     // Get categoryId from category name
@@ -44,6 +45,7 @@ export const checkDuplicateProtectionMean = async (
       body: JSON.stringify({
         categoryId,
         serialNumber: serialNumber.trim(),
+        excludeInventoryId,
       }),
     });
 
@@ -73,6 +75,7 @@ export const checkDuplicateProtectionMean = async (
 export const validateBeforeSave = async (
   categoryName: string,
   serialNumber?: string,
+  excludeInventoryId?: string,
 ): Promise<{
   isValid: boolean;
   duplicateAt?: {
@@ -81,7 +84,11 @@ export const validateBeforeSave = async (
     objectId: number;
   };
 }> => {
-  const result = await checkDuplicateProtectionMean(categoryName, serialNumber);
+  const result = await checkDuplicateProtectionMean(
+    categoryName,
+    serialNumber,
+    excludeInventoryId,
+  );
 
   if (result.error) {
     console.warn('⚠️ Validation error:', result.error);
