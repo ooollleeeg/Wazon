@@ -47,7 +47,7 @@ const getStatus = (
 
   if (days < 0) return { status: 'expired', days };
   if (days < 7) return { status: 'critical', days };
-  if (days < 30) return { status: 'warning', days };
+  if (days < 45) return { status: 'warning', days };
   return { status: 'ok', days };
 };
 
@@ -75,9 +75,9 @@ const getStatusLabel = (
     case 'critical':
       return 'Критично (< 7 днів)';
     case 'warning':
-      return 'Попередження (< 30 днів)';
+      return 'Попередження (< 45 днів)';
     case 'ok':
-      return 'OK (> 30 днів)';
+      return 'OK (> 45 днів)';
   }
 };
 

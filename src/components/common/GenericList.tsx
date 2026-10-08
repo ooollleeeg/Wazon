@@ -140,7 +140,6 @@ export default function GenericList({
                         onRefreshData={onRefreshData}
                         onClose={() => setExpandedId(null)}
                         showCloseButton={true}
-                        shouldExpandAll={true}
                       />
                     ))}
                 </div>
