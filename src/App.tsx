@@ -160,10 +160,13 @@ function App() {
         setCurrentTab(tabIndex);
         setExpandedItemId(itemId);
 
-        // Scroll to top to show expanded card
-        setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }, 100);
+        // The list scrolls to the expanded card after it has rendered.
+        // Keep the previous behavior for hash navigation without an item.
+        if (itemId === null) {
+          setTimeout(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }, 100);
+        }
       }
     };
 

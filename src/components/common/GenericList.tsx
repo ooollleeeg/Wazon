@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './GenericList.css';
 import LoadingSpinner from './LoadingSpinner';
 import { searchInObject } from '../../utils/searchUtils';
@@ -40,6 +40,7 @@ export default function GenericList({
   const [expandedId, setExpandedId] = useState<number | null>(
     expandedItemId ?? null,
   );
+  const expandedCardRef = useRef<HTMLDivElement>(null);
 
   // Update expandedId when expandedItemId prop changes
   useEffect(() => {
@@ -47,6 +48,19 @@ export default function GenericList({
       setExpandedId(expandedItemId);
     }
   }, [expandedItemId]);
+
+  useEffect(() => {
+    if (
+      expandedId &&
+      !isLoading &&
+      filteredItems.some((item) => item.id === expandedId)
+    ) {
+      expandedCardRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  }, [expandedId, filteredItems, isLoading]);
 
   useEffect(() => {
     console.log(`Filtering ${items.length} items with term: "${searchTerm}"`);
@@ -124,7 +138,7 @@ export default function GenericList({
             <>
               {/* Розгорнута карточка */}
               {expandedId && (
-                <div className='expanded-card-wrapper'>
+                <div className='expanded-card-wrapper' ref={expandedCardRef}>
                   {filteredItems
                     .filter((item) => item.id === expandedId)
                     .map((item) => (
