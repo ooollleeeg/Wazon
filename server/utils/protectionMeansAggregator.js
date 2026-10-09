@@ -40,19 +40,36 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     if (completedQueries === totalQueries) {
       // Сортування та фільтрація
       const filtered = allMeans.filter(applyFilters);
+      const seenInstalledMeans = new Set();
+      const uniqueMeans = filtered.filter((item) => {
+        if (item.status !== 'installed' || !item.ktziId) return true;
+
+        const physicalId = String(
+          item.serialNumber || item.invertarNumber || '',
+        )
+          .trim()
+          .toLocaleLowerCase('uk-UA');
+
+        if (!physicalId) return true;
+
+        const key = `${item.ktziId}|${item.category}|${physicalId}`;
+        if (seenInstalledMeans.has(key)) return false;
+        seenInstalledMeans.add(key);
+        return true;
+      });
       const categoryCounts = {};
 
-      filtered.forEach((item) => {
+      uniqueMeans.forEach((item) => {
         categoryCounts[item.category] =
           (categoryCounts[item.category] || 0) + 1;
       });
 
       callback(null, {
-        items: filtered,
+        items: uniqueMeans,
         stats: {
-          total: filtered.length,
-          installed: filtered.filter((m) => m.status === 'installed').length,
-          inStock: filtered.filter((m) => m.status === 'in_stock').length,
+          total: uniqueMeans.length,
+          installed: uniqueMeans.filter((m) => m.status === 'installed').length,
+          inStock: uniqueMeans.filter((m) => m.status === 'in_stock').length,
           byCategory: categoryCounts,
         },
       });
@@ -68,6 +85,10 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.address as objectAddress,
       a.subdivisionType as departmentType,
       a.systemClass,
+      a.ktziId,
+      ktz.address as ktziAddress,
+      ktz.premisesNumber as ktziPremisesNumber,
+      ktz.subdivisionName as ktziSubdivisionName,
       'AS' as objectType,
       pm.id as id,
       pm.toolType as category,
@@ -81,6 +102,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.createdAt
     FROM class_a_systems_protection_means pm
     JOIN class_a_systems a ON pm.systemId = a.id
+    LEFT JOIN ktzi ktz ON ktz.id = a.ktziId
     `,
     (err, rows) => {
       if (!err && rows) {
@@ -103,6 +125,10 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       sp.subdivisionName as objectName,
       sp.address as objectAddress,
       sp.subdivisionType as departmentType,
+      sp.ktziId,
+      ktz.address as ktziAddress,
+      ktz.premisesNumber as ktziPremisesNumber,
+      ktz.subdivisionName as ktziSubdivisionName,
       'SP' as objectType,
       pm.id as id,
       pm.toolType as category,
@@ -116,6 +142,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.createdAt
     FROM service_premises_protection_means pm
     JOIN service_premises sp ON pm.premisesId = sp.id
+    LEFT JOIN ktzi ktz ON ktz.id = sp.ktziId
     `,
     (err, rows) => {
       if (!err && rows) {
@@ -138,6 +165,10 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       k.systemName as objectName,
       k.address as objectAddress,
       k.subdivisionType as departmentType,
+      k.ktziId,
+      ktz.address as ktziAddress,
+      ktz.premisesNumber as ktziPremisesNumber,
+      ktz.subdivisionName as ktziSubdivisionName,
       'KRT' as objectType,
       pm.id as id,
       pm.toolType as category,
@@ -151,6 +182,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.createdAt
     FROM krt_protection_means pm
     JOIN krt k ON pm.krtId = k.id
+    LEFT JOIN ktzi ktz ON ktz.id = k.ktziId
     `,
     (err, rows) => {
       if (!err && rows) {

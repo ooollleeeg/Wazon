@@ -22,6 +22,60 @@ function initializeDatabase() {
     // Включаємо зовнішні ключі
     db.run('PRAGMA foreign_keys = ON');
 
+    db.run(`
+      CREATE TABLE IF NOT EXISTS ktzi (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ktziKey TEXT NOT NULL UNIQUE,
+        address TEXT,
+        premisesNumber TEXT,
+        subdivisionName TEXT,
+        subdivisionType TEXT,
+        serviceName TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS ktzi_documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ktziId INTEGER NOT NULL,
+        documentType TEXT NOT NULL,
+        documentNumber TEXT,
+        documentDate TEXT,
+        validUntil TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ktziId) REFERENCES ktzi(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS protection_means (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ktziId INTEGER NOT NULL,
+        categoryId INTEGER,
+        toolType TEXT,
+        name TEXT,
+        serialNumber TEXT,
+        invertarNumber TEXT,
+        releaseYear INTEGER,
+        manufacturerExploitationTerm TEXT,
+        certificateInfo TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ktziId) REFERENCES ktzi(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS protection_mean_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        protectionMeanId INTEGER NOT NULL,
+        objectType TEXT,
+        objectId INTEGER,
+        FOREIGN KEY (protectionMeanId) REFERENCES protection_means(id) ON DELETE CASCADE
+      )
+    `);
+
     // Таблиці для personnelId
     db.run(`
   CREATE TABLE IF NOT EXISTS personnel (
@@ -414,6 +468,17 @@ function initializeDatabase() {
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    ['class_a_systems', 'service_premises', 'krt'].forEach((tableName) => {
+      db.run(
+        `ALTER TABLE ${tableName} ADD COLUMN ktziId INTEGER`,
+        (err) => {
+          if (err && !err.message.includes('duplicate column name')) {
+            console.error(`❌ Не вдалося додати ktziId до ${tableName}:`, err.message);
+          }
+        },
+      );
+    });
 
     db.run(`
       CREATE TABLE IF NOT EXISTS krt_categorization (

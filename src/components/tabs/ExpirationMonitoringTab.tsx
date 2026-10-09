@@ -6,6 +6,8 @@ interface ExpirationDocument {
   id: string | number;
   parentId: number;
   parentName: string;
+  ktziId?: number;
+  ktziName?: string;
   tabId: string;
   tabLabel: string;
   documentType: string;
@@ -244,6 +246,12 @@ function ExpirationMonitoringTab() {
                         item.subdivisionName ||
                         item.name ||
                         'Без назви',
+                      ktziId: item.ktziId,
+                      ktziName: item.ktziId
+                        ? `${item.address || 'Без адреси'}, каб. ${
+                            item.premisesNumber || '—'
+                          } — ${item.subdivisionName || 'Без підрозділу'}`
+                        : undefined,
                       tabId: config.tabId,
                       tabLabel: config.label,
                       documentType: nestedName,
@@ -267,7 +275,22 @@ function ExpirationMonitoringTab() {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    setDocuments(allDocs);
+    const sharedDocumentTypes = new Set(['categorization', 'atestation']);
+    const uniqueDocuments = allDocs.filter((document, index) => {
+      if (!document.ktziId || !sharedDocumentTypes.has(document.documentType)) {
+        return true;
+      }
+
+      const firstDocumentIndex = allDocs.findIndex(
+        (candidate) =>
+          candidate.ktziId === document.ktziId &&
+          candidate.documentType === document.documentType,
+      );
+
+      return firstDocumentIndex === index;
+    });
+
+    setDocuments(uniqueDocuments);
     setLoading(false);
   };
 
@@ -402,7 +425,12 @@ function ExpirationMonitoringTab() {
                       {getDocumentTypeLabel(doc.documentType)}
                     </div>
                   </td>
-                  <td className='parent-name'>{doc.parentName}</td>
+                  <td className='parent-name'>
+                    {doc.ktziName || doc.parentName}
+                    {doc.ktziId && (
+                      <small className='document-scope'>КТЗІ</small>
+                    )}
+                  </td>
                   <td>
                     <span className='tab-badge'>{doc.tabLabel}</span>
                   </td>

@@ -19,6 +19,13 @@ import {
   updateAntivirusOnAllObjects,
 } from './utils/dbHelpers.js';
 import { db } from './database.js';
+import {
+  attachObjectToKtzi,
+  getKtziObjects,
+  syncKtziDocuments,
+  syncKtziProtectionMeans,
+  isKtziTable,
+} from './utils/ktzi.js';
 
 const router = express.Router();
 
@@ -123,12 +130,25 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
     console.log(`📝 POST /api/objects/${req.params.type}`);
     console.log(`📦 Payload:`, req.body);
 
+    const objectData = await attachObjectToKtzi(
+      req.objectConfig.table,
+      req.body,
+    );
     let result;
 
     if (req.objectConfig.nestedTables) {
-      result = await createObjectWithNested(req.objectConfig, req.body);
+      result = await createObjectWithNested(req.objectConfig, objectData);
     } else {
-      result = await createObject(req.objectConfig.table, req.body);
+      result = await createObject(req.objectConfig.table, objectData);
+    }
+
+    if (isKtziTable(req.objectConfig.table)) {
+      await syncKtziDocuments(result.ktziId, objectData);
+      await syncKtziProtectionMeans(
+        req.objectConfig.table,
+        result.id,
+        result.ktziId,
+      );
     }
 
     console.log(`✅ Object created with ID:`, result.id);
@@ -148,19 +168,36 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
     console.log(`📝 PUT /api/objects/${req.params.type}/${req.params.id}`);
     console.log(`📦 Payload:`, req.body);
 
+    const currentObject = await getObjectById(
+      req.objectConfig.table,
+      req.params.id,
+    );
+    const objectData = await attachObjectToKtzi(
+      req.objectConfig.table,
+      { ...currentObject, ...req.body },
+    );
     let result;
 
     if (req.objectConfig.nestedTables) {
       result = await updateObjectWithNested(
         req.objectConfig,
         req.params.id,
-        req.body,
+        objectData,
       );
     } else {
       result = await updateObject(
         req.objectConfig.table,
         req.params.id,
-        req.body,
+        objectData,
+      );
+    }
+
+    if (isKtziTable(req.objectConfig.table)) {
+      await syncKtziDocuments(objectData.ktziId, objectData);
+      await syncKtziProtectionMeans(
+        req.objectConfig.table,
+        req.params.id,
+        objectData.ktziId,
       );
     }
 
@@ -180,7 +217,52 @@ router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
   try {
     console.log(`🗑️ DELETE /api/objects/${req.params.type}/${req.params.id}`);
 
+    const object = await getObjectById(
+      req.objectConfig.table,
+      req.params.id,
+    );
     await deleteObject(req.objectConfig.table, req.params.id);
+
+    if (isKtziTable(req.objectConfig.table) && object?.ktziId) {
+      const objectType = {
+        class_a_systems: 'AS',
+        krt: 'KRT',
+        service_premises: 'SP',
+      }[req.objectConfig.table];
+
+      await new Promise((resolve, reject) => {
+        db.run(
+          'DELETE FROM protection_mean_assignments WHERE objectType = ? AND objectId = ?',
+          [objectType, req.params.id],
+          (err) => (err ? reject(err) : resolve()),
+        );
+      });
+      await new Promise((resolve, reject) => {
+        db.run(
+          `DELETE FROM protection_means
+           WHERE NOT EXISTS (
+             SELECT 1 FROM protection_mean_assignments
+             WHERE protectionMeanId = protection_means.id
+           )`,
+          (err) => (err ? reject(err) : resolve()),
+        );
+      });
+
+      await new Promise((resolve, reject) => {
+        db.run(
+          `DELETE FROM ktzi
+           WHERE id = ? AND NOT EXISTS (
+             SELECT 1 FROM class_a_systems WHERE ktziId = ?
+           ) AND NOT EXISTS (
+             SELECT 1 FROM krt WHERE ktziId = ?
+           ) AND NOT EXISTS (
+             SELECT 1 FROM service_premises WHERE ktziId = ?
+           )`,
+          [object.ktziId, object.ktziId, object.ktziId, object.ktziId],
+          (err) => (err ? reject(err) : resolve()),
+        );
+      });
+    }
 
     console.log(`✅ Object deleted`);
     res.json({ success: true, id: req.params.id });
@@ -198,19 +280,36 @@ router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
     console.log(`🔄 PATCH /api/objects/${req.params.type}/${req.params.id}`);
     console.log(`📦 Payload:`, req.body);
 
+    const currentObject = await getObjectById(
+      req.objectConfig.table,
+      req.params.id,
+    );
+    const objectData = await attachObjectToKtzi(
+      req.objectConfig.table,
+      { ...currentObject, ...req.body },
+    );
     let result;
 
     if (req.objectConfig.nestedTables) {
       result = await updateObjectWithNested(
         req.objectConfig,
         req.params.id,
-        req.body,
+        objectData,
       );
     } else {
       result = await updateObject(
         req.objectConfig.table,
         req.params.id,
-        req.body,
+        objectData,
+      );
+    }
+
+    if (isKtziTable(req.objectConfig.table)) {
+      await syncKtziDocuments(objectData.ktziId, objectData);
+      await syncKtziProtectionMeans(
+        req.objectConfig.table,
+        req.params.id,
+        objectData.ktziId,
       );
     }
 
@@ -251,6 +350,29 @@ router.delete(
  */
 router.get('/types', (req, res) => {
   res.json(objectTypes);
+});
+
+router.get('/ktzi', async (req, res) => {
+  try {
+    const rows = await new Promise((resolve, reject) => {
+      db.all('SELECT * FROM ktzi ORDER BY subdivisionName, premisesNumber', (err, result) => {
+        if (err) reject(err);
+        else resolve(result || []);
+      });
+    });
+
+    const withObjects = await Promise.all(
+      rows.map(async (ktzi) => ({
+        ...ktzi,
+        objects: await getKtziObjects(ktzi.id),
+      })),
+    );
+
+    res.json(withObjects);
+  } catch (err) {
+    console.error('❌ Error in GET /ktzi:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 /**
