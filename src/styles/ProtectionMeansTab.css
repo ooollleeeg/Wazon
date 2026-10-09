@@ -612,6 +612,27 @@
   font-size: 1rem;
 }
 
+.assigned-objects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.assigned-object-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid #90cdf4;
+  border-radius: 4px;
+  background: #f7fbff;
+}
+
+.assigned-object-item span {
+  color: #718096;
+  font-size: 0.85rem;
+}
+
 .info-item p {
   color: #2c3e50;
   margin: 0;

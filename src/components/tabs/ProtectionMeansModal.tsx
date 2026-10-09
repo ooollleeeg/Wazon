@@ -86,6 +86,17 @@ const ProtectionMeansModal = ({
     } — ${mean.ktziSubdivisionName || 'Без підрозділу'}`;
   };
 
+  const assignedObjects = mean.assignedObjects?.length
+    ? mean.assignedObjects
+    : [
+        {
+          objectId: mean.objectId,
+          objectName: mean.objectName,
+          objectType: mean.objectType,
+          objectAddress: mean.objectAddress,
+        },
+      ];
+
   return (
     <div className='modal-overlay' onClick={onClose}>
       <div className='modal-content' onClick={(e) => e.stopPropagation()}>
@@ -171,20 +182,27 @@ const ProtectionMeansModal = ({
                     <strong>{getKtziLabel(mean)}</strong>
                   </div>
                 )}
-                <div className='info-item'>
-                  <label>Тип об'єкту:</label>
-                  <strong>{getObjectTypeLabel(mean)}</strong>
-                </div>
-                <div className='info-item'>
-                  <label>Назва об'єкту:</label>
-                  <strong>{mean.objectName}</strong>
-                </div>
-                {mean.objectAddress && (
-                  <div className='info-item'>
-                    <label>Адреса:</label>
-                    <strong>{mean.objectAddress}</strong>
+                <div className='info-item full-width'>
+                  <label>
+                    Прив’язані об’єкти ({assignedObjects.length}):
+                  </label>
+                  <div className='assigned-objects-list'>
+                    {assignedObjects.map((object, index) => (
+                      <div
+                        className='assigned-object-item'
+                        key={`${object.objectType}-${object.objectId}-${index}`}
+                      >
+                        <strong>
+                          {object.objectName || 'Без назви'} (
+                          {getObjectTypeLabel(object)})
+                        </strong>
+                        {object.objectAddress && (
+                          <span>{object.objectAddress}</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
                 {mean.departmentType && !isIksType(mean.objectType) && (
                   <div className='info-item'>
                     <label>Тип підрозділу:</label>
