@@ -25,6 +25,12 @@ interface GenericListProps {
   onRefreshData?: () => Promise<void>; // Callback to refresh data
 }
 
+interface KtziGroup {
+  key: string;
+  label: string;
+  items: any[];
+}
+
 export default function GenericList({
   config,
   items,
@@ -107,6 +113,28 @@ export default function GenericList({
   const compactThreshold = config.compactThreshold ?? 1;
   const isSingleCard = filteredItems.length < compactThreshold;
   const useCompactMode = filteredItems.length >= compactThreshold;
+  const hasKtziGroups = filteredItems.some((item) => item.ktziId);
+  const groupedItems = hasKtziGroups
+    ? Object.values(
+        filteredItems.reduce<Record<string, KtziGroup>>((groups, item) => {
+          const key = item.ktziId ? `ktzi-${item.ktziId}` : `object-${item.id}`;
+          const label = item.ktziId
+            ? `КТЗІ: ${item.address || 'Без адреси'}, каб. ${
+                item.premisesNumber || '—'
+              } — ${item.subdivisionName || 'Без підрозділу'}`
+            : 'КТЗІ не визначено';
+
+          if (!groups[key]) {
+            groups[key] = { key, label, items: [] };
+          }
+          groups[key].items.push(item);
+          return groups;
+        }, {}),
+      )
+    : [{ key: 'all', label: '', items: filteredItems }];
+
+  const renderGroupHeader = (label: string) =>
+    label ? <div className='ktzi-group-header'>{label}</div> : null;
 
   return (
     <div className='generic-list'>
@@ -119,16 +147,21 @@ export default function GenericList({
       {isSingleCard ? (
         // ОДНА КАРТОЧКА - Повний вид без кнопки закриття
         <div className='cards-container single-card-mode'>
-          {filteredItems.map((item) => (
-            <config.CardComponent
-              key={item.id}
-              {...item}
-              searchTerm={searchTerm}
-              onEdit={() => onEdit(item)}
-              onDelete={() => onDelete(item.id)}
-              onRefreshData={onRefreshData}
-              showCloseButton={false}
-            />
+          {groupedItems.map((group) => (
+            <div className='ktzi-group' key={group.key}>
+              {renderGroupHeader(group.label)}
+              {group.items.map((item) => (
+                <config.CardComponent
+                  key={item.id}
+                  {...item}
+                  searchTerm={searchTerm}
+                  onEdit={() => onEdit(item)}
+                  onDelete={() => onDelete(item.id)}
+                  onRefreshData={onRefreshData}
+                  showCloseButton={false}
+                />
+              ))}
+            </div>
           ))}
         </div>
       ) : useCompactMode ? (
@@ -160,18 +193,28 @@ export default function GenericList({
               )}
 
               {/* Плашки - лише ті, що не розгорнуті */}
-              <div className='compact-cards-grid'>
-                {filteredItems
-                  .filter((item) => item.id !== expandedId)
-                  .map((item) => (
-                    <config.CompactCardComponent
-                      key={item.id}
-                      {...item}
-                      searchTerm={searchTerm}
-                      onClick={() => setExpandedId(item.id)}
-                    />
-                  ))}
-              </div>
+              {groupedItems.map((group) => {
+                const visibleItems = group.items.filter(
+                  (item) => item.id !== expandedId,
+                );
+                if (visibleItems.length === 0) return null;
+
+                return (
+                  <div className='ktzi-group compact-ktzi-group' key={group.key}>
+                    {renderGroupHeader(group.label)}
+                    <div className='compact-cards-grid'>
+                      {visibleItems.map((item) => (
+                        <config.CompactCardComponent
+                          key={item.id}
+                          {...item}
+                          searchTerm={searchTerm}
+                          onClick={() => setExpandedId(item.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </>
           ) : (
             <div className='no-results'>

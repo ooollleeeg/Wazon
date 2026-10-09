@@ -94,6 +94,26 @@
   padding: 0;
 }
 
+.ktzi-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.compact-ktzi-group {
+  grid-column: 1 / -1;
+}
+
+.ktzi-group-header {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #3182ce;
+  border-radius: 8px;
+  background: #ebf8ff;
+  color: #2c5282;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 /* ============================================================================
    COMPACT MODE STYLES
    ============================================================================ */
