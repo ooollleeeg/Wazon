@@ -76,6 +76,17 @@ function initializeDatabase() {
       )
     `);
 
+    db.run(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_protection_mean_assignment_unique
+      ON protection_mean_assignments (protectionMeanId, objectType, objectId)
+    `);
+
+    db.run(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_protection_mean_serial_unique
+      ON protection_means (ktziId, categoryId, serialNumber)
+      WHERE serialNumber IS NOT NULL AND serialNumber != ''
+    `);
+
     // Таблиці для personnelId
     db.run(`
   CREATE TABLE IF NOT EXISTS personnel (

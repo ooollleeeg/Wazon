@@ -630,6 +630,60 @@ function getCategoryIdFromCategory(categoryName) {
   return cat ? cat.id : null;
 }
 
+const assignmentTables = {
+  AS: 'class_a_systems',
+  SP: 'service_premises',
+  KRT: 'krt',
+  IKS: 'iks',
+};
+
+function validateAssignmentTargets(ktziId, targets, callback) {
+  const objectTargets = targets.filter(
+    (target) => target.objectType !== 'KTZI',
+  );
+
+  if (objectTargets.length === 0) {
+    callback(null);
+    return;
+  }
+
+  let remaining = objectTargets.length;
+  let validationError = null;
+
+  objectTargets.forEach((target) => {
+    const table = assignmentTables[target.objectType];
+    if (!table) {
+      validationError = new Error(
+        `Невідомий тип об’єкту для прив’язки: ${target.objectType}`,
+      );
+      remaining -= 1;
+      if (remaining === 0) callback(validationError);
+      return;
+    }
+
+    db.get(
+      `SELECT ktziId FROM ${table} WHERE id = ?`,
+      [target.objectId],
+      (err, row) => {
+        if (err) {
+          validationError = err;
+        } else if (!row) {
+          validationError = new Error(
+            `Об’єкт ${target.objectType}#${target.objectId} не знайдено`,
+          );
+        } else if (String(row.ktziId) !== String(ktziId)) {
+          validationError = new Error(
+            'Не можна прив’язати засіб до об’єкта з іншого КТЗІ',
+          );
+        }
+
+        remaining -= 1;
+        if (remaining === 0) callback(validationError);
+      },
+    );
+  });
+}
+
 /**
  * Встановити засіб ТЗІ з складу на конкретний об'єкт
  * засобу з таблиці protection_means_inventory до об'єкту (АС, СП, КРТ, ІКС)
@@ -941,28 +995,38 @@ export function installProtectionMean(data, callback) {
                       );
                     }
 
-                    let remaining = validTargets.length;
-                    let assignmentError = null;
-                    validTargets.forEach((target) => {
-                      db.run(
-                        `INSERT INTO protection_mean_assignments
-                          (protectionMeanId, objectType, objectId)
-                         VALUES (?, ?, ?)`,
-                        [
-                          installedMean.id,
-                          target.objectType,
-                          target.objectId,
-                        ],
-                        (assignmentErr) => {
-                          if (assignmentErr) assignmentError = assignmentErr;
-                          remaining -= 1;
-                          if (remaining === 0) {
-                            if (assignmentError) return callback(assignmentError);
-                            finishInstall();
-                          }
-                        },
-                      );
-                    });
+                    validateAssignmentTargets(
+                      objectId,
+                      validTargets,
+                      (validationError) => {
+                        if (validationError) return callback(validationError);
+
+                        let remaining = validTargets.length;
+                        let assignmentError = null;
+                        validTargets.forEach((target) => {
+                          db.run(
+                            `INSERT INTO protection_mean_assignments
+                              (protectionMeanId, objectType, objectId)
+                             VALUES (?, ?, ?)`,
+                            [
+                              installedMean.id,
+                              target.objectType,
+                              target.objectId,
+                            ],
+                            (assignmentErr) => {
+                              if (assignmentErr) assignmentError = assignmentErr;
+                              remaining -= 1;
+                              if (remaining === 0) {
+                                if (assignmentError) {
+                                  return callback(assignmentError);
+                                }
+                                finishInstall();
+                              }
+                            },
+                          );
+                        });
+                      },
+                    );
                   },
                 );
               } else {
