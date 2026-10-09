@@ -7,9 +7,13 @@ const ProtectionMeansModal = ({
   onNavigate,
   onEdit,
   onDelete,
+  onAssignmentChange,
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [removingAssignment, setRemovingAssignment] = useState<string | null>(
+    null,
+  );
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
   };
@@ -84,6 +88,37 @@ const ProtectionMeansModal = ({
     return `КТЗІ: ${mean.ktziAddress || 'Без адреси'}, каб. ${
       mean.ktziPremisesNumber || '—'
     } — ${mean.ktziSubdivisionName || 'Без підрозділу'}`;
+  };
+
+  const handleRemoveAssignment = async (object) => {
+    const assignmentKey = `${object.objectType}-${object.objectId}`;
+    setRemovingAssignment(assignmentKey);
+    try {
+      const response = await fetch(
+        `/api/protection-means/${mean.id}/assignments`,
+        {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            objectType: object.objectType,
+            objectId: object.objectId,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Помилка при видаленні прив’язки');
+      }
+
+      onAssignmentChange?.();
+      onClose();
+    } catch (err) {
+      console.error('❌ Error removing protection mean assignment:', err);
+      alert(err instanceof Error ? err.message : 'Помилка при видаленні прив’язки');
+    } finally {
+      setRemovingAssignment(null);
+    }
   };
 
   const assignedObjects = mean.assignedObjects?.length
@@ -192,12 +227,29 @@ const ProtectionMeansModal = ({
                         className='assigned-object-item'
                         key={`${object.objectType}-${object.objectId}-${index}`}
                       >
-                        <strong>
-                          {object.objectName || 'Без назви'} (
-                          {getObjectTypeLabel(object)})
-                        </strong>
-                        {object.objectAddress && (
-                          <span>{object.objectAddress}</span>
+                        <div>
+                          <strong>
+                            {object.objectName || 'Без назви'} (
+                            {getObjectTypeLabel(object)})
+                          </strong>
+                          {object.objectAddress && (
+                            <span>{object.objectAddress}</span>
+                          )}
+                        </div>
+                        {mean.ktziId && object.objectType !== 'KTZI' && (
+                          <button
+                            className='btn-remove-assignment'
+                            onClick={() => handleRemoveAssignment(object)}
+                            disabled={
+                              removingAssignment ===
+                              `${object.objectType}-${object.objectId}`
+                            }
+                          >
+                            {removingAssignment ===
+                            `${object.objectType}-${object.objectId}`
+                              ? 'Видалення...'
+                              : 'Відв’язати'}
+                          </button>
                         )}
                       </div>
                     ))}

@@ -603,7 +603,7 @@ router.post('/protection-means/install', (req, res) => {
         installProtectionMean(req.body, (err, result) => {
           if (err) {
             console.error('❌ Error installing protection mean:', err);
-            res.status(500).json({ error: err.message });
+            res.status(err.status || 500).json({ error: err.message });
           } else {
             console.log('✅ Protection mean installed successfully');
             res.json(result);
@@ -616,6 +616,26 @@ router.post('/protection-means/install', (req, res) => {
     },
   );
 });
+
+  router.delete('/protection-means/:id/assignments', (req, res) => {
+    import('./utils/protectionMeansAggregator.js').then(
+      ({ removeProtectionMeanAssignment }) => {
+        const { objectType, objectId } = req.body || {};
+        removeProtectionMeanAssignment(
+          req.params.id,
+          objectType,
+          objectId,
+          (error, result) => {
+            if (error) {
+              console.error('❌ Error removing protection mean assignment:', error);
+              return res.status(error.status || 500).json({ error: error.message });
+            }
+            res.json(result);
+          },
+        );
+      },
+    );
+  });
 
 // ===== SEARCH CONTROL EQUIPMENT ENDPOINTS =====
 

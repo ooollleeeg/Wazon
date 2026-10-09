@@ -119,6 +119,12 @@ const ProtectionMeansTab = () => {
     fetchData();
   };
 
+  const handleAssignmentChange = () => {
+    fetchData();
+    setSuccessMessage('Прив’язку засобу ТЗІ успішно видалено');
+    setShowSuccessModal(true);
+  };
+
   // Обробник закриття модалі
   const handleCloseModal = () => {
     setShowModal(false);
@@ -392,6 +398,7 @@ const ProtectionMeansTab = () => {
           onNavigate={handleNavigateToObject}
           onEdit={handleEditInventoryItem}
           onDelete={handleDeleteSuccess}
+          onAssignmentChange={handleAssignmentChange}
         />
       )}
 

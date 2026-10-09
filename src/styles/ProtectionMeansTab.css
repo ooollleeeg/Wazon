@@ -619,6 +619,7 @@
 }
 
 .assigned-object-item {
+  align-items: center;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -626,6 +627,20 @@
   border-left: 3px solid #90cdf4;
   border-radius: 4px;
   background: #f7fbff;
+}
+
+.btn-remove-assignment {
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  background: #fff;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-remove-assignment:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 .assigned-object-item span {

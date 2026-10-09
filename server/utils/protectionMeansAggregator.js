@@ -611,6 +611,50 @@ export function deleteInventoryItem(id, callback) {
 }
 
 /**
+ * Видалити прив’язку канонічного засобу ТЗІ до об’єкта.
+ */
+export function removeProtectionMeanAssignment(
+  protectionMeanId,
+  objectType,
+  objectId,
+  callback,
+) {
+  const allowedTypes = new Set(['AS', 'SP', 'KRT', 'IKS', 'KTZI']);
+  if (!allowedTypes.has(objectType) || !objectId) {
+    const error = new Error('Некоректна прив’язка засобу до об’єкта');
+    error.status = 400;
+    return callback(error);
+  }
+
+  db.run(
+    `DELETE FROM protection_mean_assignments
+     WHERE protectionMeanId = ? AND objectType = ? AND objectId = ?`,
+    [protectionMeanId, objectType, objectId],
+    function (deleteError) {
+      if (deleteError) return callback(deleteError);
+      if (this.changes === 0) {
+        const error = new Error('Прив’язку засобу до об’єкта не знайдено');
+        error.status = 404;
+        return callback(error);
+      }
+
+      db.run(
+        `DELETE FROM protection_means
+         WHERE id = ? AND NOT EXISTS (
+           SELECT 1 FROM protection_mean_assignments
+           WHERE protectionMeanId = protection_means.id
+         )`,
+        [protectionMeanId],
+        (cleanupError) => {
+          if (cleanupError) return callback(cleanupError);
+          callback(null, { success: true, protectionMeanId, objectType, objectId });
+        },
+      );
+    },
+  );
+}
+
+/**
  * Допоміжна функція для отримання categoryId за назвою категорії
  */
 function getCategoryIdFromCategory(categoryName) {
@@ -657,6 +701,7 @@ function validateAssignmentTargets(ktziId, targets, callback) {
       validationError = new Error(
         `Невідомий тип об’єкту для прив’язки: ${target.objectType}`,
       );
+      validationError.status = 400;
       remaining -= 1;
       if (remaining === 0) callback(validationError);
       return;
@@ -672,10 +717,12 @@ function validateAssignmentTargets(ktziId, targets, callback) {
           validationError = new Error(
             `Об’єкт ${target.objectType}#${target.objectId} не знайдено`,
           );
+          validationError.status = 404;
         } else if (String(row.ktziId) !== String(ktziId)) {
           validationError = new Error(
             'Не можна прив’язати засіб до об’єкта з іншого КТЗІ',
           );
+          validationError.status = 400;
         }
 
         remaining -= 1;
@@ -694,9 +741,9 @@ export function installProtectionMean(data, callback) {
 
   // Перевірити вхідні дані
   if (!meanId || !objectId || !objectType) {
-    return callback(
-      new Error("meanId, objectId, та objectType є обов'язковими"),
-    );
+    const error = new Error("meanId, objectId, та objectType є обов'язковими");
+    error.status = 400;
+    return callback(error);
   }
 
   // 1. Спочатку отримати засіб з складу
@@ -709,7 +756,9 @@ export function installProtectionMean(data, callback) {
       }
 
       if (!mean) {
-        return callback(new Error('Засіб на складі не знайдений'));
+        const error = new Error('Засіб на складі не знайдений');
+        error.status = 404;
+        return callback(error);
       }
 
       // Визначити категорію засобу (використовуємо з параметру або з запису)
