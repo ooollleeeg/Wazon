@@ -9,7 +9,9 @@ interface ObjectItem {
   departmentType?: string;
   objectName?: string;
   objectAddress?: string;
+  objectType?: string;
   hasKzz?: boolean; // Чи встановлено КЗЗ від НСД на об'єкті
+  objects?: ObjectItem[];
 }
 
 interface SelectObjectModalProps {
@@ -19,6 +21,7 @@ interface SelectObjectModalProps {
     mean: ProtectionMean,
     objectId: string,
     objectType: string,
+    assignments?: Array<{ objectId: string; objectType: string }>,
   ) => Promise<void>;
 }
 
@@ -59,6 +62,8 @@ const SelectObjectModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
+  const [ktziScope, setKtziScope] = useState<'whole' | 'selected'>('whole');
+  const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
 
   // Завантажуємо об'єкти при зміні типу
   useEffect(() => {
@@ -101,6 +106,16 @@ const SelectObjectModal = ({
             objectName: obj.subdivisionName,
             objectAddress: obj.address,
             hasKzz,
+            objects:
+              selectedType === 'KTZI'
+                ? (obj.objects || []).map((nested: any) => ({
+                    id: String(nested.id),
+                    name: nested.objectName || nested.name || 'Без назви',
+                    address: nested.address || '',
+                    premisesNumber: nested.premisesNumber || '',
+                    objectType: nested.objectType,
+                  }))
+                : undefined,
           };
         });
 
@@ -117,6 +132,11 @@ const SelectObjectModal = ({
 
     fetchObjects();
   }, [selectedType, mean.category]);
+
+  useEffect(() => {
+    setKtziScope('whole');
+    setSelectedAssignments([]);
+  }, [selectedType]);
 
   // Отримуємо доступні типи об'єктів залежно від категорії засобу
   const getAvailableObjectTypes = (): ObjectType[] => {
@@ -143,10 +163,25 @@ const SelectObjectModal = ({
       setError("Виберіть об'єкт");
       return;
     }
+    if (
+      selectedType === 'KTZI' &&
+      ktziScope === 'selected' &&
+      selectedAssignments.length === 0
+    ) {
+      setError('Виберіть хоча б один об’єкт у складі КТЗІ');
+      return;
+    }
 
     setInstalling(true);
     try {
-      await onInstall(mean, selectedObject.id, selectedType);
+      const assignments =
+        selectedType === 'KTZI' && ktziScope === 'selected'
+          ? selectedAssignments.map((value) => {
+              const [objectType, objectId] = value.split(':');
+              return { objectType, objectId };
+            })
+          : undefined;
+      await onInstall(mean, selectedObject.id, selectedType, assignments);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Помилка встановлення';
@@ -233,32 +268,79 @@ const SelectObjectModal = ({
             <h3>📍 Виберіть об'єкт для встановлення</h3>
             {loading && <p className='loading'>⏳ Завантаження об'єктів...</p>}
             {error && <p className='error'>❌ {error}</p>}
+            {!loading && objects.length > 0 && selectedType === 'KTZI' && (
+              <div className='ktzi-scope-selector'>
+                <label className='radio-option'>
+                  <input
+                    type='radio'
+                    name='ktziScope'
+                    checked={ktziScope === 'whole'}
+                    onChange={() => setKtziScope('whole')}
+                  />
+                  <span>Весь КТЗІ</span>
+                </label>
+                <label className='radio-option'>
+                  <input
+                    type='radio'
+                    name='ktziScope'
+                    checked={ktziScope === 'selected'}
+                    onChange={() => setKtziScope('selected')}
+                  />
+                  <span>Окремі об’єкти КТЗІ</span>
+                </label>
+              </div>
+            )}
             {!loading && objects.length === 0 && (
               <p className='empty-state'>Немає доступних об'єктів цього типу</p>
             )}
             {!loading && objects.length > 0 && (
               <div className='object-list'>
                 {objects.map((obj) => (
-                  <label
-                    key={obj.id}
-                    className={`object-item ${obj.hasKzz ? 'disabled' : ''}`}
-                  >
-                    <input
-                      type='radio'
-                      name='object'
-                      checked={selectedObject?.id === obj.id}
-                      onChange={() => setSelectedObject(obj)}
-                      disabled={obj.hasKzz}
-                    />
-                    <span className='object-label'>
-                      {getObjectDisplay(obj)}
-                      {obj.hasKzz && (
-                        <span className='kzz-warning'>
-                          ⚠️ КЗЗ від НСД вже встановлено
-                        </span>
-                      )}
-                    </span>
-                  </label>
+                  <div key={obj.id}>
+                    <label
+                      className={`object-item ${obj.hasKzz ? 'disabled' : ''}`}
+                    >
+                      <input
+                        type='radio'
+                        name='object'
+                        checked={selectedObject?.id === obj.id}
+                        onChange={() => setSelectedObject(obj)}
+                        disabled={obj.hasKzz}
+                      />
+                      <span className='object-label'>
+                        {getObjectDisplay(obj)}
+                        {obj.hasKzz && (
+                          <span className='kzz-warning'>
+                            ⚠️ КЗЗ від НСД вже встановлено
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                    {selectedType === 'KTZI' &&
+                      ktziScope === 'selected' &&
+                      selectedObject?.id === obj.id &&
+                      obj.objects?.map((nested) => {
+                        const value = `${nested.objectType || 'OBJECT'}:${
+                          nested.id
+                        }`;
+                        return (
+                          <label key={value} className='object-item nested'>
+                            <input
+                              type='checkbox'
+                              checked={selectedAssignments.includes(value)}
+                              onChange={() =>
+                                setSelectedAssignments((current) =>
+                                  current.includes(value)
+                                    ? current.filter((item) => item !== value)
+                                    : [...current, value],
+                                )
+                              }
+                            />
+                            <span className='object-label'>{nested.name}</span>
+                          </label>
+                        );
+                      })}
+                  </div>
                 ))}
               </div>
             )}

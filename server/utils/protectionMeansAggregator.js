@@ -347,7 +347,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     JOIN ktzi k ON k.id = pm.ktziId
     WHERE EXISTS (
       SELECT 1 FROM protection_mean_assignments pma
-      WHERE pma.protectionMeanId = pm.id AND pma.objectType = 'KTZI'
+      WHERE pma.protectionMeanId = pm.id
     )
     `,
     (err, rows) => {
@@ -591,7 +591,7 @@ function getCategoryIdFromCategory(categoryName) {
  * засобу з таблиці protection_means_inventory до об'єкту (АС, СП, КРТ, ІКС)
  */
 export function installProtectionMean(data, callback) {
-  const { meanId, objectId, objectType, category } = data;
+  const { meanId, objectId, objectType, category, assignments } = data;
 
   // Перевірити вхідні дані
   if (!meanId || !objectId || !objectType) {
@@ -877,16 +877,48 @@ export function installProtectionMean(data, callback) {
                           new Error('Не вдалося створити засіб на рівні КТЗІ'),
                       );
                     }
-                    db.run(
-                      `INSERT INTO protection_mean_assignments
-                        (protectionMeanId, objectType, objectId)
-                       VALUES (?, 'KTZI', ?)`,
-                      [installedMean.id, objectId],
-                      (assignmentErr) => {
-                        if (assignmentErr) return callback(assignmentErr);
-                        finishInstall();
-                      },
+                    const targets =
+                      Array.isArray(assignments) && assignments.length > 0
+                        ? assignments
+                        : [{ objectType: 'KTZI', objectId }];
+                    const allowedTypes = new Set(['AS', 'SP', 'KRT', 'IKS']);
+                    const validTargets = targets.filter(
+                      (target) =>
+                        target &&
+                        ((target.objectType === 'KTZI' &&
+                          String(target.objectId) === String(objectId)) ||
+                          (allowedTypes.has(target.objectType) &&
+                            target.objectId)),
                     );
+
+                    if (validTargets.length !== targets.length) {
+                      return callback(
+                        new Error('Некоректна прив’язка засобу до об’єктів'),
+                      );
+                    }
+
+                    let remaining = validTargets.length;
+                    let assignmentError = null;
+                    validTargets.forEach((target) => {
+                      db.run(
+                        `INSERT INTO protection_mean_assignments
+                          (protectionMeanId, objectType, objectId)
+                         VALUES (?, ?, ?)`,
+                        [
+                          installedMean.id,
+                          target.objectType,
+                          target.objectId,
+                        ],
+                        (assignmentErr) => {
+                          if (assignmentErr) assignmentError = assignmentErr;
+                          remaining -= 1;
+                          if (remaining === 0) {
+                            if (assignmentError) return callback(assignmentError);
+                            finishInstall();
+                          }
+                        },
+                      );
+                    });
                   },
                 );
               } else {

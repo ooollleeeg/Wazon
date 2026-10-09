@@ -173,6 +173,7 @@ const ProtectionMeansTab = () => {
     mean: ProtectionMean,
     objectId: string,
     objectType: string,
+    assignments?: Array<{ objectId: string; objectType: string }>,
   ) => {
     try {
       // Перевіримо дублювання перед встановленням
@@ -200,6 +201,7 @@ const ProtectionMeansTab = () => {
         meanId: mean.id,
         objectId,
         objectType,
+        assignments,
         category: mean.category, // Передаємо категорію для правильного обрання поля
       };
 
