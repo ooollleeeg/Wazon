@@ -67,6 +67,7 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
       'SP': 'Службове приміщення',
       'KRT': 'КРТ',
       'IKS': 'ІКС',
+      'KTZI': 'КТЗІ',
       'INVENTORY': 'На складі'
     };
     

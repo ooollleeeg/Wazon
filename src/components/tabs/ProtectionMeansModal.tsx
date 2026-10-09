@@ -72,6 +72,7 @@ const ProtectionMeansModal = ({
       KRT: 'КРТ',
       IKS: 'ІКС',
       ІКС: 'ІКС',
+      KTZI: 'КТЗІ',
       INVENTORY: 'Запас (склад)',
     };
     return map[mean.objectType] || mean.objectType || '—';
@@ -196,7 +197,9 @@ const ProtectionMeansModal = ({
         </div>
 
         <div className='modal-footer'>
-          {mean.status === 'installed' && mean.objectType !== 'INVENTORY' && (
+          {mean.status === 'installed' &&
+            mean.objectType !== 'INVENTORY' &&
+            mean.objectType !== 'KTZI' && (
             <button className='btn-primary' onClick={() => onNavigate(mean)}>
               → Перейти до {getObjectTypeLabel(mean)}
             </button>

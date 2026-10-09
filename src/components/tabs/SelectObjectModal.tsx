@@ -5,6 +5,7 @@ interface ObjectItem {
   id: string;
   name: string;
   address?: string;
+  premisesNumber?: string;
   departmentType?: string;
   objectName?: string;
   objectAddress?: string;
@@ -21,7 +22,7 @@ interface SelectObjectModalProps {
   ) => Promise<void>;
 }
 
-type ObjectType = 'AS' | 'SP' | 'KRT' | 'IKS';
+type ObjectType = 'KTZI' | 'AS' | 'SP' | 'KRT' | 'IKS';
 
 const SelectObjectModal = ({
   mean,
@@ -31,6 +32,7 @@ const SelectObjectModal = ({
   // Карта типів об'єктів
   const objectTypeMap: Record<ObjectType, { label: string; endpoint: string }> =
     {
+      KTZI: { label: 'КТЗІ', endpoint: '/api/ktzi' },
       AS: { label: 'АС класу 1,2,3', endpoint: '/api/objects/class_a_systems' },
       SP: {
         label: 'Службові приміщення',
@@ -94,6 +96,7 @@ const SelectObjectModal = ({
               obj.communicationName ||
               `Object ${obj.id}`,
             address: obj.address || obj.objectAddress || '',
+            premisesNumber: obj.premisesNumber || '',
             departmentType: obj.departmentType || obj.subdivisionType || '',
             objectName: obj.subdivisionName,
             objectAddress: obj.address,
@@ -122,7 +125,7 @@ const SelectObjectModal = ({
       return ['AS', 'IKS'];
     }
     // Для інших засобів доступні всі типи
-    return ['AS', 'SP', 'KRT', 'IKS'];
+    return ['KTZI', 'AS', 'SP', 'KRT', 'IKS'];
   };
 
   // Якщо вибраний тип не доступний, вибираємо перший доступний
@@ -158,6 +161,11 @@ const SelectObjectModal = ({
     const name = obj.name || `ID: ${obj.id}`;
     const address = obj.address || '';
 
+    if (selectedType === 'KTZI') {
+      return `${name}, каб. ${obj.premisesNumber || '—'}${
+        address ? ` (${address})` : ''
+      }`;
+    }
     if (selectedType === 'SP' && address) {
       return `${name} (${address})`;
     }

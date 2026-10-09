@@ -9,7 +9,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
   const { category, status, departmentType, search } = filters;
   const allMeans = [];
   let completedQueries = 0;
-  const totalQueries = 6; // 5 об'єктів + 1 таблиця на складі
+  const totalQueries = 7; // 5 об'єктів + КТЗІ + 1 таблиця на складі
 
   // Хелпер функція для застосування фільтрів
   const applyFilters = (item) => {
@@ -318,7 +318,52 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     },
   );
 
-  // 6️⃣ Засоби на складі (protection_means_inventory)
+  // 6️⃣ Засоби, встановлені на весь КТЗІ
+  db.all(
+    `
+    SELECT
+      pm.ktziId as objectId,
+      ('КТЗІ: ' || COALESCE(k.address, 'Без адреси') || ', каб. ' ||
+        COALESCE(k.premisesNumber, '—') || ' — ' ||
+        COALESCE(k.subdivisionName, 'Без підрозділу')) as objectName,
+      k.address as objectAddress,
+      'ktzi' as departmentType,
+      pm.ktziId,
+      k.address as ktziAddress,
+      k.premisesNumber as ktziPremisesNumber,
+      k.subdivisionName as ktziSubdivisionName,
+      'KTZI' as objectType,
+      pm.id,
+      pm.toolType as category,
+      pm.name,
+      pm.serialNumber,
+      pm.invertarNumber,
+      pm.releaseYear,
+      pm.manufacturerExploitationTerm,
+      pm.certificateInfo,
+      'installed' as status,
+      pm.createdAt
+    FROM protection_means pm
+    JOIN ktzi k ON k.id = pm.ktziId
+    WHERE EXISTS (
+      SELECT 1 FROM protection_mean_assignments pma
+      WHERE pma.protectionMeanId = pm.id AND pma.objectType = 'KTZI'
+    )
+    `,
+    (err, rows) => {
+      if (!err && rows) {
+        allMeans.push(
+          ...rows.map((row) => ({
+            ...row,
+            category: row.category || 'Інші вироби',
+          })),
+        );
+      }
+      checkCompletion();
+    },
+  );
+
+  // 7️⃣ Засоби на складі (protection_means_inventory)
   db.all(
     `
     SELECT 
@@ -683,6 +728,27 @@ export function installProtectionMean(data, callback) {
         } else {
           // Звичайні засоби ТЗІ - зберігаємо в таблиці protection_means
           switch (objectType) {
+            case 'KTZI':
+              insertQuery = `
+                INSERT INTO protection_means
+                (ktziId, categoryId, toolType, name, serialNumber, invertarNumber,
+                 releaseYear, manufacturerExploitationTerm, certificateInfo)
+                SELECT id, ?, ?, ?, ?, ?, ?, ?, ?
+                FROM ktzi
+                WHERE id = ?
+              `;
+              insertParams = [
+                mean.categoryId,
+                mean.category,
+                mean.name,
+                mean.serialNumber,
+                mean.invertarNumber,
+                mean.releaseYear,
+                mean.manufacturerExploitationTerm,
+                mean.certificateInfo,
+                objectId,
+              ];
+              break;
             case 'AS': // АС класу 1,2,3
               insertQuery = `
                 INSERT INTO class_a_systems_protection_means 
@@ -786,15 +852,46 @@ export function installProtectionMean(data, callback) {
                 );
               }
 
-              // Повернути успішний результат
-              callback(null, {
-                success: true,
-                meanId,
-                objectId,
-                objectType,
-                mean,
-                message: `Засіб "${mean.name}" успішно встановлено на об'єкт`,
-              });
+              const finishInstall = () => {
+                callback(null, {
+                  success: true,
+                  meanId,
+                  objectId,
+                  objectType,
+                  mean,
+                  message: `Засіб "${mean.name}" успішно встановлено`,
+                });
+              };
+
+              if (objectType === 'KTZI') {
+                db.get(
+                  `SELECT id FROM protection_means
+                   WHERE ktziId = ? AND name = ? AND
+                     COALESCE(serialNumber, '') = COALESCE(?, '')
+                   ORDER BY id DESC LIMIT 1`,
+                  [objectId, mean.name, mean.serialNumber],
+                  (lookupErr, installedMean) => {
+                    if (lookupErr || !installedMean) {
+                      return callback(
+                        lookupErr ||
+                          new Error('Не вдалося створити засіб на рівні КТЗІ'),
+                      );
+                    }
+                    db.run(
+                      `INSERT INTO protection_mean_assignments
+                        (protectionMeanId, objectType, objectId)
+                       VALUES (?, 'KTZI', ?)`,
+                      [installedMean.id, objectId],
+                      (assignmentErr) => {
+                        if (assignmentErr) return callback(assignmentErr);
+                        finishInstall();
+                      },
+                    );
+                  },
+                );
+              } else {
+                finishInstall();
+              }
             },
           );
         });
