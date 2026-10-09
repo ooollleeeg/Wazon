@@ -1,4 +1,5 @@
 import { db } from '../database.js';
+import { syncKtziProtectionMeans } from './ktzi.js';
 import { checkProtectionMeanDuplicate } from './dbHelpers.js';
 
 /**
@@ -961,6 +962,43 @@ export function installProtectionMean(data, callback) {
                 });
               };
 
+              const syncObjectInstallation = () => {
+                const objectTables = {
+                  AS: 'class_a_systems',
+                  SP: 'service_premises',
+                  KRT: 'krt',
+                };
+                const table = objectTables[objectType];
+
+                if (!table) {
+                  finishInstall();
+                  return;
+                }
+
+                db.get(
+                  `SELECT ktziId FROM ${table} WHERE id = ?`,
+                  [objectId],
+                  (ktziError, object) => {
+                    if (ktziError) return callback(ktziError);
+                    if (!object?.ktziId) {
+                      return callback(
+                        new Error(
+                          'Об’єкт не прив’язаний до КТЗІ, синхронізація неможлива',
+                        ),
+                      );
+                    }
+
+                    syncKtziProtectionMeans(
+                      table,
+                      objectId,
+                      object.ktziId,
+                    )
+                      .then(finishInstall)
+                      .catch((syncError) => callback(syncError));
+                  },
+                );
+              };
+
               if (objectType === 'KTZI') {
                 db.get(
                   `SELECT id FROM protection_means
@@ -1030,7 +1068,7 @@ export function installProtectionMean(data, callback) {
                   },
                 );
               } else {
-                finishInstall();
+                syncObjectInstallation();
               }
             },
           );
