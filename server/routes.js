@@ -375,6 +375,61 @@ router.get('/ktzi', async (req, res) => {
   }
 });
 
+router.get('/ktzi/documents', async (req, res) => {
+  try {
+    const documents = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT d.*, k.address, k.premisesNumber, k.subdivisionName
+         FROM ktzi_documents d
+         JOIN ktzi k ON k.id = d.ktziId
+         WHERE d.validUntil IS NOT NULL AND d.validUntil != ''
+         ORDER BY d.validUntil`,
+        (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows || []);
+        },
+      );
+    });
+
+    const result = [];
+    for (const document of documents) {
+      const objects = await getKtziObjects(document.ktziId);
+      const object = objects[0];
+      if (!object) continue;
+
+      const tabId = {
+        AS: 'class-a',
+        KRT: 'krt',
+        SP: 'service-premises',
+      }[object.objectType];
+
+      result.push({
+        id: `ktzi-${document.ktziId}-${document.documentType}`,
+        ktziId: document.ktziId,
+        parentId: object.id,
+        parentName: `${document.address || 'Без адреси'}, каб. ${
+          document.premisesNumber || '—'
+        } — ${document.subdivisionName || 'Без підрозділу'}`,
+        tabId,
+        tabLabel: 'КТЗІ',
+        documentType: document.documentType,
+        fieldName: 'validUntil',
+        fieldLabel:
+          document.documentType === 'categorization'
+            ? 'Акт категоріювання дійсний до'
+            : 'Атестація дійсна до',
+        expirationDate: document.validUntil,
+        objectType: object.objectType,
+      });
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('❌ Error in GET /ktzi/documents:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * DEBUG: GET /api/debug/iks-protection - Check raw IKS protection means data
  */

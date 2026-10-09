@@ -89,6 +89,7 @@ const getDocumentTypeLabel = (documentType: string): string => {
     instrumentalControl: 'Інструментальний контроль',
     atestation: 'Атестація',
     complianceDocuments: 'Підтвердження відповідності вимогам ТЗІ',
+    technicalTask: 'Технічне завдання',
   };
   return translations[documentType] || documentType;
 };
@@ -141,6 +142,26 @@ function ExpirationMonitoringTab() {
     setLoading(true);
     const allDocs: ExpirationDocument[] = [];
 
+    try {
+      const response = await fetch('/api/ktzi/documents', {
+        signal: AbortSignal.timeout(10000),
+      });
+      if (response.ok) {
+        const ktziDocuments = await response.json();
+        if (Array.isArray(ktziDocuments)) {
+          allDocs.push(
+            ...ktziDocuments.map((document: ExpirationDocument) => ({
+              ...document,
+              status: getStatus(document.expirationDate).status,
+              daysUntilExpiration: getStatus(document.expirationDate).days,
+            })),
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching KTZI documents:', error);
+    }
+
     for (const config of TABS_CONFIG) {
       try {
         const response = await fetch(config.apiEndpoint, {
@@ -157,28 +178,20 @@ function ExpirationMonitoringTab() {
               [key: string]: { [key: string]: string[] };
             } = {
               'class-a': {
-                categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
-                atestation: ['attestationValidUntil'],
                 complianceDocuments: [
                   'validUntil',
                   'nextAuthorizationDeadline',
                 ],
               },
               'service-premises': {
-                categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
-                atestation: ['attestationValidUntil'],
               },
               krt: {
-                categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
-                atestation: ['attestationValidUntil'],
               },
               iks: {
-                categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
-                atestation: ['attestationValidUntil'],
                 complianceDocuments: [
                   'validUntil',
                   'nextAuthorizationDeadline',
