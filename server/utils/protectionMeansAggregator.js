@@ -68,15 +68,25 @@ export function aggregateProtectionMeans(filters = {}, callback) {
           objectType: item.objectType,
           objectAddress: item.objectAddress,
         };
+        const assignments = item.assignedObjects?.length
+          ? item.assignedObjects
+          : [assignment];
 
         if (existing) {
-          existing.assignedObjects.push(assignment);
+          assignments.forEach((candidate) => {
+            const alreadyAssigned = existing.assignedObjects.some(
+              (current) =>
+                String(current.objectId) === String(candidate.objectId) &&
+                current.objectType === candidate.objectType,
+            );
+            if (!alreadyAssigned) existing.assignedObjects.push(candidate);
+          });
           return;
         }
 
         const uniqueItem = {
           ...item,
-          assignedObjects: [assignment],
+          assignedObjects: assignments,
         };
         installedByIdentity.set(key, uniqueItem);
         uniqueMeans.push(uniqueItem);
@@ -342,9 +352,33 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.manufacturerExploitationTerm,
       pm.certificateInfo,
       'installed' as status,
-      pm.createdAt
+      pm.createdAt,
+      pma.objectType as assignedObjectType,
+      pma.objectId as assignedObjectId,
+      CASE pma.objectType
+        WHEN 'AS' THEN a.systemName
+        WHEN 'KRT' THEN kr.systemName
+        WHEN 'SP' THEN sp.serviceName
+        WHEN 'KTZI' THEN ('КТЗІ: ' || COALESCE(k.address, 'Без адреси') ||
+          ', каб. ' || COALESCE(k.premisesNumber, '—'))
+        ELSE NULL
+      END as assignedObjectName,
+      CASE pma.objectType
+        WHEN 'AS' THEN a.address
+        WHEN 'KRT' THEN kr.address
+        WHEN 'SP' THEN sp.address
+        ELSE k.address
+      END as assignedObjectAddress
     FROM protection_means pm
     JOIN ktzi k ON k.id = pm.ktziId
+    JOIN protection_mean_assignments pma
+      ON pma.protectionMeanId = pm.id
+    LEFT JOIN class_a_systems a
+      ON pma.objectType = 'AS' AND a.id = pma.objectId
+    LEFT JOIN krt kr
+      ON pma.objectType = 'KRT' AND kr.id = pma.objectId
+    LEFT JOIN service_premises sp
+      ON pma.objectType = 'SP' AND sp.id = pma.objectId
     WHERE EXISTS (
       SELECT 1 FROM protection_mean_assignments pma
       WHERE pma.protectionMeanId = pm.id
@@ -356,6 +390,16 @@ export function aggregateProtectionMeans(filters = {}, callback) {
           ...rows.map((row) => ({
             ...row,
             category: row.category || 'Інші вироби',
+            assignedObjects: row.assignedObjectId
+              ? [
+                  {
+                    objectId: row.assignedObjectId,
+                    objectName: row.assignedObjectName,
+                    objectType: row.assignedObjectType,
+                    objectAddress: row.assignedObjectAddress,
+                  },
+                ]
+              : [],
           })),
         );
       }
