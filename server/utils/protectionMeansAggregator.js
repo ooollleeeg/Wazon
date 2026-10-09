@@ -40,9 +40,14 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     if (completedQueries === totalQueries) {
       // Сортування та фільтрація
       const filtered = allMeans.filter(applyFilters);
-      const seenInstalledMeans = new Set();
-      const uniqueMeans = filtered.filter((item) => {
-        if (item.status !== 'installed' || !item.ktziId) return true;
+      const installedByIdentity = new Map();
+      const uniqueMeans = [];
+
+      filtered.forEach((item) => {
+        if (item.status !== 'installed' || !item.ktziId) {
+          uniqueMeans.push(item);
+          return;
+        }
 
         const physicalId = String(
           item.serialNumber || item.invertarNumber || '',
@@ -50,12 +55,31 @@ export function aggregateProtectionMeans(filters = {}, callback) {
           .trim()
           .toLocaleLowerCase('uk-UA');
 
-        if (!physicalId) return true;
+        if (!physicalId) {
+          uniqueMeans.push(item);
+          return;
+        }
 
         const key = `${item.ktziId}|${item.category}|${physicalId}`;
-        if (seenInstalledMeans.has(key)) return false;
-        seenInstalledMeans.add(key);
-        return true;
+        const existing = installedByIdentity.get(key);
+        const assignment = {
+          objectId: item.objectId,
+          objectName: item.objectName,
+          objectType: item.objectType,
+          objectAddress: item.objectAddress,
+        };
+
+        if (existing) {
+          existing.assignedObjects.push(assignment);
+          return;
+        }
+
+        const uniqueItem = {
+          ...item,
+          assignedObjects: [assignment],
+        };
+        installedByIdentity.set(key, uniqueItem);
+        uniqueMeans.push(uniqueItem);
       });
       const categoryCounts = {};
 

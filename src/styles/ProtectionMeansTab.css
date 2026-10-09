@@ -381,6 +381,13 @@
   min-width: 200px;
 }
 
+.ktzi-name {
+  margin-bottom: 0.25rem;
+  color: #2c5282;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .object-name {
   font-weight: 600;
   color: #2c3e50;

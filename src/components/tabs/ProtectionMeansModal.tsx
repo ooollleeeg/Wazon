@@ -77,6 +77,14 @@ const ProtectionMeansModal = ({
     return map[mean.objectType] || mean.objectType || '—';
   };
 
+  const getKtziLabel = (mean) => {
+    if (!mean.ktziId) return null;
+
+    return `КТЗІ: ${mean.ktziAddress || 'Без адреси'}, каб. ${
+      mean.ktziPremisesNumber || '—'
+    } — ${mean.ktziSubdivisionName || 'Без підрозділу'}`;
+  };
+
   return (
     <div className='modal-overlay' onClick={onClose}>
       <div className='modal-content' onClick={(e) => e.stopPropagation()}>
@@ -156,6 +164,12 @@ const ProtectionMeansModal = ({
             <section className='modal-section'>
               <h3>🏢 Встановлено на об'єкті</h3>
               <div className='info-grid'>
+                {getKtziLabel(mean) && (
+                  <div className='info-item full-width'>
+                    <label>КТЗІ:</label>
+                    <strong>{getKtziLabel(mean)}</strong>
+                  </div>
+                )}
                 <div className='info-item'>
                   <label>Тип об'єкту:</label>
                   <strong>{getObjectTypeLabel(mean)}</strong>

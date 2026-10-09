@@ -8,6 +8,16 @@ export interface ProtectionMean {
   objectAddress?: string;
   objectId?: string;
   objectType?: string;
+  ktziId?: number;
+  ktziAddress?: string;
+  ktziPremisesNumber?: string;
+  ktziSubdivisionName?: string;
+  assignedObjects?: Array<{
+    objectId?: string | number;
+    objectName?: string;
+    objectType?: string;
+    objectAddress?: string;
+  }>;
   systemClass?: string;
   serialNumber?: string;
   departmentType: string;
@@ -63,6 +73,14 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
     return typeMap[mean.objectType || ''] || (mean.objectType || '—');
   };
 
+  const getKtziLabel = (mean: ProtectionMean): string => {
+    if (!mean.ktziId) return '';
+
+    return `КТЗІ: ${mean.ktziAddress || 'Без адреси'}, каб. ${
+      mean.ktziPremisesNumber || '—'
+    } — ${mean.ktziSubdivisionName || 'Без підрозділу'}`;
+  };
+
   if (means.length === 0) {
     return (
       <div className='empty-state'>
@@ -79,7 +97,7 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
             <th>Категорія</th>
             <th>Назва засобу</th>
             <th>Серійний номер</th>
-            <th>Об'єкт установки</th>
+            <th>КТЗІ / об'єкт установки</th>
             <th>Тип об'єкту</th>
             <th>Статус</th>
             <th>Дія</th>
@@ -104,10 +122,24 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
               <td className='object-cell'>
                 {mean.objectName ? (
                   <div>
-                    <div className='object-name'>{mean.objectName}</div>
-                    {mean.objectAddress && (
-                      <div className='object-address'>{mean.objectAddress}</div>
+                    {getKtziLabel(mean) && (
+                      <div className='ktzi-name'>{getKtziLabel(mean)}</div>
                     )}
+                    {(mean.assignedObjects || [
+                      {
+                        objectName: mean.objectName,
+                        objectAddress: mean.objectAddress,
+                      },
+                    ]).map((object, objectIndex) => (
+                      <div key={`${object.objectId || object.objectName}-${objectIndex}`}>
+                        <div className='object-name'>{object.objectName}</div>
+                        {object.objectAddress && (
+                          <div className='object-address'>
+                            {object.objectAddress}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <span className='na'>На складі</span>
