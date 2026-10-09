@@ -208,6 +208,15 @@ export const syncKtziProtectionMeans = async (
       [mean.id, objectType, objectId],
     );
   }
+
+  await run(
+    `DELETE FROM protection_means
+     WHERE ktziId = ? AND NOT EXISTS (
+       SELECT 1 FROM protection_mean_assignments
+       WHERE protectionMeanId = protection_means.id
+     )`,
+    [ktziId],
+  );
 };
 
 export const getKtziObjects = (ktziId) =>
