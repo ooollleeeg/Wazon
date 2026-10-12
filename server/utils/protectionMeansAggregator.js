@@ -655,6 +655,92 @@ export function removeProtectionMeanAssignment(
 }
 
 /**
+ * Замінити або розширити список об’єктів, до яких прив’язаний засіб ТЗІ.
+ */
+export function updateProtectionMeanAssignments(
+  protectionMeanId,
+  assignments,
+  replaceWholeScope,
+  callback,
+) {
+  if (!Array.isArray(assignments) || assignments.length === 0) {
+    const error = new Error('Потрібно вибрати хоча б один об’єкт');
+    error.status = 400;
+    return callback(error);
+  }
+
+  db.get(
+    'SELECT ktziId FROM protection_means WHERE id = ?',
+    [protectionMeanId],
+    (meanError, mean) => {
+      if (meanError) return callback(meanError);
+      if (!mean) {
+        const error = new Error('Засіб ТЗІ не знайдений');
+        error.status = 404;
+        return callback(error);
+      }
+
+      const normalizedAssignments = assignments.map((assignment) => ({
+        objectType: assignment?.objectType,
+        objectId: assignment?.objectId,
+      }));
+
+      validateAssignmentTargets(
+        mean.ktziId,
+        normalizedAssignments,
+        (validationError) => {
+          if (validationError) return callback(validationError);
+
+          db.serialize(() => {
+            const removeWholeScope = replaceWholeScope
+              ? new Promise((resolve, reject) => {
+                  db.run(
+                    `DELETE FROM protection_mean_assignments
+                     WHERE protectionMeanId = ? AND objectType = 'KTZI'`,
+                    [protectionMeanId],
+                    (error) => (error ? reject(error) : resolve()),
+                  );
+                })
+              : Promise.resolve();
+
+            removeWholeScope
+              .then(
+                () =>
+                  Promise.all(
+                    normalizedAssignments.map(
+                      (assignment) =>
+                        new Promise((resolve, reject) => {
+                          db.run(
+                            `INSERT OR IGNORE INTO protection_mean_assignments
+                              (protectionMeanId, objectType, objectId)
+                             VALUES (?, ?, ?)`,
+                            [
+                              protectionMeanId,
+                              assignment.objectType,
+                              assignment.objectId,
+                            ],
+                            (error) => (error ? reject(error) : resolve()),
+                          );
+                        }),
+                    ),
+                  ),
+              )
+              .then(() =>
+                callback(null, {
+                  success: true,
+                  protectionMeanId,
+                  assignments: normalizedAssignments,
+                }),
+              )
+              .catch(callback);
+          });
+        },
+      );
+    },
+  );
+}
+
+/**
  * Допоміжна функція для отримання categoryId за назвою категорії
  */
 function getCategoryIdFromCategory(categoryName) {

@@ -5,7 +5,8 @@ import path from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, '../data/vazon.db');
+const dbPath =
+  process.env.VAZON_DB_PATH || path.join(__dirname, '../data/vazon.db');
 
 // ✅ ЕКСПОРТУЙТЕ db
 export const db = new sqlite3.Database(dbPath, (err) => {
@@ -1178,6 +1179,7 @@ function initializeDatabase() {
 
 // Закрите базу даних при завершенні процеса
 process.on('exit', () => {
+  if (!db.open) return;
   db.close((err) => {
     if (err) console.error('Error closing database:', err);
     else console.log('Database connection closed');

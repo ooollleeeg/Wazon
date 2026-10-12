@@ -14,6 +14,11 @@ const ProtectionMeansModal = ({
   const [removingAssignment, setRemovingAssignment] = useState<string | null>(
     null,
   );
+  const [showAssignmentEditor, setShowAssignmentEditor] = useState(false);
+  const [availableObjects, setAvailableObjects] = useState<any[]>([]);
+  const [selectedAssignments, setSelectedAssignments] = useState<string[]>([]);
+  const [loadingObjects, setLoadingObjects] = useState(false);
+  const [savingAssignments, setSavingAssignments] = useState(false);
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
   };
@@ -118,6 +123,60 @@ const ProtectionMeansModal = ({
       alert(err instanceof Error ? err.message : 'Помилка при видаленні прив’язки');
     } finally {
       setRemovingAssignment(null);
+    }
+  };
+
+  const openAssignmentEditor = async () => {
+    if (!mean.ktziId) return;
+    setLoadingObjects(true);
+    setShowAssignmentEditor(true);
+    try {
+      const response = await fetch('/api/ktzi');
+      if (!response.ok) throw new Error('Помилка при завантаженні об’єктів КТЗІ');
+      const ktziList = await response.json();
+      const ktzi = ktziList.find((item) => String(item.id) === String(mean.ktziId));
+      setAvailableObjects(ktzi?.objects || []);
+      setSelectedAssignments([]);
+    } catch (err) {
+      console.error('❌ Error loading KTZI objects:', err);
+      alert(err instanceof Error ? err.message : 'Помилка при завантаженні об’єктів');
+      setShowAssignmentEditor(false);
+    } finally {
+      setLoadingObjects(false);
+    }
+  };
+
+  const saveAssignments = async () => {
+    if (selectedAssignments.length === 0) return;
+    setSavingAssignments(true);
+    try {
+      const response = await fetch(
+        `/api/protection-means/${mean.id}/assignments`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            assignments: selectedAssignments.map((value) => {
+              const [objectType, objectId] = value.split(':');
+              return { objectType, objectId };
+            }),
+            replaceWholeScope: assignedObjects.some(
+              (object) => object.objectType === 'KTZI',
+            ),
+          }),
+        },
+      );
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Помилка при оновленні прив’язок');
+      }
+      onAssignmentChange?.();
+      onClose();
+    } catch (err) {
+      console.error('❌ Error updating protection mean assignments:', err);
+      alert(err instanceof Error ? err.message : 'Помилка при оновленні прив’язок');
+    } finally {
+      setSavingAssignments(false);
     }
   };
 
@@ -255,6 +314,64 @@ const ProtectionMeansModal = ({
                     ))}
                   </div>
                 </div>
+                {mean.ktziId && (
+                  <div className='info-item full-width'>
+                    <button
+                      className='btn-edit-assignment'
+                      onClick={openAssignmentEditor}
+                    >
+                      ✏️ Змінити об’єкти встановлення
+                    </button>
+                    {showAssignmentEditor && (
+                      <div className='assignment-editor'>
+                        <strong>Виберіть об’єкти цього КТЗІ:</strong>
+                        {loadingObjects ? (
+                          <p>Завантаження...</p>
+                        ) : availableObjects.length === 0 ? (
+                          <p>У КТЗІ немає доступних об’єктів.</p>
+                        ) : (
+                          <div className='assignment-editor-list'>
+                            {availableObjects.map((object) => {
+                              const value = `${object.objectType}:${object.id}`;
+                              return (
+                                <label key={value}>
+                                  <input
+                                    type='checkbox'
+                                    checked={selectedAssignments.includes(value)}
+                                    onChange={() =>
+                                      setSelectedAssignments((current) =>
+                                        current.includes(value)
+                                          ? current.filter((item) => item !== value)
+                                          : [...current, value],
+                                      )
+                                    }
+                                  />
+                                  {object.objectName || 'Без назви'} (
+                                  {getObjectTypeLabel(object)})
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <div className='assignment-editor-actions'>
+                          <button
+                            className='btn-primary'
+                            onClick={saveAssignments}
+                            disabled={savingAssignments || selectedAssignments.length === 0}
+                          >
+                            {savingAssignments ? 'Збереження...' : 'Зберегти'}
+                          </button>
+                          <button
+                            className='btn-secondary'
+                            onClick={() => setShowAssignmentEditor(false)}
+                          >
+                            Скасувати
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {mean.departmentType && !isIksType(mean.objectType) && (
                   <div className='info-item'>
                     <label>Тип підрозділу:</label>
