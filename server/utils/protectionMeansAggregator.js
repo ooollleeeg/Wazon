@@ -82,6 +82,11 @@ export function aggregateProtectionMeans(filters = {}, callback) {
             );
             if (!alreadyAssigned) existing.assignedObjects.push(candidate);
           });
+          // The canonical KTZI record is the one used by assignment APIs.
+          // Object-level rows can have a different ID for the same physical mean.
+          if (item.objectType === 'KTZI') {
+            existing.id = item.id;
+          }
           return;
         }
 
@@ -611,129 +616,214 @@ export function deleteInventoryItem(id, callback) {
 }
 
 /**
- * Видалити прив’язку канонічного засобу ТЗІ до об’єкта.
+ * Повернути встановлений засіб ТЗІ на склад і видалити всі його прив’язки.
  */
-export function removeProtectionMeanAssignment(
-  protectionMeanId,
-  objectType,
+function returnSourceMeanToInventory(
+  sourceTable,
+  foreignKey,
+  sourceId,
   objectId,
+  identity,
   callback,
 ) {
-  const allowedTypes = new Set(['AS', 'SP', 'KRT', 'IKS', 'KTZI']);
-  if (!allowedTypes.has(objectType) || !objectId) {
-    const error = new Error('Некоректна прив’язка засобу до об’єкта');
-    error.status = 400;
-    return callback(error);
-  }
-
-  db.run(
-    `DELETE FROM protection_mean_assignments
-     WHERE protectionMeanId = ? AND objectType = ? AND objectId = ?`,
-    [protectionMeanId, objectType, objectId],
-    function (deleteError) {
-      if (deleteError) return callback(deleteError);
-      if (this.changes === 0) {
-        const error = new Error('Прив’язку засобу до об’єкта не знайдено');
-        error.status = 404;
-        return callback(error);
-      }
-
-      db.run(
-        `DELETE FROM protection_means
-         WHERE id = ? AND NOT EXISTS (
-           SELECT 1 FROM protection_mean_assignments
-           WHERE protectionMeanId = protection_means.id
-         )`,
-        [protectionMeanId],
-        (cleanupError) => {
-          if (cleanupError) return callback(cleanupError);
-          callback(null, { success: true, protectionMeanId, objectType, objectId });
-        },
-      );
-    },
-  );
-}
-
-/**
- * Замінити або розширити список об’єктів, до яких прив’язаний засіб ТЗІ.
- */
-export function updateProtectionMeanAssignments(
-  protectionMeanId,
-  assignments,
-  replaceWholeScope,
-  callback,
-) {
-  if (!Array.isArray(assignments) || assignments.length === 0) {
-    const error = new Error('Потрібно вибрати хоча б один об’єкт');
-    error.status = 400;
-    return callback(error);
-  }
-
   db.get(
-    'SELECT ktziId FROM protection_means WHERE id = ?',
-    [protectionMeanId],
-    (meanError, mean) => {
-      if (meanError) return callback(meanError);
+    `SELECT id, categoryId, toolType, name, serialNumber, invertarNumber,
+      releaseYear, manufacturerExploitationTerm, certificateInfo
+     FROM ${sourceTable}
+     WHERE ${foreignKey} = ?
+       AND (
+         id = ?
+         OR (
+           name = ?
+           AND COALESCE(serialNumber, '') = COALESCE(?, '')
+           AND COALESCE(invertarNumber, '') = COALESCE(?, '')
+         )
+       )`,
+    [
+      objectId,
+      sourceId,
+      identity?.name,
+      identity?.serialNumber,
+      identity?.invertarNumber,
+    ],
+    (selectError, mean) => {
+      if (selectError) return callback(selectError);
       if (!mean) {
         const error = new Error('Засіб ТЗІ не знайдений');
         error.status = 404;
         return callback(error);
       }
 
-      const normalizedAssignments = assignments.map((assignment) => ({
-        objectType: assignment?.objectType,
-        objectId: assignment?.objectId,
-      }));
+      db.run(
+        `INSERT INTO protection_means_inventory
+          (categoryId, category, name, serialNumber, invertarNumber,
+           releaseYear, manufacturerExploitationTerm, certificateInfo,
+           status, inStockDate, notes, createdAt, updatedAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'in_stock', date('now'),
+           'Повернуто зі встановлення на склад', datetime('now'), datetime('now'))`,
+        [
+          mean.categoryId,
+          mean.toolType || 'Інші вироби',
+          mean.name,
+          mean.serialNumber,
+          mean.invertarNumber,
+          mean.releaseYear,
+          mean.manufacturerExploitationTerm,
+          mean.certificateInfo,
+        ],
+        (insertError) => {
+          if (insertError) return callback(insertError);
 
-      validateAssignmentTargets(
-        mean.ktziId,
-        normalizedAssignments,
-        (validationError) => {
-          if (validationError) return callback(validationError);
+          db.run(
+            `DELETE FROM ${sourceTable} WHERE id = ? AND ${foreignKey} = ?`,
+            [mean.id, objectId],
+            (deleteError) => {
+              if (deleteError) return callback(deleteError);
+              callback(null, {
+                success: true,
+                protectionMeanId: sourceId,
+                message: 'Засіб ТЗІ повернуто на склад',
+              });
+            },
+          );
+        },
+      );
+    },
+  );
+}
 
-          db.serialize(() => {
-            const removeWholeScope = replaceWholeScope
-              ? new Promise((resolve, reject) => {
+export function returnProtectionMeanToInventory(
+  protectionMeanId,
+  assignment,
+  callback,
+) {
+  if (typeof assignment === 'function') {
+    callback = assignment;
+    assignment = {};
+  }
+
+  db.get(
+    `SELECT categoryId, toolType, name, serialNumber, invertarNumber,
+      releaseYear, manufacturerExploitationTerm, certificateInfo
+     FROM protection_means WHERE id = ?`,
+    [protectionMeanId],
+    (selectError, mean) => {
+      if (selectError) return callback(selectError);
+      if (!mean) {
+        const sourceTables = {
+          AS: ['class_a_systems_protection_means', 'systemId'],
+          SP: ['service_premises_protection_means', 'premisesId'],
+          KRT: ['krt_protection_means', 'krtId'],
+          IKS: ['iks_protection_means', 'iksId'],
+        };
+        const sourceConfig = sourceTables[assignment?.objectType];
+        if (!sourceConfig || !assignment?.objectId) {
+          const error = new Error('Засіб ТЗІ не знайдений');
+          error.status = 404;
+          return callback(error);
+        }
+
+        const [sourceTable, foreignKey] = sourceConfig;
+        return returnSourceMeanToInventory(
+          sourceTable,
+          foreignKey,
+          protectionMeanId,
+          assignment.objectId,
+          assignment,
+          callback,
+        );
+      }
+
+      db.all(
+        `SELECT objectType, objectId
+         FROM protection_mean_assignments
+         WHERE protectionMeanId = ?`,
+        [protectionMeanId],
+        (assignmentsSelectError, assignments) => {
+          if (assignmentsSelectError) return callback(assignmentsSelectError);
+
+          db.run(
+            `INSERT INTO protection_means_inventory
+              (categoryId, category, name, serialNumber, invertarNumber,
+               releaseYear, manufacturerExploitationTerm, certificateInfo,
+               status, inStockDate, notes, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'in_stock', date('now'),
+               'Повернуто зі встановлення на склад', datetime('now'), datetime('now'))`,
+            [
+              mean.categoryId,
+              mean.toolType || 'Інші вироби',
+              mean.name,
+              mean.serialNumber,
+              mean.invertarNumber,
+              mean.releaseYear,
+              mean.manufacturerExploitationTerm,
+              mean.certificateInfo,
+            ],
+            (insertError) => {
+              if (insertError) return callback(insertError);
+
+              const sourceTables = {
+                AS: ['class_a_systems_protection_means', 'systemId'],
+                SP: ['service_premises_protection_means', 'premisesId'],
+                KRT: ['krt_protection_means', 'krtId'],
+                IKS: ['iks_protection_means', 'iksId'],
+              };
+              const sourceAssignments = (assignments || []).filter(
+                ({ objectType }) => sourceTables[objectType],
+              );
+
+              const deleteSourceRows = (index) => {
+                if (index >= sourceAssignments.length) {
                   db.run(
-                    `DELETE FROM protection_mean_assignments
-                     WHERE protectionMeanId = ? AND objectType = 'KTZI'`,
+                    'DELETE FROM protection_mean_assignments WHERE protectionMeanId = ?',
                     [protectionMeanId],
-                    (error) => (error ? reject(error) : resolve()),
-                  );
-                })
-              : Promise.resolve();
+                    (assignmentsError) => {
+                      if (assignmentsError) return callback(assignmentsError);
 
-            removeWholeScope
-              .then(
-                () =>
-                  Promise.all(
-                    normalizedAssignments.map(
-                      (assignment) =>
-                        new Promise((resolve, reject) => {
-                          db.run(
-                            `INSERT OR IGNORE INTO protection_mean_assignments
-                              (protectionMeanId, objectType, objectId)
-                             VALUES (?, ?, ?)`,
-                            [
-                              protectionMeanId,
-                              assignment.objectType,
-                              assignment.objectId,
-                            ],
-                            (error) => (error ? reject(error) : resolve()),
-                          );
-                        }),
-                    ),
-                  ),
-              )
-              .then(() =>
-                callback(null, {
-                  success: true,
-                  protectionMeanId,
-                  assignments: normalizedAssignments,
-                }),
-              )
-              .catch(callback);
-          });
+                      db.run(
+                        'DELETE FROM protection_means WHERE id = ?',
+                        [protectionMeanId],
+                        (deleteError) => {
+                          if (deleteError) return callback(deleteError);
+                          callback(null, {
+                            success: true,
+                            protectionMeanId,
+                            message: 'Засіб ТЗІ повернуто на склад',
+                          });
+                        },
+                      );
+                    },
+                  );
+                  return;
+                }
+
+                const assignment = sourceAssignments[index];
+                const [table, foreignKey] = sourceTables[assignment.objectType];
+                db.run(
+                  `DELETE FROM ${table}
+                   WHERE ${foreignKey} = ?
+                     AND (categoryId = ? OR (categoryId IS NULL AND ? IS NULL))
+                     AND name = ?
+                     AND COALESCE(serialNumber, '') = COALESCE(?, '')
+                     AND COALESCE(invertarNumber, '') = COALESCE(?, '')`,
+                  [
+                    assignment.objectId,
+                    mean.categoryId,
+                    mean.categoryId,
+                    mean.name,
+                    mean.serialNumber,
+                    mean.invertarNumber,
+                  ],
+                  (sourceDeleteError) => {
+                    if (sourceDeleteError) return callback(sourceDeleteError);
+                    deleteSourceRows(index + 1);
+                  },
+                );
+              };
+
+              deleteSourceRows(0);
+            },
+          );
         },
       );
     },
@@ -816,6 +906,43 @@ function validateAssignmentTargets(ktziId, targets, callback) {
       },
     );
   });
+}
+
+function removeObjectCopiesForMean(mean, callback) {
+  const sourceTables = [
+    ['class_a_systems_protection_means', 'systemId'],
+    ['service_premises_protection_means', 'premisesId'],
+    ['krt_protection_means', 'krtId'],
+    ['iks_protection_means', 'iksId'],
+  ];
+
+  const removeNext = (index) => {
+    if (index >= sourceTables.length) {
+      callback(null);
+      return;
+    }
+
+    const [table] = sourceTables[index];
+    db.run(
+      `DELETE FROM ${table}
+       WHERE name = ?
+         AND toolType = ?
+         AND COALESCE(serialNumber, '') = COALESCE(?, '')
+         AND COALESCE(invertarNumber, '') = COALESCE(?, '')`,
+      [
+        mean.name,
+        mean.category,
+        mean.serialNumber,
+        mean.invertarNumber,
+      ],
+      (error) => {
+        if (error) return callback(error);
+        removeNext(index + 1);
+      },
+    );
+  };
+
+  removeNext(0);
 }
 
 /**
@@ -1193,7 +1320,15 @@ export function installProtectionMean(data, callback) {
                                 if (assignmentError) {
                                   return callback(assignmentError);
                                 }
-                                finishInstall();
+                                removeObjectCopiesForMean(
+                                  mean,
+                                  (cleanupError) => {
+                                    if (cleanupError) {
+                                      return callback(cleanupError);
+                                    }
+                                    finishInstall();
+                                  },
+                                );
                               }
                             },
                           );

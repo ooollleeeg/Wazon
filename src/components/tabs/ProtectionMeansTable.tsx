@@ -32,7 +32,12 @@ interface ProtectionMeansTableProps {
   searchTerm?: string;
 }
 
-const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = '' }: ProtectionMeansTableProps) => {
+const ProtectionMeansTable = ({
+  means,
+  onViewDetails,
+  onInstall,
+  searchTerm = '',
+}: ProtectionMeansTableProps) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'installed':
@@ -62,16 +67,16 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
       }
       return `АС класу ${mean.systemClass || '?'}`;
     }
-    
+
     const typeMap: Record<string, string> = {
-      'SP': 'Службове приміщення',
-      'KRT': 'КРТ',
-      'IKS': 'ІКС',
-      'KTZI': 'КТЗІ',
-      'INVENTORY': 'На складі'
+      SP: 'Службове приміщення',
+      KRT: 'КРТ',
+      IKS: 'ІКС',
+      KTZI: 'КТЗІ',
+      INVENTORY: 'На складі',
     };
-    
-    return typeMap[mean.objectType || ''] || (mean.objectType || '—');
+
+    return typeMap[mean.objectType || ''] || mean.objectType || '—';
   };
 
   const getKtziLabel = (mean: ProtectionMean): string => {
@@ -106,18 +111,27 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
         </thead>
         <tbody>
           {means.map((mean: ProtectionMean, idx: number) => (
-            <tr key={`${mean.id || mean.serialNumber || mean.name}-${idx}`} className={`mean-row mean-${mean.status}`}>
+            <tr
+              key={`${mean.id || mean.serialNumber || mean.name}-${idx}`}
+              className={`mean-row mean-${mean.status}`}
+            >
               <td className='category-cell'>
                 <span className='category-badge'>
                   {highlightText(mean.category, searchTerm, `${mean.id}-cat`)}
                 </span>
               </td>
               <td className='name-cell'>
-                <strong>{highlightText(mean.name, searchTerm, `${mean.id}-name`)}</strong>
+                <strong>
+                  {highlightText(mean.name, searchTerm, `${mean.id}-name`)}
+                </strong>
               </td>
               <td className='serial-cell'>
                 {mean.serialNumber
-                  ? highlightText(mean.serialNumber, searchTerm, `${mean.id}-serial`)
+                  ? highlightText(
+                      mean.serialNumber,
+                      searchTerm,
+                      `${mean.id}-serial`,
+                    )
                   : '—'}
               </td>
               <td className='object-cell'>
@@ -126,19 +140,23 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
                     {getKtziLabel(mean) && (
                       <div className='ktzi-name'>{getKtziLabel(mean)}</div>
                     )}
-                    {(mean.assignedObjects || [
-                      {
-                        objectName: mean.objectName,
-                        objectAddress: mean.objectAddress,
-                      },
-                    ]).map((object, objectIndex) => (
-                      <div key={`${object.objectId || object.objectName}-${objectIndex}`}>
+                    {(
+                      mean.assignedObjects || [
+                        {
+                          objectName: mean.objectName,
+                          objectAddress: mean.objectAddress,
+                        },
+                      ]
+                    ).map((object, objectIndex) => (
+                      <div
+                        key={`${object.objectId || object.objectName}-${objectIndex}`}
+                      >
                         <div className='object-name'>{object.objectName}</div>
-                        {object.objectAddress && (
+                        {/* {object.objectAddress && (
                           <div className='object-address'>
                             {object.objectAddress}
                           </div>
-                        )}
+                        )} */}
                       </div>
                     ))}
                   </div>
@@ -146,9 +164,7 @@ const ProtectionMeansTable = ({ means, onViewDetails, onInstall, searchTerm = ''
                   <span className='na'>На складі</span>
                 )}
               </td>
-              <td className='object-type-cell'>
-                {getObjectTypeLabel(mean)}
-              </td>
+              <td className='object-type-cell'>{getObjectTypeLabel(mean)}</td>
               <td className='status-cell'>{getStatusBadge(mean.status)}</td>
               <td className='action-cell'>
                 <button

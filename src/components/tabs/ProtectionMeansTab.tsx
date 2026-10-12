@@ -183,11 +183,14 @@ const ProtectionMeansTab = () => {
   ) => {
     try {
       // Перевіримо дублювання перед встановленням
-      const validationResult = await validateBeforeSave(
-        mean.category,
-        mean.serialNumber,
-        mean.id,
-      );
+      const validationResult =
+        objectType === 'KTZI'
+          ? { isValid: true }
+          : await validateBeforeSave(
+              mean.category,
+              mean.serialNumber,
+              mean.id,
+            );
 
       if (!validationResult.isValid && validationResult.duplicateAt) {
         // Показуємо помилку дублювання

@@ -19,8 +19,7 @@ const {
 } = await import('./ktzi.js');
 const {
   installProtectionMean,
-  removeProtectionMeanAssignment,
-  updateProtectionMeanAssignments,
+  returnProtectionMeanToInventory,
 } = await import('./protectionMeansAggregator.js');
 
 const run = (query, params = []) =>
@@ -47,34 +46,12 @@ const install = (data) =>
     });
   });
 
-const removeAssignment = (meanId, objectType, objectId) =>
+const returnToInventory = (meanId) =>
   new Promise((resolve, reject) => {
-    removeProtectionMeanAssignment(
-      meanId,
-      objectType,
-      objectId,
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      },
-    );
-  });
-
-const updateAssignments = (
-  meanId,
-  assignments,
-  replaceWholeScope = false,
-) =>
-  new Promise((resolve, reject) => {
-    updateProtectionMeanAssignments(
-      meanId,
-      assignments,
-      replaceWholeScope,
-      (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      },
-    );
+    returnProtectionMeanToInventory(meanId, (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
   });
 
 const createRequiredTables = async () => {
@@ -333,7 +310,7 @@ describe('KTZI protection means', () => {
     );
   });
 
-  it('removes the canonical mean after its last assignment is removed', async () => {
+  it('returns the installed mean to inventory and clears its assignments', async () => {
     const ktzi = await ensureKtzi({
       address: 'Видалення 1',
       premisesNumber: '601',
@@ -356,52 +333,24 @@ describe('KTZI protection means', () => {
       [mean.id, 'AS', objectId],
     );
 
-    await removeAssignment(mean.id, 'AS', objectId);
+    await returnToInventory(mean.id);
 
     assert.equal(
       await get('SELECT id FROM protection_means WHERE id = ?', [mean.id]),
       null,
     );
+    const inventoryMean = await get(
+      `SELECT categoryId, category, name, serialNumber, status
+       FROM protection_means_inventory WHERE serialNumber = ?`,
+      ['SN-4'],
+    );
+    assert.deepEqual(inventoryMean, {
+      categoryId: 1,
+      category: 'Інші вироби',
+      name: 'Засіб 4',
+      serialNumber: 'SN-4',
+      status: 'in_stock',
+    });
   });
 
-  it('replaces a whole-KTZI assignment with selected object assignments', async () => {
-    const ktzi = await ensureKtzi({
-      address: 'Редагування 1',
-      premisesNumber: '701',
-      subdivisionName: 'Відділ Є',
-    });
-    const objectId = await seedObject('class_a_systems', {
-      systemName: 'АС 5',
-      ktziId: ktzi.id,
-    });
-    const mean = await run(
-      `INSERT INTO protection_means
-       (ktziId, categoryId, name, serialNumber)
-       VALUES (?, ?, ?, ?)`,
-      [ktzi.id, 1, 'Засіб 5', 'SN-5'],
-    );
-    await run(
-      `INSERT INTO protection_mean_assignments
-       (protectionMeanId, objectType, objectId)
-       VALUES (?, ?, ?)`,
-      [mean.id, 'KTZI', ktzi.id],
-    );
-
-    await updateAssignments(
-      mean.id,
-      [{ objectType: 'AS', objectId }],
-      true,
-    );
-
-    const assignments = await new Promise((resolve, reject) => {
-      db.all(
-        `SELECT objectType, objectId
-         FROM protection_mean_assignments
-         WHERE protectionMeanId = ?`,
-        [mean.id],
-        (error, rows) => (error ? reject(error) : resolve(rows)),
-      );
-    });
-    assert.deepEqual(assignments, [{ objectType: 'AS', objectId }]);
-  });
 });

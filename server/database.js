@@ -1180,10 +1180,7 @@ function initializeDatabase() {
 // Закрите базу даних при завершенні процеса
 process.on('exit', () => {
   if (!db.open) return;
-  db.close((err) => {
-    if (err) console.error('Error closing database:', err);
-    else console.log('Database connection closed');
-  });
+  db.close();
 });
 
 export default db;

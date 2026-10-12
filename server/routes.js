@@ -617,45 +617,25 @@ router.post('/protection-means/install', (req, res) => {
   );
 });
 
-  router.delete('/protection-means/:id/assignments', (req, res) => {
-    import('./utils/protectionMeansAggregator.js').then(
-      ({ removeProtectionMeanAssignment }) => {
-        const { objectType, objectId } = req.body || {};
-        removeProtectionMeanAssignment(
-          req.params.id,
-          objectType,
-          objectId,
-          (error, result) => {
-            if (error) {
-              console.error('❌ Error removing protection mean assignment:', error);
-              return res.status(error.status || 500).json({ error: error.message });
-            }
-            res.json(result);
-          },
-        );
-      },
-    );
-  });
-
-  router.post('/protection-means/:id/assignments', (req, res) => {
-    import('./utils/protectionMeansAggregator.js').then(
-      ({ updateProtectionMeanAssignments }) => {
-        const { assignments, replaceWholeScope = false } = req.body || {};
-        updateProtectionMeanAssignments(
-          req.params.id,
-          assignments,
-          replaceWholeScope,
-          (error, result) => {
-            if (error) {
-              console.error('❌ Error updating protection mean assignments:', error);
-              return res.status(error.status || 500).json({ error: error.message });
-            }
-            res.json(result);
-          },
-        );
-      },
-    );
-  });
+router.delete('/protection-means/:id/assignments', (req, res) => {
+  import('./utils/protectionMeansAggregator.js').then(
+    ({ returnProtectionMeanToInventory }) => {
+      const { objectType, objectId, name, serialNumber, invertarNumber } =
+        req.body || {};
+      returnProtectionMeanToInventory(
+        req.params.id,
+        { objectType, objectId, name, serialNumber, invertarNumber },
+        (error, result) => {
+        if (error) {
+          console.error('❌ Error returning protection mean to inventory:', error);
+          return res.status(error.status || 500).json({ error: error.message });
+        }
+        res.json(result);
+        },
+      );
+    },
+  );
+});
 
 // ===== SEARCH CONTROL EQUIPMENT ENDPOINTS =====
 
