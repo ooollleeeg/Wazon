@@ -159,8 +159,8 @@ export const syncKtziProtectionMeans = async (
   const [sourceTable, objectType, foreignKey] = config;
   const rows = await all(
     `SELECT categoryId, toolType, name, serialNumber, invertarNumber,
-      releaseYear, manufacturerExploitationTerm, certificateInfo
-     FROM ${sourceTable} WHERE ${foreignKey} = ?`,
+      releaseYear, manufacturerExploitationTerm, certificateInfo, notes
+      FROM ${sourceTable} WHERE ${foreignKey} = ?`,
     [objectId],
   );
 
@@ -184,8 +184,8 @@ export const syncKtziProtectionMeans = async (
       const result = await run(
         `INSERT INTO protection_means
           (ktziId, categoryId, toolType, name, serialNumber, invertarNumber,
-           releaseYear, manufacturerExploitationTerm, certificateInfo)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           releaseYear, manufacturerExploitationTerm, certificateInfo, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           ktziId,
           row.categoryId,
@@ -196,6 +196,7 @@ export const syncKtziProtectionMeans = async (
           row.releaseYear,
           row.manufacturerExploitationTerm,
           row.certificateInfo,
+          row.notes,
         ],
       );
       mean = { id: result.id };

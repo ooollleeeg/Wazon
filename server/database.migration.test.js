@@ -31,6 +31,19 @@ await legacyRun(`
     systemName TEXT
   )
 `);
+await legacyRun(`
+  CREATE TABLE class_a_systems_protection_means (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    systemId INTEGER,
+    toolType TEXT,
+    name TEXT,
+    serialNumber TEXT,
+    invertarNumber TEXT,
+    releaseYear INTEGER,
+    manufacturerExploitationTerm TEXT,
+    certificateInfo TEXT
+  )
+`);
 const legacyObjectId = await legacyRun(
   `INSERT INTO class_a_systems
    (address, premisesNumber, subdivisionName, systemClass, systemName)
@@ -83,4 +96,8 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
   });
   assert.ok(columns.some((column) => column.name === 'ktziId'));
   assert.ok(columns.some((column) => column.name === 'isProcessingSuspended'));
+  const protectionMeanColumns = await tableColumns(
+    'class_a_systems_protection_means',
+  );
+  assert.ok(protectionMeanColumns.some((column) => column.name === 'notes'));
 });

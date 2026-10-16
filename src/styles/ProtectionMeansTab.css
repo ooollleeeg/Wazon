@@ -822,6 +822,34 @@
   cursor: pointer;
 }
 
+.object-item input[type='checkbox'] {
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.install-selection-hint {
+  color: #5d6d7e;
+  margin: -0.5rem 0 1rem;
+}
+
+.ktzi-related-objects {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #d6eaf8;
+  border-radius: 8px;
+  background: #f4faff;
+}
+
+.ktzi-related-objects h4 {
+  margin: 0 0 0.5rem;
+  color: #2c3e50;
+}
+
+.ktzi-related-objects p {
+  margin: 0 0 0.5rem;
+  color: #5d6d7e;
+}
+
 .object-item.nested {
   margin-left: 2rem;
   padding: 0.65rem 1rem;
@@ -846,7 +874,7 @@
   background: #f9f9f9;
 }
 
-.object-item.disabled input[type='radio'] {
+.object-item.disabled input {
   cursor: not-allowed;
 }
 

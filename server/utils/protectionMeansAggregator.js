@@ -123,6 +123,8 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.id as objectId,
       a.systemName as objectName,
       a.address as objectAddress,
+      a.subdivisionName,
+      a.premisesNumber,
       a.subdivisionType as departmentType,
       a.systemClass,
       a.ktziId,
@@ -138,6 +140,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.releaseYear,
       pm.manufacturerExploitationTerm,
       pm.certificateInfo,
+      pm.notes,
       'installed' as status,
       pm.createdAt
     FROM class_a_systems_protection_means pm
@@ -164,6 +167,8 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       sp.id as objectId,
       sp.subdivisionName as objectName,
       sp.address as objectAddress,
+      sp.subdivisionName,
+      sp.premisesNumber,
       sp.subdivisionType as departmentType,
       sp.ktziId,
       ktz.address as ktziAddress,
@@ -178,6 +183,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.releaseYear,
       pm.manufacturerExploitationTerm,
       pm.certificateInfo,
+      pm.notes,
       'installed' as status,
       pm.createdAt
     FROM service_premises_protection_means pm
@@ -204,6 +210,8 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       k.id as objectId,
       k.systemName as objectName,
       k.address as objectAddress,
+      k.subdivisionName,
+      k.premisesNumber,
       k.subdivisionType as departmentType,
       k.ktziId,
       ktz.address as ktziAddress,
@@ -218,6 +226,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.releaseYear,
       pm.manufacturerExploitationTerm,
       pm.certificateInfo,
+      pm.notes,
       'installed' as status,
       pm.createdAt
     FROM krt_protection_means pm
@@ -244,7 +253,9 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       i.id as objectId,
       i.systemName as objectName,
       null as objectAddress,
-      'territorial' as departmentType,
+      i.subdivisionName,
+      null as premisesNumber,
+      i.subdivisionType as departmentType,
       'IKS' as objectType,
       pm.id as id,
       COALESCE(pm.toolType, 'Засоби захисту') as category,
@@ -254,6 +265,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.releaseYear,
       pm.manufacturerExploitationTerm,
       pm.certificateInfo,
+      pm.notes,
       'installed' as status,
       pm.createdAt
     FROM iks_protection_means pm
@@ -284,6 +296,8 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.id as objectId,
       a.systemName as objectName,
       a.address as objectAddress,
+      a.subdivisionName,
+      a.premisesNumber,
       a.subdivisionType as departmentType,
       'AS' as objectType,
       COALESCE(a.systemClass, 'АС класу ?') as systemClass,
@@ -294,6 +308,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       NULL as releaseYear,
       a.kzzManufacturerExploitationTerm as manufacturerExploitationTerm,
       NULL as certificateInfo,
+      a.kzzNotes as notes,
       'installed' as status,
       a.createdAt,
       ('AS-' || a.id || '-kzz') as id
@@ -306,7 +321,9 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       i.id as objectId,
       i.systemName as objectName,
       null as objectAddress,
-      'territorial' as departmentType,
+      i.subdivisionName,
+      null as premisesNumber,
+      i.subdivisionType as departmentType,
       'IKS' as objectType,
       NULL as systemClass,
       'КЗЗ від НСД' as category,
@@ -316,6 +333,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       NULL as releaseYear,
       i.kzzManufacturerExploitationTerm as manufacturerExploitationTerm,
       NULL as certificateInfo,
+      i.kzzNotes as notes,
       'installed' as status,
       i.createdAt,
       ('IKS-' || i.id || '-kzz') as id
@@ -357,6 +375,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.releaseYear,
       pm.manufacturerExploitationTerm,
       pm.certificateInfo,
+      pm.notes,
       'installed' as status,
       pm.createdAt,
       pma.objectType as assignedObjectType,
@@ -364,7 +383,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       CASE pma.objectType
         WHEN 'AS' THEN a.systemName
         WHEN 'KRT' THEN kr.systemName
-        WHEN 'SP' THEN sp.serviceName
+        WHEN 'SP' THEN NULL
         WHEN 'KTZI' THEN ('КТЗІ: ' || COALESCE(k.address, 'Без адреси') ||
           ', каб. ' || COALESCE(k.premisesNumber, '—'))
         ELSE NULL
@@ -374,7 +393,26 @@ export function aggregateProtectionMeans(filters = {}, callback) {
         WHEN 'KRT' THEN kr.address
         WHEN 'SP' THEN sp.address
         ELSE k.address
-      END as assignedObjectAddress
+      END as assignedObjectAddress,
+      CASE pma.objectType
+        WHEN 'AS' THEN a.subdivisionName
+        WHEN 'KRT' THEN kr.subdivisionName
+        WHEN 'SP' THEN sp.subdivisionName
+        ELSE k.subdivisionName
+      END as assignedSubdivisionName,
+      CASE pma.objectType
+        WHEN 'AS' THEN a.premisesNumber
+        WHEN 'KRT' THEN kr.premisesNumber
+        WHEN 'SP' THEN sp.premisesNumber
+        ELSE k.premisesNumber
+      END as assignedPremisesNumber,
+      CASE pma.objectType
+        WHEN 'AS' THEN a.subdivisionType
+        WHEN 'KRT' THEN kr.subdivisionType
+        WHEN 'SP' THEN sp.subdivisionType
+        ELSE k.subdivisionType
+      END as assignedDepartmentType,
+      a.systemClass as assignedSystemClass
     FROM protection_means pm
     JOIN ktzi k ON k.id = pm.ktziId
     JOIN protection_mean_assignments pma
@@ -403,6 +441,10 @@ export function aggregateProtectionMeans(filters = {}, callback) {
                     objectName: row.assignedObjectName,
                     objectType: row.assignedObjectType,
                     objectAddress: row.assignedObjectAddress,
+                    subdivisionName: row.assignedSubdivisionName,
+                    premisesNumber: row.assignedPremisesNumber,
+                    departmentType: row.assignedDepartmentType,
+                    systemClass: row.assignedSystemClass,
                   },
                 ]
               : [],
@@ -628,7 +670,7 @@ function returnSourceMeanToInventory(
 ) {
   db.get(
     `SELECT id, categoryId, toolType, name, serialNumber, invertarNumber,
-      releaseYear, manufacturerExploitationTerm, certificateInfo
+      releaseYear, manufacturerExploitationTerm, certificateInfo, notes
      FROM ${sourceTable}
      WHERE ${foreignKey} = ?
        AND (
@@ -660,7 +702,7 @@ function returnSourceMeanToInventory(
            releaseYear, manufacturerExploitationTerm, certificateInfo,
            status, inStockDate, notes, createdAt, updatedAt)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'in_stock', date('now'),
-           'Повернуто зі встановлення на склад', datetime('now'), datetime('now'))`,
+           ?, datetime('now'), datetime('now'))`,
         [
           mean.categoryId,
           mean.toolType || 'Інші вироби',
@@ -670,6 +712,9 @@ function returnSourceMeanToInventory(
           mean.releaseYear,
           mean.manufacturerExploitationTerm,
           mean.certificateInfo,
+          mean.notes
+            ? `${mean.notes}\nПовернуто зі встановлення на склад`
+            : 'Повернуто зі встановлення на склад',
         ],
         (insertError) => {
           if (insertError) return callback(insertError);
@@ -704,7 +749,7 @@ export function returnProtectionMeanToInventory(
 
   db.get(
     `SELECT categoryId, toolType, name, serialNumber, invertarNumber,
-      releaseYear, manufacturerExploitationTerm, certificateInfo
+      releaseYear, manufacturerExploitationTerm, certificateInfo, notes
      FROM protection_means WHERE id = ?`,
     [protectionMeanId],
     (selectError, mean) => {
@@ -748,7 +793,7 @@ export function returnProtectionMeanToInventory(
                releaseYear, manufacturerExploitationTerm, certificateInfo,
                status, inStockDate, notes, createdAt, updatedAt)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'in_stock', date('now'),
-               'Повернуто зі встановлення на склад', datetime('now'), datetime('now'))`,
+               ?, datetime('now'), datetime('now'))`,
             [
               mean.categoryId,
               mean.toolType || 'Інші вироби',
@@ -758,6 +803,9 @@ export function returnProtectionMeanToInventory(
               mean.releaseYear,
               mean.manufacturerExploitationTerm,
               mean.certificateInfo,
+              mean.notes
+                ? `${mean.notes}\nПовернуто зі встановлення на склад`
+                : 'Повернуто зі встановлення на склад',
             ],
             (insertError) => {
               if (insertError) return callback(insertError);
@@ -1047,7 +1095,7 @@ export function installProtectionMean(data, callback) {
               insertQuery = `
                 UPDATE class_a_systems 
                 SET kzzName = ?, kzzSerial = ?, kzzExpertOpinionNumber = ?, 
-                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?, kzzCategoryId = ?
+                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?, kzzCategoryId = ?, kzzNotes = ?
                 WHERE id = ?
               `;
               insertParams = [
@@ -1057,6 +1105,7 @@ export function installProtectionMean(data, callback) {
                 mean.releaseYear || '',
                 mean.manufacturerExploitationTerm || '',
                 mean.categoryId,
+                mean.notes || '',
                 objectId,
               ];
               break;
@@ -1065,7 +1114,7 @@ export function installProtectionMean(data, callback) {
               insertQuery = `
                 UPDATE iks 
                 SET kzzName = ?, kzzSerial = ?, kzzExpertOpinionNumber = ?, 
-                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?, kzzCategoryId = ?
+                    kzzExpertOpinionDate = ?, kzzManufacturerExploitationTerm = ?, kzzCategoryId = ?, kzzNotes = ?
                 WHERE id = ?
               `;
               insertParams = [
@@ -1075,6 +1124,7 @@ export function installProtectionMean(data, callback) {
                 mean.releaseYear || '',
                 mean.manufacturerExploitationTerm || '',
                 mean.categoryId,
+                mean.notes || '',
                 objectId,
               ];
               break;
@@ -1093,8 +1143,8 @@ export function installProtectionMean(data, callback) {
               insertQuery = `
                 INSERT INTO protection_means
                 (ktziId, categoryId, toolType, name, serialNumber, invertarNumber,
-                 releaseYear, manufacturerExploitationTerm, certificateInfo)
-                SELECT id, ?, ?, ?, ?, ?, ?, ?, ?
+                 releaseYear, manufacturerExploitationTerm, certificateInfo, notes)
+                SELECT id, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 FROM ktzi
                 WHERE id = ?
               `;
@@ -1107,14 +1157,15 @@ export function installProtectionMean(data, callback) {
                 mean.releaseYear,
                 mean.manufacturerExploitationTerm,
                 mean.certificateInfo,
+                mean.notes,
                 objectId,
               ];
               break;
             case 'AS': // АС класу 1,2,3
               insertQuery = `
                 INSERT INTO class_a_systems_protection_means 
-                (systemId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (systemId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, notes, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
@@ -1126,14 +1177,15 @@ export function installProtectionMean(data, callback) {
                 mean.releaseYear,
                 mean.manufacturerExploitationTerm,
                 mean.certificateInfo,
+                mean.notes,
               ];
               break;
 
             case 'SP': // Службові приміщення
               insertQuery = `
                 INSERT INTO service_premises_protection_means 
-                (premisesId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (premisesId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, notes, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
@@ -1145,14 +1197,15 @@ export function installProtectionMean(data, callback) {
                 mean.releaseYear,
                 mean.manufacturerExploitationTerm,
                 mean.certificateInfo,
+                mean.notes,
               ];
               break;
 
             case 'KRT': // КРТ
               insertQuery = `
                 INSERT INTO krt_protection_means 
-                (krtId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (krtId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, notes, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
@@ -1164,14 +1217,15 @@ export function installProtectionMean(data, callback) {
                 mean.releaseYear,
                 mean.manufacturerExploitationTerm,
                 mean.certificateInfo,
+                mean.notes,
               ];
               break;
 
             case 'IKS': // ІКС
               insertQuery = `
                 INSERT INTO iks_protection_means 
-                (iksId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                (iksId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, notes, createdAt)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `;
               insertParams = [
                 objectId,
@@ -1183,6 +1237,7 @@ export function installProtectionMean(data, callback) {
                 mean.releaseYear,
                 mean.manufacturerExploitationTerm,
                 mean.certificateInfo,
+                mean.notes,
               ];
               break;
 
@@ -1241,16 +1296,10 @@ export function installProtectionMean(data, callback) {
                   `SELECT ktziId FROM ${table} WHERE id = ?`,
                   [objectId],
                   (ktziError, object) => {
-                    if (ktziError) return callback(ktziError);
-                    if (!object?.ktziId) {
-                      return callback(
-                        new Error(
-                          'Об’єкт не прив’язаний до КТЗІ, синхронізація неможлива',
-                        ),
-                      );
-                    }
+                  if (ktziError) return callback(ktziError);
+                  if (!object?.ktziId) return finishInstall();
 
-                    syncKtziProtectionMeans(
+                  syncKtziProtectionMeans(
                       table,
                       objectId,
                       object.ktziId,

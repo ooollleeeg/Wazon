@@ -321,6 +321,32 @@ export const getObjectWithNested = (config, id) => {
 
         let completed = 0;
         const nestedKeys = Object.keys(config.nestedTables);
+        const sharedProtectionMeanTypes = {
+          class_a_systems: 'AS',
+          krt: 'KRT',
+          service_premises: 'SP',
+        };
+        const completeWithSharedProtectionMeans = () => {
+          const objectType = sharedProtectionMeanTypes[config.table];
+          if (!objectType) return resolve(result);
+
+          db.all(
+            `SELECT pm.id, pm.toolType, pm.name, pm.serialNumber,
+              pm.invertarNumber, pm.releaseYear,
+              pm.manufacturerExploitationTerm, pm.certificateInfo, pm.notes,
+              1 as isSharedKtzi
+             FROM protection_means pm
+             JOIN protection_mean_assignments pma
+               ON pma.protectionMeanId = pm.id
+             WHERE pma.objectType = ? AND pma.objectId = ?`,
+            [objectType, id],
+            (sharedError, rows) => {
+              if (sharedError) return reject(sharedError);
+              result.sharedProtectionMeans = rows || [];
+              resolve(result);
+            },
+          );
+        };
 
         nestedKeys.forEach((nestedKey) => {
           const nestedConfig = config.nestedTables[nestedKey];
@@ -336,7 +362,7 @@ export const getObjectWithNested = (config, id) => {
               }
               completed++;
               if (completed === nestedKeys.length) {
-                resolve(result);
+                completeWithSharedProtectionMeans();
               }
             },
           );

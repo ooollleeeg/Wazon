@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import ProtectionMeansFilters from './ProtectionMeansFilters';
-import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
+import ProtectionMeansTable, {
+  AssignedProtectionObject,
+  ProtectionMean,
+} from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
 import SelectObjectModal from './SelectObjectModal';
 import DuplicateErrorModal from '../modals/DuplicateErrorModal';
@@ -140,23 +143,28 @@ const ProtectionMeansTab = () => {
   };
 
   // Обробник отримання переходу до об'єкта
-  const handleNavigateToObject = (mean: ProtectionMean) => {
-    if (!mean.objectId) {
+  const handleNavigateToObject = (
+    mean: ProtectionMean,
+    object?: AssignedProtectionObject,
+  ) => {
+    const objectId = object?.objectId || mean.objectId;
+    const objectType = normalizeObjectType(
+      object?.objectType || mean.objectType,
+    );
+    if (!objectId) {
       console.warn('No objectId found in mean:', mean);
       handleCloseModal();
       return;
     }
 
-    const objectType = normalizeObjectType(mean.objectType);
-
     if (objectType === 'AS') {
-      window.location.hash = `#class-a:${mean.objectId}`;
+      window.location.hash = `#class-a:${objectId}`;
     } else if (objectType === 'SP') {
-      window.location.hash = `#service-premises:${mean.objectId}`;
+      window.location.hash = `#service-premises:${objectId}`;
     } else if (objectType === 'KRT') {
-      window.location.hash = `#krt:${mean.objectId}`;
+      window.location.hash = `#krt:${objectId}`;
     } else if (objectType === 'IKS' || objectType === 'ІКС') {
-      window.location.hash = `#iks:${mean.objectId}`;
+      window.location.hash = `#iks:${objectId}`;
     }
 
     handleCloseModal();
@@ -229,15 +237,15 @@ const ProtectionMeansTab = () => {
       // Перезавантажуємо дані та переходимо на об'єкт
       await fetchData();
 
-      // Навігуємо на об'єкт
-      if (objectType === 'AS') {
-        window.location.hash = `#class-a:${objectId}`;
-      } else if (objectType === 'SP') {
-        window.location.hash = `#service-premises:${objectId}`;
-      } else if (objectType === 'KRT') {
-        window.location.hash = `#krt:${objectId}`;
-      } else if (objectType === 'IKS') {
-        window.location.hash = `#iks:${objectId}`;
+      const navigationTarget = assignments?.[0] || { objectId, objectType };
+      if (navigationTarget.objectType === 'AS') {
+        window.location.hash = `#class-a:${navigationTarget.objectId}`;
+      } else if (navigationTarget.objectType === 'SP') {
+        window.location.hash = `#service-premises:${navigationTarget.objectId}`;
+      } else if (navigationTarget.objectType === 'KRT') {
+        window.location.hash = `#krt:${navigationTarget.objectId}`;
+      } else if (navigationTarget.objectType === 'IKS') {
+        window.location.hash = `#iks:${navigationTarget.objectId}`;
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';

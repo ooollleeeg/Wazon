@@ -20,13 +20,23 @@ const {
 const {
   installProtectionMean,
   returnProtectionMeanToInventory,
+  aggregateProtectionMeans,
 } = await import('./protectionMeansAggregator.js');
+const { getObjectWithNested } = await import('./dbHelpers.js');
 
 const run = (query, params = []) =>
   new Promise((resolve, reject) => {
     db.run(query, params, function (error) {
       if (error) reject(error);
       else resolve({ id: this.lastID, changes: this.changes });
+    });
+  });
+
+const aggregateMeans = () =>
+  new Promise((resolve, reject) => {
+    aggregateProtectionMeans({}, (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
     });
   });
 
@@ -63,6 +73,8 @@ const createRequiredTables = async () => {
       address TEXT,
       premisesNumber TEXT,
       subdivisionName TEXT,
+      subdivisionType TEXT,
+      kzzName TEXT,
       ktziId INTEGER
     )
   `);
@@ -77,7 +89,9 @@ const createRequiredTables = async () => {
       invertarNumber TEXT,
       releaseYear INTEGER,
       manufacturerExploitationTerm TEXT,
-      certificateInfo TEXT
+      certificateInfo TEXT,
+      notes TEXT,
+      createdAt TEXT
     )
   `);
   await run(`
@@ -87,6 +101,7 @@ const createRequiredTables = async () => {
       address TEXT,
       premisesNumber TEXT,
       subdivisionName TEXT,
+      subdivisionType TEXT,
       ktziId INTEGER
     )
   `);
@@ -97,6 +112,7 @@ const createRequiredTables = async () => {
       address TEXT,
       premisesNumber TEXT,
       subdivisionName TEXT,
+      subdivisionType TEXT,
       ktziId INTEGER
     )
   `);
@@ -110,7 +126,8 @@ const createRequiredTables = async () => {
       invertarNumber TEXT,
       releaseYear INTEGER,
       manufacturerExploitationTerm TEXT,
-      certificateInfo TEXT
+      certificateInfo TEXT,
+      notes TEXT
     )
   `);
 };
@@ -277,6 +294,134 @@ describe('KTZI protection means', () => {
     );
   });
 
+  it('returns target names and locations for shared KTZI assignments', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Агрегаційна 1',
+      premisesNumber: '451',
+      subdivisionName: 'Відділ Є',
+      subdivisionType: 'apparatus',
+    });
+    const asId = await seedObject('class_a_systems', {
+      systemName: 'АС агрегована',
+      systemClass: '1',
+      subdivisionName: 'Відділ Є',
+      subdivisionType: 'apparatus',
+      premisesNumber: '451',
+      ktziId: ktzi.id,
+    });
+    const krtId = await seedObject('krt', {
+      systemName: 'КРТ агрегована',
+      subdivisionName: 'Відділ Є',
+      subdivisionType: 'apparatus',
+      premisesNumber: '451',
+      ktziId: ktzi.id,
+    });
+    const mean = await run(
+      `INSERT INTO protection_means
+       (ktziId, categoryId, toolType, name, serialNumber, notes)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        ktzi.id,
+        1,
+        'Фільтр електроживлення',
+        'Спільний засіб',
+        'SN-SHARED',
+        'Примітка до засобу',
+      ],
+    );
+    await run(
+      `INSERT INTO protection_mean_assignments
+       (protectionMeanId, objectType, objectId)
+       VALUES (?, ?, ?), (?, ?, ?)`,
+      [mean.id, 'AS', asId, mean.id, 'KRT', krtId],
+    );
+
+    const objectCard = await getObjectWithNested(
+      {
+        table: 'class_a_systems',
+        foreignKeyName: 'systemId',
+        nestedTables: {
+          protectionMeans: {
+            table: 'class_a_systems_protection_means',
+          },
+        },
+      },
+      asId,
+    );
+    assert.deepEqual(
+      objectCard.sharedProtectionMeans.map((item) => item.name),
+      ['Спільний засіб'],
+    );
+
+    const result = await aggregateMeans();
+    const sharedMean = result.items.find((item) => item.name === 'Спільний засіб');
+
+    assert.equal(sharedMean.notes, 'Примітка до засобу');
+    assert.deepEqual(
+      sharedMean.assignedObjects.map((object) => ({
+        objectName: object.objectName,
+        objectType: object.objectType,
+        premisesNumber: object.premisesNumber,
+        subdivisionName: object.subdivisionName,
+        departmentType: object.departmentType,
+      })),
+      [
+        {
+          objectName: 'АС агрегована',
+          objectType: 'AS',
+          premisesNumber: '451',
+          subdivisionName: 'Відділ Є',
+          departmentType: 'apparatus',
+        },
+        {
+          objectName: 'КРТ агрегована',
+          objectType: 'KRT',
+          premisesNumber: '451',
+          subdivisionName: 'Відділ Є',
+          departmentType: 'apparatus',
+        },
+      ],
+    );
+  });
+
+  it('installs a protection mean on an object without a KTZI', async () => {
+    const objectId = await seedObject('class_a_systems', {
+      systemName: 'АС без КТЗІ',
+    });
+    const inventoryId = await seedObject('protection_means_inventory', {
+      categoryId: 1,
+      category: 'Фільтр електроживлення',
+      name: 'Засіб без КТЗІ',
+      serialNumber: 'SN-NO-KTZI',
+      notes: 'Зберегти примітку',
+    });
+
+    const result = await install({
+      meanId: inventoryId,
+      objectId,
+      objectType: 'AS',
+      category: 'Фільтр електроживлення',
+    });
+
+    const installedMean = await get(
+      `SELECT name, serialNumber, notes FROM class_a_systems_protection_means
+       WHERE systemId = ?`,
+      [objectId],
+    );
+    assert.equal(result.success, true);
+    assert.deepEqual(installedMean, {
+      name: 'Засіб без КТЗІ',
+      serialNumber: 'SN-NO-KTZI',
+      notes: 'Зберегти примітку',
+    });
+    assert.equal(
+      await get('SELECT id FROM protection_means_inventory WHERE id = ?', [
+        inventoryId,
+      ]),
+      null,
+    );
+  });
+
   it('rejects an assignment to an object from another KTZI', async () => {
     const firstKtzi = await ensureKtzi({
       address: 'Перший 1',
@@ -318,9 +463,9 @@ describe('KTZI protection means', () => {
     });
     const mean = await run(
       `INSERT INTO protection_means
-       (ktziId, categoryId, name, serialNumber)
-       VALUES (?, ?, ?, ?)`,
-      [ktzi.id, 1, 'Засіб 4', 'SN-4'],
+       (ktziId, categoryId, name, serialNumber, notes)
+       VALUES (?, ?, ?, ?, ?)`,
+      [ktzi.id, 1, 'Засіб 4', 'SN-4', 'Вихідна примітка'],
     );
     const objectId = await seedObject('class_a_systems', {
       systemName: 'АС 4',
@@ -340,7 +485,7 @@ describe('KTZI protection means', () => {
       null,
     );
     const inventoryMean = await get(
-      `SELECT categoryId, category, name, serialNumber, status
+      `SELECT categoryId, category, name, serialNumber, status, notes
        FROM protection_means_inventory WHERE serialNumber = ?`,
       ['SN-4'],
     );
@@ -350,6 +495,7 @@ describe('KTZI protection means', () => {
       name: 'Засіб 4',
       serialNumber: 'SN-4',
       status: 'in_stock',
+      notes: 'Вихідна примітка\nПовернуто зі встановлення на склад',
     });
   });
 

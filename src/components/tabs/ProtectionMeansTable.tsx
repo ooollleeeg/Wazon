@@ -1,5 +1,16 @@
 import { highlightText } from '../../utils/searchUtils';
 
+export interface AssignedProtectionObject {
+  objectId?: string | number;
+  objectName?: string;
+  objectType?: string;
+  objectAddress?: string;
+  premisesNumber?: string;
+  subdivisionName?: string;
+  departmentType?: string;
+  systemClass?: string;
+}
+
 export interface ProtectionMean {
   id: string;
   category: string;
@@ -12,12 +23,7 @@ export interface ProtectionMean {
   ktziAddress?: string;
   ktziPremisesNumber?: string;
   ktziSubdivisionName?: string;
-  assignedObjects?: Array<{
-    objectId?: string | number;
-    objectName?: string;
-    objectType?: string;
-    objectAddress?: string;
-  }>;
+  assignedObjects?: AssignedProtectionObject[];
   systemClass?: string;
   serialNumber?: string;
   departmentType: string;
@@ -49,26 +55,9 @@ const ProtectionMeansTable = ({
     }
   };
 
-  const getDepartmentLabel = (dept: string) => {
-    const map: Record<string, string> = {
-      apparatus: 'Апарат',
-      territorial: 'Територіальні',
-      in_warehouse: 'Склад',
-    };
-    return map[dept] || dept;
-  };
-
   const getObjectTypeLabel = (mean: ProtectionMean): string => {
-    if (mean.objectType === 'AS') {
-      // systemClass already contains "АС класу 1" from database, so return it as-is
-      // Or extract just the number if needed
-      if (mean.systemClass?.includes('АС класу')) {
-        return mean.systemClass; // Already formatted
-      }
-      return `АС класу ${mean.systemClass || '?'}`;
-    }
-
     const typeMap: Record<string, string> = {
+      AS: 'АС',
       SP: 'Службове приміщення',
       KRT: 'КРТ',
       IKS: 'ІКС',
@@ -76,7 +65,13 @@ const ProtectionMeansTable = ({
       INVENTORY: 'На складі',
     };
 
-    return typeMap[mean.objectType || ''] || mean.objectType || '—';
+    const types = mean.assignedObjects?.length
+      ? mean.assignedObjects.map((object) => object.objectType)
+      : [mean.objectType];
+    const labels = [
+      ...new Set(types.filter((type): type is string => Boolean(type))),
+    ].map((type) => typeMap[type] || type);
+    return labels.join(', ') || '—';
   };
 
   const getKtziLabel = (mean: ProtectionMean): string => {
@@ -140,18 +135,19 @@ const ProtectionMeansTable = ({
                     {getKtziLabel(mean) && (
                       <div className='ktzi-name'>{getKtziLabel(mean)}</div>
                     )}
-                    {(
-                      mean.assignedObjects || [
-                        {
-                          objectName: mean.objectName,
-                          objectAddress: mean.objectAddress,
-                        },
-                      ]
-                    ).map((object, objectIndex) => (
+                    {(mean.assignedObjects || [
+                      {
+                        objectName: mean.objectName,
+                        objectAddress: mean.objectAddress,
+                        objectType: mean.objectType,
+                      },
+                    ]).map((object, objectIndex) => (
                       <div
                         key={`${object.objectId || object.objectName}-${objectIndex}`}
                       >
-                        <div className='object-name'>{object.objectName}</div>
+                        {object.objectType !== 'SP' && (
+                          <div className='object-name'>{object.objectName}</div>
+                        )}
                         {/* {object.objectAddress && (
                           <div className='object-address'>
                             {object.objectAddress}

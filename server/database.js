@@ -62,6 +62,7 @@ function initializeDatabase() {
         releaseYear INTEGER,
         manufacturerExploitationTerm TEXT,
         certificateInfo TEXT,
+        notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (ktziId) REFERENCES ktzi(id) ON DELETE CASCADE
       )
@@ -153,6 +154,7 @@ function initializeDatabase() {
         categorizationActNumber TEXT,
         kzzName TEXT,
         kzzSerial TEXT,
+        kzzNotes TEXT,
         kzzExpertOpinionNumber TEXT,
         kzzExpertOpinionDate TEXT,
         kzzManufacturerExploitationTerm TEXT,
@@ -204,6 +206,7 @@ function initializeDatabase() {
         manufacturerExploitationTerm TEXT,
         certificateInfo TEXT,
         toolType TEXT,
+        notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
       )
@@ -433,6 +436,7 @@ function initializeDatabase() {
         manufacturerExploitationTerm TEXT,
         certificateInfo TEXT,
         toolType TEXT,
+        notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
       )
@@ -579,6 +583,7 @@ function initializeDatabase() {
         manufacturerExploitationTerm TEXT,
         certificateInfo TEXT,
         toolType TEXT,
+        notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
       )
@@ -610,6 +615,7 @@ function initializeDatabase() {
         accessMode TEXT,
         kzzName TEXT,
         kzzSerial TEXT,
+        kzzNotes TEXT,
         kzzExpertOpinionNumber TEXT,
         kzzExpertOpinionDate TEXT,
         kzzManufacturerExploitationTerm TEXT,
@@ -700,6 +706,7 @@ function initializeDatabase() {
         manufacturerExploitationTerm TEXT,
         certificateInfo TEXT,
         toolType TEXT,
+        notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
       )
@@ -801,6 +808,36 @@ function initializeDatabase() {
         FOREIGN KEY (equipmentId) REFERENCES search_control_equipment(id) ON DELETE CASCADE
       )
     `);
+
+    [
+      'protection_means',
+      'class_a_systems_protection_means',
+      'service_premises_protection_means',
+      'krt_protection_means',
+      'iks_protection_means',
+    ].forEach((tableName) => {
+      db.run(
+        `ALTER TABLE ${tableName} ADD COLUMN notes TEXT`,
+        (err) => {
+          if (err && !err.message.includes('duplicate column name')) {
+            console.error(`❌ Не вдалося додати notes до ${tableName}:`, err.message);
+          }
+        },
+      );
+    });
+    ['class_a_systems', 'iks'].forEach((tableName) => {
+      db.run(
+        `ALTER TABLE ${tableName} ADD COLUMN kzzNotes TEXT`,
+        (err) => {
+          if (err && !err.message.includes('duplicate column name')) {
+            console.error(
+              `❌ Не вдалося додати kzzNotes до ${tableName}:`,
+              err.message,
+            );
+          }
+        },
+      );
+    });
 
     // Додати колони до search_control_equipment_verification, якщо вони ще не існують
     db.run(
