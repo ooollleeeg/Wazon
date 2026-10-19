@@ -1,29 +1,13 @@
 import { highlightText } from '../../utils/searchUtils';
 
-export interface AssignedProtectionObject {
-  objectId?: string | number;
-  objectName?: string;
-  objectType?: string;
-  objectAddress?: string;
-  premisesNumber?: string;
-  subdivisionName?: string;
-  departmentType?: string;
-  systemClass?: string;
-}
-
 export interface ProtectionMean {
   id: string;
   category: string;
   name: string;
   objectName?: string;
   objectAddress?: string;
-  objectId?: string;
+  objectId?: string | number;
   objectType?: string;
-  ktziId?: number;
-  ktziAddress?: string;
-  ktziPremisesNumber?: string;
-  ktziSubdivisionName?: string;
-  assignedObjects?: AssignedProtectionObject[];
   systemClass?: string;
   serialNumber?: string;
   departmentType: string;
@@ -34,7 +18,7 @@ export interface ProtectionMean {
 interface ProtectionMeansTableProps {
   means: ProtectionMean[];
   onViewDetails: (mean: ProtectionMean) => void;
-  onInstall?: (mean: ProtectionMean) => void;
+  onInstall: (mean: ProtectionMean) => void;
   searchTerm?: string;
 }
 
@@ -61,25 +45,11 @@ const ProtectionMeansTable = ({
       SP: 'Службове приміщення',
       KRT: 'КРТ',
       IKS: 'ІКС',
-      KTZI: 'КТЗІ',
       INVENTORY: 'На складі',
     };
-
-    const types = mean.assignedObjects?.length
-      ? mean.assignedObjects.map((object) => object.objectType)
-      : [mean.objectType];
-    const labels = [
-      ...new Set(types.filter((type): type is string => Boolean(type))),
-    ].map((type) => typeMap[type] || type);
-    return labels.join(', ') || '—';
-  };
-
-  const getKtziLabel = (mean: ProtectionMean): string => {
-    if (!mean.ktziId) return '';
-
-    return `КТЗІ: ${mean.ktziAddress || 'Без адреси'}, каб. ${
-      mean.ktziPremisesNumber || '—'
-    } — ${mean.ktziSubdivisionName || 'Без підрозділу'}`;
+    return (
+      (mean.objectType && typeMap[mean.objectType]) || mean.objectType || '—'
+    );
   };
 
   if (means.length === 0) {
@@ -98,7 +68,7 @@ const ProtectionMeansTable = ({
             <th>Категорія</th>
             <th>Назва засобу</th>
             <th>Серійний номер</th>
-            <th>КТЗІ / об'єкт установки</th>
+            <th>Об’єкт установки</th>
             <th>Тип об'єкту</th>
             <th>Статус</th>
             <th>Дія</th>
@@ -130,32 +100,10 @@ const ProtectionMeansTable = ({
                   : '—'}
               </td>
               <td className='object-cell'>
-                {mean.objectName ? (
-                  <div>
-                    {getKtziLabel(mean) && (
-                      <div className='ktzi-name'>{getKtziLabel(mean)}</div>
-                    )}
-                    {(mean.assignedObjects || [
-                      {
-                        objectName: mean.objectName,
-                        objectAddress: mean.objectAddress,
-                        objectType: mean.objectType,
-                      },
-                    ]).map((object, objectIndex) => (
-                      <div
-                        key={`${object.objectId || object.objectName}-${objectIndex}`}
-                      >
-                        {object.objectType !== 'SP' && (
-                          <div className='object-name'>{object.objectName}</div>
-                        )}
-                        {/* {object.objectAddress && (
-                          <div className='object-address'>
-                            {object.objectAddress}
-                          </div>
-                        )} */}
-                      </div>
-                    ))}
-                  </div>
+                {mean.objectType === 'SP' ? (
+                  <span className='na'>—</span>
+                ) : mean.objectName ? (
+                  <div className='object-name'>{mean.objectName}</div>
                 ) : (
                   <span className='na'>На складі</span>
                 )}
@@ -170,7 +118,7 @@ const ProtectionMeansTable = ({
                 >
                   👁️
                 </button>
-                {mean.status === 'in_stock' && onInstall && (
+                {mean.status === 'in_stock' && (
                   <button
                     className='btn-install'
                     onClick={() => onInstall(mean)}

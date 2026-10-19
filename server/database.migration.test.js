@@ -44,6 +44,29 @@ await legacyRun(`
     certificateInfo TEXT
   )
 `);
+await legacyRun(`
+  CREATE TABLE protection_means (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ktziId INTEGER NOT NULL,
+    name TEXT
+  )
+`);
+await legacyRun(`
+  CREATE TABLE protection_mean_assignments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    protectionMeanId INTEGER NOT NULL,
+    objectType TEXT,
+    objectId INTEGER
+  )
+`);
+await legacyRun(
+  'INSERT INTO protection_means (ktziId, name) VALUES (?, ?)',
+  [1, 'Legacy shared mean'],
+);
+await legacyRun(
+  'INSERT INTO protection_mean_assignments (protectionMeanId, objectType, objectId) VALUES (?, ?, ?)',
+  [1, 'AS', 1],
+);
 const legacyObjectId = await legacyRun(
   `INSERT INTO class_a_systems
    (address, premisesNumber, subdivisionName, systemClass, systemName)
@@ -100,4 +123,10 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
     'class_a_systems_protection_means',
   );
   assert.ok(protectionMeanColumns.some((column) => column.name === 'notes'));
+  const legacySharedTables = await get(
+    `SELECT COUNT(*) AS count FROM sqlite_master
+     WHERE type = 'table'
+       AND name IN ('protection_means', 'protection_mean_assignments')`,
+  );
+  assert.equal(legacySharedTables.count, 0);
 });

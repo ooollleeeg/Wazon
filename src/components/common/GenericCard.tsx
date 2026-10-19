@@ -243,41 +243,10 @@ export default function GenericCard({
 
           {/* Вложённые секции */}
           {config.nestedSections?.map((nested, idx) => {
-            const nestedItems = data[nested.name] || [];
-            const sharedProtectionMeans =
-              nested.name === 'protectionMeans'
-                ? (data.sharedProtectionMeans || []).filter((shared: any) => {
-                    const sharedIdentity = [
-                      shared.toolType,
-                      shared.name,
-                      shared.serialNumber,
-                      shared.invertarNumber,
-                    ]
-                      .map((value) =>
-                        String(value || '')
-                          .trim()
-                          .toLocaleLowerCase('uk-UA'),
-                      )
-                      .join('|');
-                    return !nestedItems.some((item: any) => {
-                      const itemIdentity = [
-                        item.toolType,
-                        item.name,
-                        item.serialNumber,
-                        item.invertarNumber,
-                      ]
-                        .map((value) =>
-                          String(value || '')
-                            .trim()
-                            .toLocaleLowerCase('uk-UA'),
-                        )
-                        .join('|');
-                      return itemIdentity === sharedIdentity;
-                    });
-                  })
-                : [];
-            const cardItems = [...nestedItems, ...sharedProtectionMeans];
-            const items = sortByDate(cardItems, nested.dateField);
+            const items = sortByDate(
+              data[nested.name] || [],
+              nested.dateField,
+            );
             if (!items || items.length === 0) return null;
 
             const isShowingPreviousVersions =
@@ -347,11 +316,6 @@ export default function GenericCard({
                           </span>
                           {isCurrentVersion && nested.showPreviousVersions && (
                             <span className='badge-current'>Поточний</span>
-                          )}
-                          {item.isSharedKtzi === 1 && (
-                            <span className='badge-current'>
-                              Спільний засіб КТЗІ
-                            </span>
                           )}
                         </div>
                         <div className='nested-item-content'>

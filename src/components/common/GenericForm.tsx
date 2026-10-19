@@ -355,7 +355,6 @@ export default function GenericForm({
 
     // ✅ ОЧИЩАЄМО ДАНІ ВІД ФЛАГА __isNew ПЕРЕД ВІДПРАВКОЮ
     const cleanedData = { ...formData };
-    delete cleanedData.sharedProtectionMeans;
 
     // ✅ ПЕРЕТВОРЮЄМО BOOLEAN ЗНАЧЕННЯ ДЛЯ isProcessingSuspended
     if (cleanedData.isProcessingSuspended === true) {

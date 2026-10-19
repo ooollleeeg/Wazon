@@ -1,9 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import ProtectionMeansFilters from './ProtectionMeansFilters';
-import ProtectionMeansTable, {
-  AssignedProtectionObject,
-  ProtectionMean,
-} from './ProtectionMeansTable';
+import ProtectionMeansTable, { ProtectionMean } from './ProtectionMeansTable';
 import ProtectionMeansModal from './ProtectionMeansModal';
 import SelectObjectModal from './SelectObjectModal';
 import DuplicateErrorModal from '../modals/DuplicateErrorModal';
@@ -122,9 +119,9 @@ const ProtectionMeansTab = () => {
     fetchData();
   };
 
-  const handleAssignmentChange = () => {
+  const handleReturnToInventory = () => {
     fetchData();
-    setSuccessMessage('Прив’язку засобу ТЗІ успішно видалено');
+    setSuccessMessage('Засіб ТЗІ повернуто на склад');
     setShowSuccessModal(true);
   };
 
@@ -143,14 +140,9 @@ const ProtectionMeansTab = () => {
   };
 
   // Обробник отримання переходу до об'єкта
-  const handleNavigateToObject = (
-    mean: ProtectionMean,
-    object?: AssignedProtectionObject,
-  ) => {
-    const objectId = object?.objectId || mean.objectId;
-    const objectType = normalizeObjectType(
-      object?.objectType || mean.objectType,
-    );
+  const handleNavigateToObject = (mean: ProtectionMean) => {
+    const objectId = mean.objectId;
+    const objectType = normalizeObjectType(mean.objectType);
     if (!objectId) {
       console.warn('No objectId found in mean:', mean);
       handleCloseModal();
@@ -187,18 +179,14 @@ const ProtectionMeansTab = () => {
     mean: ProtectionMean,
     objectId: string,
     objectType: string,
-    assignments?: Array<{ objectId: string; objectType: string }>,
   ) => {
     try {
       // Перевіримо дублювання перед встановленням
-      const validationResult =
-        objectType === 'KTZI'
-          ? { isValid: true }
-          : await validateBeforeSave(
-              mean.category,
-              mean.serialNumber,
-              mean.id,
-            );
+      const validationResult = await validateBeforeSave(
+        mean.category,
+        mean.serialNumber,
+        mean.id,
+      );
 
       if (!validationResult.isValid && validationResult.duplicateAt) {
         // Показуємо помилку дублювання
@@ -218,7 +206,6 @@ const ProtectionMeansTab = () => {
         meanId: mean.id,
         objectId,
         objectType,
-        assignments,
         category: mean.category, // Передаємо категорію для правильного обрання поля
       };
 
@@ -237,15 +224,14 @@ const ProtectionMeansTab = () => {
       // Перезавантажуємо дані та переходимо на об'єкт
       await fetchData();
 
-      const navigationTarget = assignments?.[0] || { objectId, objectType };
-      if (navigationTarget.objectType === 'AS') {
-        window.location.hash = `#class-a:${navigationTarget.objectId}`;
-      } else if (navigationTarget.objectType === 'SP') {
-        window.location.hash = `#service-premises:${navigationTarget.objectId}`;
-      } else if (navigationTarget.objectType === 'KRT') {
-        window.location.hash = `#krt:${navigationTarget.objectId}`;
-      } else if (navigationTarget.objectType === 'IKS') {
-        window.location.hash = `#iks:${navigationTarget.objectId}`;
+      if (objectType === 'AS') {
+        window.location.hash = `#class-a:${objectId}`;
+      } else if (objectType === 'SP') {
+        window.location.hash = `#service-premises:${objectId}`;
+      } else if (objectType === 'KRT') {
+        window.location.hash = `#krt:${objectId}`;
+      } else if (objectType === 'IKS') {
+        window.location.hash = `#iks:${objectId}`;
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -409,7 +395,7 @@ const ProtectionMeansTab = () => {
           onNavigate={handleNavigateToObject}
           onEdit={handleEditInventoryItem}
           onDelete={handleDeleteSuccess}
-          onAssignmentChange={handleAssignmentChange}
+          onReturnToInventory={handleReturnToInventory}
         />
       )}
 

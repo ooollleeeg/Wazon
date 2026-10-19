@@ -23,7 +23,6 @@ import {
   attachObjectToKtzi,
   getKtziObjects,
   syncKtziDocuments,
-  syncKtziProtectionMeans,
   isKtziTable,
 } from './utils/ktzi.js';
 
@@ -144,11 +143,6 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
 
     if (isKtziTable(req.objectConfig.table)) {
       await syncKtziDocuments(result.ktziId, objectData);
-      await syncKtziProtectionMeans(
-        req.objectConfig.table,
-        result.id,
-        result.ktziId,
-      );
     }
 
     console.log(`✅ Object created with ID:`, result.id);
@@ -194,11 +188,6 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
 
     if (isKtziTable(req.objectConfig.table)) {
       await syncKtziDocuments(objectData.ktziId, objectData);
-      await syncKtziProtectionMeans(
-        req.objectConfig.table,
-        req.params.id,
-        objectData.ktziId,
-      );
     }
 
     console.log(`✅ Object updated`);
@@ -224,30 +213,6 @@ router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
     await deleteObject(req.objectConfig.table, req.params.id);
 
     if (isKtziTable(req.objectConfig.table) && object?.ktziId) {
-      const objectType = {
-        class_a_systems: 'AS',
-        krt: 'KRT',
-        service_premises: 'SP',
-      }[req.objectConfig.table];
-
-      await new Promise((resolve, reject) => {
-        db.run(
-          'DELETE FROM protection_mean_assignments WHERE objectType = ? AND objectId = ?',
-          [objectType, req.params.id],
-          (err) => (err ? reject(err) : resolve()),
-        );
-      });
-      await new Promise((resolve, reject) => {
-        db.run(
-          `DELETE FROM protection_means
-           WHERE NOT EXISTS (
-             SELECT 1 FROM protection_mean_assignments
-             WHERE protectionMeanId = protection_means.id
-           )`,
-          (err) => (err ? reject(err) : resolve()),
-        );
-      });
-
       await new Promise((resolve, reject) => {
         db.run(
           `DELETE FROM ktzi
@@ -306,11 +271,6 @@ router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
 
     if (isKtziTable(req.objectConfig.table)) {
       await syncKtziDocuments(objectData.ktziId, objectData);
-      await syncKtziProtectionMeans(
-        req.objectConfig.table,
-        req.params.id,
-        objectData.ktziId,
-      );
     }
 
     console.log(`✅ Object patched`);
@@ -617,7 +577,7 @@ router.post('/protection-means/install', (req, res) => {
   );
 });
 
-router.delete('/protection-means/:id/assignments', (req, res) => {
+router.delete('/protection-means/:id/return-to-inventory', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ returnProtectionMeanToInventory }) => {
       const { objectType, objectId, name, serialNumber, invertarNumber } =
@@ -626,11 +586,11 @@ router.delete('/protection-means/:id/assignments', (req, res) => {
         req.params.id,
         { objectType, objectId, name, serialNumber, invertarNumber },
         (error, result) => {
-        if (error) {
-          console.error('❌ Error returning protection mean to inventory:', error);
-          return res.status(error.status || 500).json({ error: error.message });
-        }
-        res.json(result);
+          if (error) {
+            console.error('❌ Error returning protection mean to inventory:', error);
+            return res.status(error.status || 500).json({ error: error.message });
+          }
+          res.json(result);
         },
       );
     },

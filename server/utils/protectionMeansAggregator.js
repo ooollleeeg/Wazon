@@ -1,5 +1,4 @@
 import { db } from '../database.js';
-import { syncKtziProtectionMeans } from './ktzi.js';
 import { checkProtectionMeanDuplicate } from './dbHelpers.js';
 
 /**
@@ -10,7 +9,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
   const { category, status, departmentType, search } = filters;
   const allMeans = [];
   let completedQueries = 0;
-  const totalQueries = 7; // 5 об'єктів + КТЗІ + 1 таблиця на складі
+  const totalQueries = 6; // 5 об'єктів + таблиця на складі
 
   // Хелпер функція для застосування фільтрів
   const applyFilters = (item) => {
@@ -39,77 +38,20 @@ export function aggregateProtectionMeans(filters = {}, callback) {
   const checkCompletion = () => {
     completedQueries++;
     if (completedQueries === totalQueries) {
-      // Сортування та фільтрація
       const filtered = allMeans.filter(applyFilters);
-      const installedByIdentity = new Map();
-      const uniqueMeans = [];
-
-      filtered.forEach((item) => {
-        if (item.status !== 'installed' || !item.ktziId) {
-          uniqueMeans.push(item);
-          return;
-        }
-
-        const physicalId = String(
-          item.serialNumber || item.invertarNumber || '',
-        )
-          .trim()
-          .toLocaleLowerCase('uk-UA');
-
-        if (!physicalId) {
-          uniqueMeans.push(item);
-          return;
-        }
-
-        const key = `${item.ktziId}|${item.category}|${physicalId}`;
-        const existing = installedByIdentity.get(key);
-        const assignment = {
-          objectId: item.objectId,
-          objectName: item.objectName,
-          objectType: item.objectType,
-          objectAddress: item.objectAddress,
-        };
-        const assignments = item.assignedObjects?.length
-          ? item.assignedObjects
-          : [assignment];
-
-        if (existing) {
-          assignments.forEach((candidate) => {
-            const alreadyAssigned = existing.assignedObjects.some(
-              (current) =>
-                String(current.objectId) === String(candidate.objectId) &&
-                current.objectType === candidate.objectType,
-            );
-            if (!alreadyAssigned) existing.assignedObjects.push(candidate);
-          });
-          // The canonical KTZI record is the one used by assignment APIs.
-          // Object-level rows can have a different ID for the same physical mean.
-          if (item.objectType === 'KTZI') {
-            existing.id = item.id;
-          }
-          return;
-        }
-
-        const uniqueItem = {
-          ...item,
-          assignedObjects: assignments,
-        };
-        installedByIdentity.set(key, uniqueItem);
-        uniqueMeans.push(uniqueItem);
-      });
       const categoryCounts = {};
 
-      uniqueMeans.forEach((item) => {
+      filtered.forEach((item) => {
         categoryCounts[item.category] =
           (categoryCounts[item.category] || 0) + 1;
       });
 
       callback(null, {
-        items: uniqueMeans,
+        items: filtered,
         stats: {
-          total: uniqueMeans.length,
-          installed: uniqueMeans.filter((m) => m.status === 'installed').length,
-          inStock: uniqueMeans.filter((m) => m.status === 'in_stock').length,
+          total: filtered.length,
+          installed: filtered.filter((m) => m.status === 'installed').length,
+          inStock: filtered.filter((m) => m.status === 'in_stock').length,
           byCategory: categoryCounts,
         },
       });
@@ -127,10 +69,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.premisesNumber,
       a.subdivisionType as departmentType,
       a.systemClass,
-      a.ktziId,
-      ktz.address as ktziAddress,
-      ktz.premisesNumber as ktziPremisesNumber,
-      ktz.subdivisionName as ktziSubdivisionName,
       'AS' as objectType,
       pm.id as id,
       pm.toolType as category,
@@ -145,7 +83,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.createdAt
     FROM class_a_systems_protection_means pm
     JOIN class_a_systems a ON pm.systemId = a.id
-    LEFT JOIN ktzi ktz ON ktz.id = a.ktziId
     `,
     (err, rows) => {
       if (!err && rows) {
@@ -170,10 +107,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       sp.subdivisionName,
       sp.premisesNumber,
       sp.subdivisionType as departmentType,
-      sp.ktziId,
-      ktz.address as ktziAddress,
-      ktz.premisesNumber as ktziPremisesNumber,
-      ktz.subdivisionName as ktziSubdivisionName,
       'SP' as objectType,
       pm.id as id,
       pm.toolType as category,
@@ -188,7 +121,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.createdAt
     FROM service_premises_protection_means pm
     JOIN service_premises sp ON pm.premisesId = sp.id
-    LEFT JOIN ktzi ktz ON ktz.id = sp.ktziId
     `,
     (err, rows) => {
       if (!err && rows) {
@@ -213,10 +145,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       k.subdivisionName,
       k.premisesNumber,
       k.subdivisionType as departmentType,
-      k.ktziId,
-      ktz.address as ktziAddress,
-      ktz.premisesNumber as ktziPremisesNumber,
-      ktz.subdivisionName as ktziSubdivisionName,
       'KRT' as objectType,
       pm.id as id,
       pm.toolType as category,
@@ -231,7 +159,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       pm.createdAt
     FROM krt_protection_means pm
     JOIN krt k ON pm.krtId = k.id
-    LEFT JOIN ktzi ktz ON ktz.id = k.ktziId
     `,
     (err, rows) => {
       if (!err && rows) {
@@ -352,110 +279,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     },
   );
 
-  // 6️⃣ Засоби, встановлені на весь КТЗІ
-  db.all(
-    `
-    SELECT
-      pm.ktziId as objectId,
-      ('КТЗІ: ' || COALESCE(k.address, 'Без адреси') || ', каб. ' ||
-        COALESCE(k.premisesNumber, '—') || ' — ' ||
-        COALESCE(k.subdivisionName, 'Без підрозділу')) as objectName,
-      k.address as objectAddress,
-      'ktzi' as departmentType,
-      pm.ktziId,
-      k.address as ktziAddress,
-      k.premisesNumber as ktziPremisesNumber,
-      k.subdivisionName as ktziSubdivisionName,
-      'KTZI' as objectType,
-      pm.id,
-      pm.toolType as category,
-      pm.name,
-      pm.serialNumber,
-      pm.invertarNumber,
-      pm.releaseYear,
-      pm.manufacturerExploitationTerm,
-      pm.certificateInfo,
-      pm.notes,
-      'installed' as status,
-      pm.createdAt,
-      pma.objectType as assignedObjectType,
-      pma.objectId as assignedObjectId,
-      CASE pma.objectType
-        WHEN 'AS' THEN a.systemName
-        WHEN 'KRT' THEN kr.systemName
-        WHEN 'SP' THEN NULL
-        WHEN 'KTZI' THEN ('КТЗІ: ' || COALESCE(k.address, 'Без адреси') ||
-          ', каб. ' || COALESCE(k.premisesNumber, '—'))
-        ELSE NULL
-      END as assignedObjectName,
-      CASE pma.objectType
-        WHEN 'AS' THEN a.address
-        WHEN 'KRT' THEN kr.address
-        WHEN 'SP' THEN sp.address
-        ELSE k.address
-      END as assignedObjectAddress,
-      CASE pma.objectType
-        WHEN 'AS' THEN a.subdivisionName
-        WHEN 'KRT' THEN kr.subdivisionName
-        WHEN 'SP' THEN sp.subdivisionName
-        ELSE k.subdivisionName
-      END as assignedSubdivisionName,
-      CASE pma.objectType
-        WHEN 'AS' THEN a.premisesNumber
-        WHEN 'KRT' THEN kr.premisesNumber
-        WHEN 'SP' THEN sp.premisesNumber
-        ELSE k.premisesNumber
-      END as assignedPremisesNumber,
-      CASE pma.objectType
-        WHEN 'AS' THEN a.subdivisionType
-        WHEN 'KRT' THEN kr.subdivisionType
-        WHEN 'SP' THEN sp.subdivisionType
-        ELSE k.subdivisionType
-      END as assignedDepartmentType,
-      a.systemClass as assignedSystemClass
-    FROM protection_means pm
-    JOIN ktzi k ON k.id = pm.ktziId
-    JOIN protection_mean_assignments pma
-      ON pma.protectionMeanId = pm.id
-    LEFT JOIN class_a_systems a
-      ON pma.objectType = 'AS' AND a.id = pma.objectId
-    LEFT JOIN krt kr
-      ON pma.objectType = 'KRT' AND kr.id = pma.objectId
-    LEFT JOIN service_premises sp
-      ON pma.objectType = 'SP' AND sp.id = pma.objectId
-    WHERE EXISTS (
-      SELECT 1 FROM protection_mean_assignments pma
-      WHERE pma.protectionMeanId = pm.id
-    )
-    `,
-    (err, rows) => {
-      if (!err && rows) {
-        allMeans.push(
-          ...rows.map((row) => ({
-            ...row,
-            category: row.category || 'Інші вироби',
-            assignedObjects: row.assignedObjectId
-              ? [
-                  {
-                    objectId: row.assignedObjectId,
-                    objectName: row.assignedObjectName,
-                    objectType: row.assignedObjectType,
-                    objectAddress: row.assignedObjectAddress,
-                    subdivisionName: row.assignedSubdivisionName,
-                    premisesNumber: row.assignedPremisesNumber,
-                    departmentType: row.assignedDepartmentType,
-                    systemClass: row.assignedSystemClass,
-                  },
-                ]
-              : [],
-          })),
-        );
-      }
-      checkCompletion();
-    },
-  );
-
-  // 7️⃣ Засоби на складі (protection_means_inventory)
+  // 6️⃣ Засоби на складі (protection_means_inventory)
   db.all(
     `
     SELECT 
@@ -658,7 +482,7 @@ export function deleteInventoryItem(id, callback) {
 }
 
 /**
- * Повернути встановлений засіб ТЗІ на склад і видалити всі його прив’язки.
+ * Повернути встановлений на об’єкті засіб ТЗІ на склад.
  */
 function returnSourceMeanToInventory(
   sourceTable,
@@ -739,142 +563,30 @@ function returnSourceMeanToInventory(
 
 export function returnProtectionMeanToInventory(
   protectionMeanId,
-  assignment,
+  target,
   callback,
 ) {
-  if (typeof assignment === 'function') {
-    callback = assignment;
-    assignment = {};
+  const sourceTables = {
+    AS: ['class_a_systems_protection_means', 'systemId'],
+    SP: ['service_premises_protection_means', 'premisesId'],
+    KRT: ['krt_protection_means', 'krtId'],
+    IKS: ['iks_protection_means', 'iksId'],
+  };
+  const sourceConfig = sourceTables[target?.objectType];
+  if (!sourceConfig || !target?.objectId) {
+    const error = new Error('Засіб ТЗІ не знайдений');
+    error.status = 404;
+    return callback(error);
   }
 
-  db.get(
-    `SELECT categoryId, toolType, name, serialNumber, invertarNumber,
-      releaseYear, manufacturerExploitationTerm, certificateInfo, notes
-     FROM protection_means WHERE id = ?`,
-    [protectionMeanId],
-    (selectError, mean) => {
-      if (selectError) return callback(selectError);
-      if (!mean) {
-        const sourceTables = {
-          AS: ['class_a_systems_protection_means', 'systemId'],
-          SP: ['service_premises_protection_means', 'premisesId'],
-          KRT: ['krt_protection_means', 'krtId'],
-          IKS: ['iks_protection_means', 'iksId'],
-        };
-        const sourceConfig = sourceTables[assignment?.objectType];
-        if (!sourceConfig || !assignment?.objectId) {
-          const error = new Error('Засіб ТЗІ не знайдений');
-          error.status = 404;
-          return callback(error);
-        }
-
-        const [sourceTable, foreignKey] = sourceConfig;
-        return returnSourceMeanToInventory(
-          sourceTable,
-          foreignKey,
-          protectionMeanId,
-          assignment.objectId,
-          assignment,
-          callback,
-        );
-      }
-
-      db.all(
-        `SELECT objectType, objectId
-         FROM protection_mean_assignments
-         WHERE protectionMeanId = ?`,
-        [protectionMeanId],
-        (assignmentsSelectError, assignments) => {
-          if (assignmentsSelectError) return callback(assignmentsSelectError);
-
-          db.run(
-            `INSERT INTO protection_means_inventory
-              (categoryId, category, name, serialNumber, invertarNumber,
-               releaseYear, manufacturerExploitationTerm, certificateInfo,
-               status, inStockDate, notes, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'in_stock', date('now'),
-               ?, datetime('now'), datetime('now'))`,
-            [
-              mean.categoryId,
-              mean.toolType || 'Інші вироби',
-              mean.name,
-              mean.serialNumber,
-              mean.invertarNumber,
-              mean.releaseYear,
-              mean.manufacturerExploitationTerm,
-              mean.certificateInfo,
-              mean.notes
-                ? `${mean.notes}\nПовернуто зі встановлення на склад`
-                : 'Повернуто зі встановлення на склад',
-            ],
-            (insertError) => {
-              if (insertError) return callback(insertError);
-
-              const sourceTables = {
-                AS: ['class_a_systems_protection_means', 'systemId'],
-                SP: ['service_premises_protection_means', 'premisesId'],
-                KRT: ['krt_protection_means', 'krtId'],
-                IKS: ['iks_protection_means', 'iksId'],
-              };
-              const sourceAssignments = (assignments || []).filter(
-                ({ objectType }) => sourceTables[objectType],
-              );
-
-              const deleteSourceRows = (index) => {
-                if (index >= sourceAssignments.length) {
-                  db.run(
-                    'DELETE FROM protection_mean_assignments WHERE protectionMeanId = ?',
-                    [protectionMeanId],
-                    (assignmentsError) => {
-                      if (assignmentsError) return callback(assignmentsError);
-
-                      db.run(
-                        'DELETE FROM protection_means WHERE id = ?',
-                        [protectionMeanId],
-                        (deleteError) => {
-                          if (deleteError) return callback(deleteError);
-                          callback(null, {
-                            success: true,
-                            protectionMeanId,
-                            message: 'Засіб ТЗІ повернуто на склад',
-                          });
-                        },
-                      );
-                    },
-                  );
-                  return;
-                }
-
-                const assignment = sourceAssignments[index];
-                const [table, foreignKey] = sourceTables[assignment.objectType];
-                db.run(
-                  `DELETE FROM ${table}
-                   WHERE ${foreignKey} = ?
-                     AND (categoryId = ? OR (categoryId IS NULL AND ? IS NULL))
-                     AND name = ?
-                     AND COALESCE(serialNumber, '') = COALESCE(?, '')
-                     AND COALESCE(invertarNumber, '') = COALESCE(?, '')`,
-                  [
-                    assignment.objectId,
-                    mean.categoryId,
-                    mean.categoryId,
-                    mean.name,
-                    mean.serialNumber,
-                    mean.invertarNumber,
-                  ],
-                  (sourceDeleteError) => {
-                    if (sourceDeleteError) return callback(sourceDeleteError);
-                    deleteSourceRows(index + 1);
-                  },
-                );
-              };
-
-              deleteSourceRows(0);
-            },
-          );
-        },
-      );
-    },
+  const [sourceTable, foreignKey] = sourceConfig;
+  return returnSourceMeanToInventory(
+    sourceTable,
+    foreignKey,
+    protectionMeanId,
+    target.objectId,
+    target,
+    callback,
   );
 }
 
@@ -899,106 +611,12 @@ function getCategoryIdFromCategory(categoryName) {
   return cat ? cat.id : null;
 }
 
-const assignmentTables = {
-  AS: 'class_a_systems',
-  SP: 'service_premises',
-  KRT: 'krt',
-  IKS: 'iks',
-};
-
-function validateAssignmentTargets(ktziId, targets, callback) {
-  const objectTargets = targets.filter(
-    (target) => target.objectType !== 'KTZI',
-  );
-
-  if (objectTargets.length === 0) {
-    callback(null);
-    return;
-  }
-
-  let remaining = objectTargets.length;
-  let validationError = null;
-
-  objectTargets.forEach((target) => {
-    const table = assignmentTables[target.objectType];
-    if (!table) {
-      validationError = new Error(
-        `Невідомий тип об’єкту для прив’язки: ${target.objectType}`,
-      );
-      validationError.status = 400;
-      remaining -= 1;
-      if (remaining === 0) callback(validationError);
-      return;
-    }
-
-    db.get(
-      `SELECT ktziId FROM ${table} WHERE id = ?`,
-      [target.objectId],
-      (err, row) => {
-        if (err) {
-          validationError = err;
-        } else if (!row) {
-          validationError = new Error(
-            `Об’єкт ${target.objectType}#${target.objectId} не знайдено`,
-          );
-          validationError.status = 404;
-        } else if (String(row.ktziId) !== String(ktziId)) {
-          validationError = new Error(
-            'Не можна прив’язати засіб до об’єкта з іншого КТЗІ',
-          );
-          validationError.status = 400;
-        }
-
-        remaining -= 1;
-        if (remaining === 0) callback(validationError);
-      },
-    );
-  });
-}
-
-function removeObjectCopiesForMean(mean, callback) {
-  const sourceTables = [
-    ['class_a_systems_protection_means', 'systemId'],
-    ['service_premises_protection_means', 'premisesId'],
-    ['krt_protection_means', 'krtId'],
-    ['iks_protection_means', 'iksId'],
-  ];
-
-  const removeNext = (index) => {
-    if (index >= sourceTables.length) {
-      callback(null);
-      return;
-    }
-
-    const [table] = sourceTables[index];
-    db.run(
-      `DELETE FROM ${table}
-       WHERE name = ?
-         AND toolType = ?
-         AND COALESCE(serialNumber, '') = COALESCE(?, '')
-         AND COALESCE(invertarNumber, '') = COALESCE(?, '')`,
-      [
-        mean.name,
-        mean.category,
-        mean.serialNumber,
-        mean.invertarNumber,
-      ],
-      (error) => {
-        if (error) return callback(error);
-        removeNext(index + 1);
-      },
-    );
-  };
-
-  removeNext(0);
-}
-
 /**
  * Встановити засіб ТЗІ з складу на конкретний об'єкт
  * засобу з таблиці protection_means_inventory до об'єкту (АС, СП, КРТ, ІКС)
  */
 export function installProtectionMean(data, callback) {
-  const { meanId, objectId, objectType, category, assignments } = data;
+  const { meanId, objectId, objectType, category } = data;
 
   // Перевірити вхідні дані
   if (!meanId || !objectId || !objectType) {
@@ -1137,30 +755,8 @@ export function installProtectionMean(data, callback) {
               );
           }
         } else {
-          // Звичайні засоби ТЗІ - зберігаємо в таблиці protection_means
+          // Звичайні засоби ТЗІ зберігаються у таблиці обраного об’єкта.
           switch (objectType) {
-            case 'KTZI':
-              insertQuery = `
-                INSERT INTO protection_means
-                (ktziId, categoryId, toolType, name, serialNumber, invertarNumber,
-                 releaseYear, manufacturerExploitationTerm, certificateInfo, notes)
-                SELECT id, ?, ?, ?, ?, ?, ?, ?, ?, ?
-                FROM ktzi
-                WHERE id = ?
-              `;
-              insertParams = [
-                mean.categoryId,
-                mean.category,
-                mean.name,
-                mean.serialNumber,
-                mean.invertarNumber,
-                mean.releaseYear,
-                mean.manufacturerExploitationTerm,
-                mean.certificateInfo,
-                mean.notes,
-                objectId,
-              ];
-              break;
             case 'AS': // АС класу 1,2,3
               insertQuery = `
                 INSERT INTO class_a_systems_protection_means 
@@ -1279,116 +875,7 @@ export function installProtectionMean(data, callback) {
                 });
               };
 
-              const syncObjectInstallation = () => {
-                const objectTables = {
-                  AS: 'class_a_systems',
-                  SP: 'service_premises',
-                  KRT: 'krt',
-                };
-                const table = objectTables[objectType];
-
-                if (!table) {
-                  finishInstall();
-                  return;
-                }
-
-                db.get(
-                  `SELECT ktziId FROM ${table} WHERE id = ?`,
-                  [objectId],
-                  (ktziError, object) => {
-                  if (ktziError) return callback(ktziError);
-                  if (!object?.ktziId) return finishInstall();
-
-                  syncKtziProtectionMeans(
-                      table,
-                      objectId,
-                      object.ktziId,
-                    )
-                      .then(finishInstall)
-                      .catch((syncError) => callback(syncError));
-                  },
-                );
-              };
-
-              if (objectType === 'KTZI') {
-                db.get(
-                  `SELECT id FROM protection_means
-                   WHERE ktziId = ? AND name = ? AND
-                     COALESCE(serialNumber, '') = COALESCE(?, '')
-                   ORDER BY id DESC LIMIT 1`,
-                  [objectId, mean.name, mean.serialNumber],
-                  (lookupErr, installedMean) => {
-                    if (lookupErr || !installedMean) {
-                      return callback(
-                        lookupErr ||
-                          new Error('Не вдалося створити засіб на рівні КТЗІ'),
-                      );
-                    }
-                    const targets =
-                      Array.isArray(assignments) && assignments.length > 0
-                        ? assignments
-                        : [{ objectType: 'KTZI', objectId }];
-                    const allowedTypes = new Set(['AS', 'SP', 'KRT', 'IKS']);
-                    const validTargets = targets.filter(
-                      (target) =>
-                        target &&
-                        ((target.objectType === 'KTZI' &&
-                          String(target.objectId) === String(objectId)) ||
-                          (allowedTypes.has(target.objectType) &&
-                            target.objectId)),
-                    );
-
-                    if (validTargets.length !== targets.length) {
-                      return callback(
-                        new Error('Некоректна прив’язка засобу до об’єктів'),
-                      );
-                    }
-
-                    validateAssignmentTargets(
-                      objectId,
-                      validTargets,
-                      (validationError) => {
-                        if (validationError) return callback(validationError);
-
-                        let remaining = validTargets.length;
-                        let assignmentError = null;
-                        validTargets.forEach((target) => {
-                          db.run(
-                            `INSERT INTO protection_mean_assignments
-                              (protectionMeanId, objectType, objectId)
-                             VALUES (?, ?, ?)`,
-                            [
-                              installedMean.id,
-                              target.objectType,
-                              target.objectId,
-                            ],
-                            (assignmentErr) => {
-                              if (assignmentErr) assignmentError = assignmentErr;
-                              remaining -= 1;
-                              if (remaining === 0) {
-                                if (assignmentError) {
-                                  return callback(assignmentError);
-                                }
-                                removeObjectCopiesForMean(
-                                  mean,
-                                  (cleanupError) => {
-                                    if (cleanupError) {
-                                      return callback(cleanupError);
-                                    }
-                                    finishInstall();
-                                  },
-                                );
-                              }
-                            },
-                          );
-                        });
-                      },
-                    );
-                  },
-                );
-              } else {
-                syncObjectInstallation();
-              }
+              finishInstall();
             },
           );
         });
