@@ -20,6 +20,19 @@ const legacyRun = (query, params = []) =>
   });
 
 await legacyRun(`
+  CREATE TABLE ktzi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ktziKey TEXT NOT NULL UNIQUE,
+    address TEXT,
+    premisesNumber TEXT,
+    subdivisionName TEXT,
+    subdivisionType TEXT,
+    serviceName TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+await legacyRun(`
   CREATE TABLE class_a_systems (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     address TEXT,
@@ -48,7 +61,16 @@ await legacyRun(`
   CREATE TABLE protection_means (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ktziId INTEGER NOT NULL,
-    name TEXT
+    categoryId INTEGER,
+    toolType TEXT,
+    name TEXT,
+    serialNumber TEXT,
+    invertarNumber TEXT,
+    releaseYear INTEGER,
+    manufacturerExploitationTerm TEXT,
+    certificateInfo TEXT,
+    notes TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `);
 await legacyRun(`
@@ -60,18 +82,27 @@ await legacyRun(`
   )
 `);
 await legacyRun(
-  'INSERT INTO protection_means (ktziId, name) VALUES (?, ?)',
-  [1, 'Legacy shared mean'],
-);
-await legacyRun(
-  'INSERT INTO protection_mean_assignments (protectionMeanId, objectType, objectId) VALUES (?, ?, ?)',
-  [1, 'AS', 1],
+  `INSERT INTO ktzi (id, ktziKey, address, premisesNumber, subdivisionName)
+   VALUES (?, ?, ?, ?, ?)`,
+  [1, 'legacy-ktzi', 'Legacy address', '101', 'Legacy department'],
 );
 const legacyObjectId = await legacyRun(
   `INSERT INTO class_a_systems
    (address, premisesNumber, subdivisionName, systemClass, systemName)
    VALUES (?, ?, ?, ?, ?)`,
   ['Legacy address', '101', 'Legacy department', 'АС класу 1', 'Legacy AS'],
+);
+const legacyMeanId = await legacyRun(
+  `INSERT INTO protection_means
+   (ktziId, categoryId, toolType, name, serialNumber, notes)
+   VALUES (?, ?, ?, ?, ?, ?)`,
+  [1, 7, 'Фільтр', 'Legacy shared mean', 'LEGACY-SN', 'Legacy notes'],
+);
+await legacyRun(
+  `INSERT INTO protection_mean_assignments
+   (protectionMeanId, objectType, objectId)
+   VALUES (?, ?, ?)`,
+  [legacyMeanId, 'AS', legacyObjectId],
 );
 await new Promise((resolve, reject) =>
   legacyDb.close((error) => (error ? reject(error) : resolve())),
@@ -123,10 +154,26 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
     'class_a_systems_protection_means',
   );
   assert.ok(protectionMeanColumns.some((column) => column.name === 'notes'));
-  const legacySharedTables = await get(
-    `SELECT COUNT(*) AS count FROM sqlite_master
-     WHERE type = 'table'
-       AND name IN ('protection_means', 'protection_mean_assignments')`,
+  const sharedMean = await get(
+    `SELECT id, ktziId, name, serialNumber, notes
+     FROM protection_means WHERE id = ?`,
+    [legacyMeanId],
   );
-  assert.equal(legacySharedTables.count, 0);
+  assert.deepEqual(sharedMean, {
+    id: legacyMeanId,
+    ktziId: 1,
+    name: 'Legacy shared mean',
+    serialNumber: 'LEGACY-SN',
+    notes: 'Legacy notes',
+  });
+  const assignment = await get(
+    `SELECT protectionMeanId, objectType, objectId
+     FROM protection_mean_assignments WHERE protectionMeanId = ?`,
+    [legacyMeanId],
+  );
+  assert.deepEqual(assignment, {
+    protectionMeanId: legacyMeanId,
+    objectType: 'AS',
+    objectId: legacyObjectId,
+  });
 });

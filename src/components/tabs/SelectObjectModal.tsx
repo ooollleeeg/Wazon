@@ -7,6 +7,7 @@ interface ObjectItem {
   premisesNumber?: string;
   departmentType?: string;
   subdivisionName?: string;
+  ktziId?: string;
   objectType?: string;
   hasKzz?: boolean;
 }
@@ -24,6 +25,7 @@ interface RawObject {
   premisesNumber?: string | number;
   departmentType?: string;
   subdivisionType?: string;
+  ktziId?: string | number | null;
   kzzName?: string | null;
 }
 
@@ -34,6 +36,7 @@ interface SelectObjectModalProps {
     mean: ProtectionMean,
     objectId: string,
     objectType: string,
+    assignments?: Array<{ objectId: string; objectType: string }>,
   ) => Promise<void>;
 }
 
@@ -59,7 +62,11 @@ const SelectObjectModal = ({
 
   const [selectedType, setSelectedType] = useState<ObjectType>('AS');
   const [objects, setObjects] = useState<ObjectItem[]>([]);
-  const [selectedObject, setSelectedObject] = useState<ObjectItem | null>(null);
+  const [relatedObjects, setRelatedObjects] = useState<ObjectItem[]>([]);
+  const [selectedObjects, setSelectedObjects] = useState<ObjectItem[]>([]);
+  const [additionalAssignments, setAdditionalAssignments] = useState<string[]>(
+    [],
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [installing, setInstalling] = useState(false);
@@ -67,13 +74,24 @@ const SelectObjectModal = ({
     const fetchObjects = async () => {
       setLoading(true);
       setError(null);
-      setSelectedObject(null);
+      setSelectedObjects([]);
+      setAdditionalAssignments([]);
       try {
-        const response = await fetch(objectTypeMap[selectedType].endpoint);
-        if (!response.ok) {
-          throw new Error("Помилка при завантаженні об'єктів");
-        }
-        const data = await response.json();
+        const typeToFetch = selectedType;
+        const endpoints =
+          typeToFetch === 'AS' || typeToFetch === 'KRT'
+            ? ['AS', 'KRT'] as const
+            : [typeToFetch] as const;
+        const responses = await Promise.all(
+          endpoints.map((type) =>
+            fetch(objectTypeMap[type].endpoint).then((response) => {
+              if (!response.ok) {
+                throw new Error("Помилка при завантаженні об'єктів");
+              }
+              return response.json();
+            }),
+          ),
+        );
         const normalize = (
           data: unknown,
           type: ObjectType,
@@ -104,12 +122,19 @@ const SelectObjectModal = ({
               premisesNumber: String(obj.premisesNumber || ''),
               departmentType: obj.departmentType || obj.subdivisionType || '',
               subdivisionName: obj.subdivisionName || '',
+              ktziId: obj.ktziId ? String(obj.ktziId) : undefined,
               objectType: type,
               hasKzz,
             };
           });
         };
-        const normalized = normalize(data, selectedType);
+        const normalized = responses.flatMap((data, index) =>
+          normalize(data, endpoints[index]),
+        );
+        const visibleObjects =
+          typeToFetch === 'AS' || typeToFetch === 'KRT'
+            ? normalized.filter((object) => object.objectType === typeToFetch)
+            : normalized;
         const sortedObjects = (items: ObjectItem[]) =>
           [...items].sort((a, b) => {
             const departmentOrder = (type?: string) =>
@@ -133,7 +158,8 @@ const SelectObjectModal = ({
               a.name.localeCompare(b.name, 'uk')
             );
           });
-        setObjects(sortedObjects(normalized));
+        setObjects(sortedObjects(visibleObjects));
+        setRelatedObjects(sortedObjects(normalized));
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Помилка завантаження';
@@ -164,15 +190,96 @@ const SelectObjectModal = ({
     }
   }, [mean.category]);
 
+  const supportsMultipleSelection =
+    (selectedType === 'AS' || selectedType === 'KRT') &&
+    mean.category !== 'КЗЗ від НСД';
+
+  const canSelectObject = (object: ObjectItem) => {
+    if (!supportsMultipleSelection || selectedObjects.length === 0) return true;
+    const firstKtziId = selectedObjects[0].ktziId;
+    return Boolean(
+      firstKtziId &&
+        object.ktziId === firstKtziId &&
+        selectedObjects.every((selected) => selected.ktziId === firstKtziId),
+    );
+  };
+
+  const ktziId = selectedObjects[0]?.ktziId;
+  const availableAdditionalObjects = supportsMultipleSelection && ktziId
+    ? relatedObjects.filter(
+        (object) =>
+          (object.objectType === 'AS' || object.objectType === 'KRT') &&
+          object.ktziId === ktziId &&
+          !selectedObjects.some(
+            (selected) =>
+              selected.id === object.id &&
+              selected.objectType === object.objectType,
+          ),
+      )
+    : [];
+
+  const isSelected = (object: ObjectItem) =>
+    selectedObjects.some(
+      (selected) =>
+        selected.id === object.id && selected.objectType === object.objectType,
+    );
+
+  const handleObjectSelection = (object: ObjectItem) => {
+    if (!supportsMultipleSelection) {
+      setSelectedObjects([object]);
+      setAdditionalAssignments([]);
+      return;
+    }
+
+    setSelectedObjects((current) => {
+      const alreadySelected = current.some(
+        (item) =>
+          item.id === object.id && item.objectType === object.objectType,
+      );
+      if (alreadySelected) {
+        return current.filter(
+          (item) =>
+            item.id !== object.id || item.objectType !== object.objectType,
+        );
+      }
+      if (current.length > 0 && !canSelectObject(object)) return current;
+      return [...current, object];
+    });
+    setAdditionalAssignments([]);
+  };
+
   const handleInstall = async () => {
-    if (!selectedObject) {
+    if (selectedObjects.length === 0) {
       setError("Виберіть об'єкт");
       return;
     }
 
     setInstalling(true);
     try {
-      await onInstall(mean, selectedObject.id, selectedType);
+      const firstObject = selectedObjects[0];
+      const allAssignments = [
+        ...selectedObjects,
+        ...availableAdditionalObjects.filter((object) =>
+          additionalAssignments.includes(`${object.objectType}:${object.id}`),
+        ),
+      ];
+      if (
+        supportsMultipleSelection &&
+        firstObject.ktziId &&
+        allAssignments.length
+      ) {
+        await onInstall(
+          mean,
+          firstObject.ktziId,
+          'KTZI',
+          allAssignments.map((object) => ({
+            objectId: object.id,
+            objectType: object.objectType || selectedType,
+          })),
+        );
+      } else {
+        await onInstall(mean, firstObject.id, selectedType);
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Помилка встановлення';
@@ -253,8 +360,14 @@ const SelectObjectModal = ({
           {/* Список об'єктів */}
           <section className='modal-section'>
             <h3>
-              📍 Виберіть об’єкт для встановлення
+              📍 Виберіть {supportsMultipleSelection ? 'об’єкт(и)' : 'об’єкт'}{' '}
+              для встановлення
             </h3>
+            {supportsMultipleSelection && (
+              <p className='install-selection-hint'>
+                Можна обрати кілька АС/КРТ лише в межах одного КТЗІ.
+              </p>
+            )}
             {loading && <p className='loading'>⏳ Завантаження об'єктів...</p>}
             {error && <p className='error'>❌ {error}</p>}
             {!loading && objects.length === 0 && (
@@ -263,16 +376,16 @@ const SelectObjectModal = ({
             {!loading && objects.length > 0 && (
               <div className='object-list'>
                 {objects.map((obj) => (
-                  <div key={obj.id}>
+                  <div key={`${obj.objectType}:${obj.id}`}>
                     <label
                       className={`object-item ${obj.hasKzz ? 'disabled' : ''}`}
                     >
                       <input
-                        type='radio'
+                        type={supportsMultipleSelection ? 'checkbox' : 'radio'}
                         name='object'
-                        checked={selectedObject?.id === obj.id}
-                        onChange={() => setSelectedObject(obj)}
-                        disabled={obj.hasKzz}
+                        checked={isSelected(obj)}
+                        onChange={() => handleObjectSelection(obj)}
+                        disabled={obj.hasKzz || !canSelectObject(obj)}
                       />
                       <span className='object-label'>
                         {getObjectDisplay(obj)}
@@ -287,6 +400,40 @@ const SelectObjectModal = ({
                 ))}
               </div>
             )}
+            {!loading && availableAdditionalObjects.length > 0 && (
+              <div className='ktzi-related-objects'>
+                <h4>
+                  У КТЗІ, каб. {selectedObjects[0]?.premisesNumber || '—'}{' '}
+                  {selectedObjects[0]?.subdivisionName || 'цього підрозділу'} є
+                  також інші АС/КРТ
+                </h4>
+                <p>
+                  За бажанням оберіть додаткові об’єкти, на які також
+                  встановити цей засіб:
+                </p>
+                {availableAdditionalObjects.map((object) => {
+                  const value = `${object.objectType}:${object.id}`;
+                  return (
+                    <label className='object-item' key={value}>
+                      <input
+                        type='checkbox'
+                        checked={additionalAssignments.includes(value)}
+                        onChange={() =>
+                          setAdditionalAssignments((current) =>
+                            current.includes(value)
+                              ? current.filter((item) => item !== value)
+                              : [...current, value],
+                          )
+                        }
+                      />
+                      <span className='object-label'>
+                        {getObjectDisplay(object)}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           {/* Кнопки дій */}
@@ -294,7 +441,7 @@ const SelectObjectModal = ({
             <button
               className='btn btn-primary'
               onClick={handleInstall}
-              disabled={!selectedObject || installing || loading}
+              disabled={selectedObjects.length === 0 || installing || loading}
             >
               {installing ? '⏳ Встановлення...' : '✓ Встановити засіб'}
             </button>

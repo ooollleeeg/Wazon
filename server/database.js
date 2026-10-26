@@ -22,16 +22,6 @@ function initializeDatabase() {
   db.serialize(() => {
     // Включаємо зовнішні ключі
     db.run('PRAGMA foreign_keys = ON');
-    db.run('DROP TABLE IF EXISTS protection_mean_assignments', (err) => {
-      if (err) {
-        console.error('❌ Не вдалося видалити старі призначення засобів ТЗІ:', err.message);
-      }
-    });
-    db.run('DROP TABLE IF EXISTS protection_means', (err) => {
-      if (err) {
-        console.error('❌ Не вдалося видалити старі засоби ТЗІ КТЗІ:', err.message);
-      }
-    });
 
     db.run(`
       CREATE TABLE IF NOT EXISTS ktzi (
@@ -58,6 +48,45 @@ function initializeDatabase() {
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (ktziId) REFERENCES ktzi(id) ON DELETE CASCADE
       )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS protection_means (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ktziId INTEGER NOT NULL,
+        categoryId INTEGER,
+        toolType TEXT,
+        name TEXT,
+        serialNumber TEXT,
+        invertarNumber TEXT,
+        releaseYear INTEGER,
+        manufacturerExploitationTerm TEXT,
+        certificateInfo TEXT,
+        notes TEXT,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ktziId) REFERENCES ktzi(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE TABLE IF NOT EXISTS protection_mean_assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        protectionMeanId INTEGER NOT NULL,
+        objectType TEXT,
+        objectId INTEGER,
+        FOREIGN KEY (protectionMeanId) REFERENCES protection_means(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_protection_mean_assignment_unique
+      ON protection_mean_assignments (protectionMeanId, objectType, objectId)
+    `);
+
+    db.run(`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_protection_mean_serial_unique
+      ON protection_means (ktziId, categoryId, serialNumber)
+      WHERE serialNumber IS NOT NULL AND serialNumber != ''
     `);
 
     // Таблиці для personnelId
@@ -781,6 +810,7 @@ function initializeDatabase() {
     `);
 
     [
+      'protection_means',
       'class_a_systems_protection_means',
       'service_premises_protection_means',
       'krt_protection_means',

@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "server": "node server/index.js",
     "start": "concurrently \"npm run dev\" \"npm run server\"",
-    "test": "node --test --test-concurrency=1 server/utils/ktzi.test.js server/database.migration.test.js"
+    "test": "node server/database.migration.test.js && node server/utils/ktzi.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

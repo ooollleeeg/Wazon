@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
-import { ProtectionMean } from './ProtectionMeansTable';
+import {
+  AssignedProtectionObject,
+  ProtectionMean,
+} from './ProtectionMeansTable';
 
 interface ProtectionMeansModalProps {
   mean: ProtectionMean;
   onClose: () => void;
-  onNavigate: (mean: ProtectionMean) => void;
+  onNavigate: (
+    mean: ProtectionMean,
+    object?: AssignedProtectionObject,
+  ) => void;
   onEdit?: (mean: ProtectionMean) => void;
   onDelete?: () => void;
-  onReturnToInventory?: () => void;
+  onAssignmentChange?: () => void;
 }
 
 const ProtectionMeansModal = ({
@@ -17,11 +23,13 @@ const ProtectionMeansModal = ({
   onNavigate,
   onEdit,
   onDelete,
-  onReturnToInventory,
+  onAssignmentChange,
 }: ProtectionMeansModalProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [returningToInventory, setReturningToInventory] = useState(false);
+  const [removingAssignment, setRemovingAssignment] = useState<string | null>(
+    null,
+  );
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
   };
@@ -77,6 +85,7 @@ const ProtectionMeansModal = ({
       KRT: 'КРТ',
       IKS: 'ІКС',
       ІКС: 'ІКС',
+      KTZI: 'КТЗІ',
       INVENTORY: 'Запас (склад)',
     };
     return (
@@ -86,17 +95,26 @@ const ProtectionMeansModal = ({
     );
   };
 
-  const handleReturnToInventory = async () => {
-    setReturningToInventory(true);
+  const getKtziLabel = (mean: ProtectionMean) => {
+    if (!mean.ktziId) return null;
+
+    return `КТЗІ: ${mean.ktziAddress || 'Без адреси'}, каб. ${
+      mean.ktziPremisesNumber || '—'
+    } — ${mean.ktziSubdivisionName || 'Без підрозділу'}`;
+  };
+
+  const handleRemoveAssignment = async (object: AssignedProtectionObject) => {
+    const assignmentKey = `${object.objectType}-${object.objectId}`;
+    setRemovingAssignment(assignmentKey);
     try {
       const response = await fetch(
-        `/api/protection-means/${mean.id}/return-to-inventory`,
+        `/api/protection-means/${mean.id}/assignments`,
         {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            objectType: mean.objectType,
-            objectId: mean.objectId,
+            objectType: object.objectType,
+            objectId: object.objectId,
             name: mean.name,
             serialNumber: mean.serialNumber,
             invertarNumber: mean.invertarNumber,
@@ -109,7 +127,7 @@ const ProtectionMeansModal = ({
         throw new Error(data.error || 'Помилка при поверненні засобу на склад');
       }
 
-      onReturnToInventory?.();
+      onAssignmentChange?.();
       onClose();
     } catch (err) {
       console.error('❌ Error returning protection mean to inventory:', err);
@@ -119,9 +137,27 @@ const ProtectionMeansModal = ({
           : 'Помилка при поверненні засобу на склад',
       );
     } finally {
-      setReturningToInventory(false);
+      setRemovingAssignment(null);
     }
   };
+
+  const assignedObjects: AssignedProtectionObject[] = mean.assignedObjects?.length
+    ? mean.assignedObjects
+    : [
+        {
+          objectId: mean.objectId,
+          objectName: mean.objectName,
+          objectType: mean.objectType,
+          objectAddress: mean.objectAddress,
+          premisesNumber: mean.premisesNumber,
+          subdivisionName: mean.subdivisionName,
+          departmentType: mean.departmentType,
+          systemClass: mean.systemClass,
+        },
+      ];
+  const uniqueStrings = (values: Array<string | undefined>) => [
+    ...new Set(values.filter((value): value is string => Boolean(value))),
+  ];
 
   return (
     <div className='modal-overlay' onClick={onClose}>
@@ -197,62 +233,125 @@ const ProtectionMeansModal = ({
 
           {/* Інформація про установку (якщо встановлено) */}
           {mean.status === 'installed' &&
-            mean.objectType &&
-            mean.objectId && (
+            (mean.objectName || (mean.assignedObjects?.length ?? 0) > 0) && (
               <section className='modal-section'>
                 <h3>🏢 Встановлено на об'єкті</h3>
                 <div className='info-grid'>
+                  {getKtziLabel(mean) && (
+                    <div className='info-item full-width'>
+                      <label>КТЗІ:</label>
+                      <strong>{getKtziLabel(mean)}</strong>
+                    </div>
+                  )}
                   <div className='info-item'>
                     <label>Тип об'єкту:</label>
-                    <strong>{getObjectTypeLabel(mean)}</strong>
+                    <strong>
+                      {uniqueStrings(
+                        assignedObjects.map(
+                          (object) => object.objectType || mean.objectType,
+                        ),
+                      )
+                        .map((type) =>
+                          getObjectTypeLabel({ objectType: type }),
+                        )
+                        .join(', ') || '—'}
+                    </strong>
                   </div>
                   <div className='info-item'>
                     <label>Назва об'єкту:</label>
                     <strong>
-                      {mean.objectType === 'SP' ? '—' : mean.objectName || '—'}
+                      {uniqueStrings(
+                        assignedObjects
+                          .filter((object) => object.objectType !== 'SP')
+                          .map((object) => object.objectName),
+                      ).join(', ') || '—'}
                     </strong>
                   </div>
                   <div className='info-item'>
                     <label>Номер приміщення:</label>
-                    <strong>{mean.premisesNumber || '—'}</strong>
+                    <strong>
+                      {uniqueStrings(
+                        assignedObjects.map((object) => object.premisesNumber),
+                      ).join(', ') ||
+                        mean.ktziPremisesNumber ||
+                        '—'}
+                    </strong>
                   </div>
                   <div className='info-item'>
                     <label>Назва підрозділу:</label>
-                    <strong>{mean.subdivisionName || '—'}</strong>
+                    <strong>
+                      {uniqueStrings(
+                        assignedObjects.map((object) => object.subdivisionName),
+                      ).join(', ') ||
+                        mean.ktziSubdivisionName ||
+                        '—'}
+                    </strong>
                   </div>
                   <div className='info-item'>
                     <label>Тип підрозділу:</label>
-                    <strong>{getDepartmentLabel(mean.departmentType)}</strong>
+                    <strong>
+                      {uniqueStrings(
+                        assignedObjects.map((object) => object.departmentType),
+                      )
+                        .map(getDepartmentLabel)
+                        .join(', ') ||
+                        getDepartmentLabel(mean.departmentType) ||
+                        '—'}
+                    </strong>
                   </div>
-                  {mean.objectAddress && (
-                    <div className='info-item'>
-                      <label>Адреса:</label>
-                      <strong>{mean.objectAddress}</strong>
+                  <div className='info-item full-width'>
+                    <label>Об’єкти ({assignedObjects.length}):</label>
+                    <div className='assigned-objects-list'>
+                      {assignedObjects.map((object, index) => (
+                        <div
+                          className='assigned-object-item'
+                          key={`${object.objectType}-${object.objectId}-${index}`}
+                        >
+                          <div>
+                            <strong>
+                              {object.objectType === 'SP'
+                                ? `Приміщення ${object.premisesNumber || '—'}`
+                                : object.objectName || 'Без назви'} (
+                              {getObjectTypeLabel(object)})
+                            </strong>
+                            {object.subdivisionName && (
+                              <span>, {object.subdivisionName}</span>
+                            )}
+                            {object.objectAddress && (
+                              <span>, {object.objectAddress}</span>
+                            )}
+                          </div>
+                          {object.objectId && object.objectType !== 'KTZI' && (
+                            <button
+                              className='btn-primary'
+                              onClick={() => onNavigate(mean, object)}
+                            >
+                              → Перейти до{' '}
+                              {object.objectType === 'SP'
+                                ? `каб. ${object.premisesNumber || '—'}, ${
+                                    object.subdivisionName || 'підрозділу'
+                                  }`
+                                : object.objectName || 'об’єкта'}
+                            </button>
+                          )}
+                          {mean.ktziId && object.objectType !== 'KTZI' && (
+                            <button
+                              className='btn-remove-assignment'
+                              onClick={() => handleRemoveAssignment(object)}
+                              disabled={
+                                removingAssignment ===
+                                `${object.objectType}-${object.objectId}`
+                              }
+                            >
+                              {removingAssignment ===
+                              `${object.objectType}-${object.objectId}`
+                                ? 'Повернення...'
+                                : 'Відв’язати і повернути на склад'}
+                            </button>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  <div className='info-item full-width object-actions'>
-                    <button
-                      className='btn-primary'
-                      onClick={() => onNavigate(mean)}
-                    >
-                      → Перейти до{' '}
-                      {mean.objectType === 'SP'
-                        ? `каб. ${mean.premisesNumber || '—'}, ${
-                            mean.subdivisionName || 'підрозділу'
-                          }`
-                        : mean.objectName || 'об’єкта'}
-                    </button>
-                    {mean.category !== 'КЗЗ від НСД' && (
-                      <button
-                        className='btn-return-to-inventory'
-                        onClick={handleReturnToInventory}
-                        disabled={returningToInventory}
-                      >
-                        {returningToInventory
-                          ? 'Повернення...'
-                          : 'Повернути на склад'}
-                      </button>
-                    )}
                   </div>
                 </div>
               </section>
