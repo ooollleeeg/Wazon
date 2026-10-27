@@ -6,11 +6,15 @@ interface DuplicateErrorModalProps {
   category: string;
   name: string;
   serialNumber?: string;
-  duplicateLocation: {
+  duplicateLocations: Array<{
     source: string;
     objectName: string;
-    objectId: number;
-  };
+    objectId?: number;
+    objectType?: string;
+    subdivisionName?: string;
+    premisesNumber?: string | number | null;
+    address?: string | null;
+  }>;
   onClose: () => void;
 }
 
@@ -19,21 +23,19 @@ const DuplicateErrorModal: React.FC<DuplicateErrorModalProps> = ({
   category,
   name,
   serialNumber,
-  duplicateLocation,
+  duplicateLocations,
   onClose,
 }) => {
   if (!isOpen) return null;
 
   // Mapping source codes to display names
   const sourceNames: Record<string, string> = {
-    AS: 'Ас класу',
+    AS: 'АС',
     SP: 'Службове приміщення',
     KRT: 'КРТ',
     IKS: 'ІКС',
+    Inventory: 'На складі',
   };
-
-  const sourceDisplay =
-    sourceNames[duplicateLocation.source] || duplicateLocation.source;
 
   return (
     <div className='duplicate-error-modal-overlay' onClick={onClose}>
@@ -54,29 +56,41 @@ const DuplicateErrorModal: React.FC<DuplicateErrorModalProps> = ({
             {serialNumber && <> (S/N: {serialNumber})</>}
           </p>
 
-          <p className='duplicate-error-location'>вже встановлений на:</p>
+          <p className='duplicate-error-location'>
+            {duplicateLocations.some((location) => location.source === 'Inventory')
+              ? 'вже перебуває на складі або встановлений на:'
+              : 'вже встановлений на:'}
+          </p>
 
           <div className='duplicate-error-details'>
-            <div className='detail-row'>
-              <span className='detail-label'>Тип об'єкту:</span>
-              <span className='detail-value'>{sourceDisplay}</span>
-            </div>
-            <div className='detail-row'>
-              <span className='detail-label'>Назва об'єкту:</span>
-              <span className='detail-value'>
-                {duplicateLocation.objectName}
-              </span>
-            </div>
-            <div className='detail-row'>
-              <span className='detail-label'>ID об'єкту:</span>
-              <span className='detail-value'>
-                #{duplicateLocation.objectId}
-              </span>
-            </div>
+            {duplicateLocations.map((location, index) => {
+              const locationName = [
+                location.subdivisionName,
+                location.premisesNumber
+                  ? `каб. ${location.premisesNumber}`
+                  : '',
+                location.objectName,
+              ]
+                .filter(Boolean)
+                .join(' — ');
+              return (
+                <div className='detail-row' key={`${location.source}-${location.objectId ?? 'stock'}-${index}`}>
+                  <span className='detail-label'>
+                    {sourceNames[location.source] || location.source}:
+                  </span>
+                  <span className='detail-value'>
+                    {location.source === 'Inventory'
+                      ? 'На складі'
+                      : locationName || location.objectName}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <p className='duplicate-error-note'>
-            Для додавання цього засобу спочатку видаліть його з іншого об'єкту.
+            Для коректного встановлення скористайтеся функцією «Встановити на
+            об’єкт» у вкладці «Засоби ТЗІ».
           </p>
         </div>
 

@@ -11,35 +11,6 @@ const getObjectDisplayName = (data) => {
   );
 };
 
-const getProtectionMeanKey = (item) => {
-  // Don't lowercase - for consistency with database comparisons
-  // This is important for Cyrillic text where JavaScript toLowerCase() doesn't work reliably
-  const category = (item.category || item.toolType || '').toString().trim();
-  const name = (item.name || '').toString().trim();
-  const serialNumber = (item.serialNumber || '').toString().trim();
-  return `${category}|${name}|${serialNumber}`;
-};
-
-const validateProtectionMeansArray = (items, objectName) => {
-  const seen = new Set();
-  for (const item of items) {
-    if (!item || typeof item !== 'object') continue;
-    const key = getProtectionMeanKey(item);
-    if (!key) continue;
-    if (seen.has(key)) {
-      const category = item.category || item.toolType || 'Засіб ТЗІ';
-      const name = item.name || '—';
-      const serial = item.serialNumber || '—';
-      const err = new Error(
-        `${category} ${name} ${serial} вже встановлений на ${objectName}`,
-      );
-      err.status = 400;
-      throw err;
-    }
-    seen.add(key);
-  }
-};
-
 const isProtectionMeansTable = (nestedKey, nestedConfig) => {
   return (
     nestedKey === 'protectionMeans' ||
@@ -47,16 +18,7 @@ const isProtectionMeansTable = (nestedKey, nestedConfig) => {
   );
 };
 
-const getProtectionMeanLookupParams = (item) => {
-  // Don't lowercase - SQL will use COLLATE NOCASE for case-insensitive comparison
-  // This is important for Cyrillic text where JavaScript toLowerCase() doesn't work reliably
-  const category = (item.category || item.toolType || '').toString().trim();
-  const name = (item.name || '').toString().trim();
-  const serialNumber = (item.serialNumber || '').toString().trim();
-  return { category, name, serialNumber };
-};
-
-const findExistingProtectionMean = (
+const findExistingProtectionMeans = (
   categoryId,
   serialNumber,
   excludeInventoryId = null,
@@ -76,27 +38,33 @@ const findExistingProtectionMean = (
     // NOTE: Do NOT use .toLowerCase() for Cyrillic! JavaScript's toLowerCase() doesn't work properly with Ukrainian characters.
     // Instead, use COLLATE NOCASE in SQL for case-insensitive comparison
     const sql = `
-      SELECT 'AS' AS source, pm.systemId AS objectId, a.systemName AS objectName
+      SELECT 'AS' AS source, 'AS' AS objectType, pm.systemId AS objectId,
+        a.systemName AS objectName, a.subdivisionName, a.premisesNumber, a.address
       FROM class_a_systems_protection_means pm
       JOIN class_a_systems a ON pm.systemId = a.id
       WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
-      SELECT 'SP' AS source, pm.premisesId AS objectId, sp.subdivisionName AS objectName
+      SELECT 'SP' AS source, 'SP' AS objectType, pm.premisesId AS objectId,
+        sp.serviceName AS objectName, sp.subdivisionName, sp.premisesNumber, sp.address
       FROM service_premises_protection_means pm
       JOIN service_premises sp ON pm.premisesId = sp.id
       WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
-      SELECT 'KRT' AS source, pm.krtId AS objectId, k.systemName AS objectName
+      SELECT 'KRT' AS source, 'KRT' AS objectType, pm.krtId AS objectId,
+        k.systemName AS objectName, k.subdivisionName, k.premisesNumber, k.address
       FROM krt_protection_means pm
       JOIN krt k ON pm.krtId = k.id
       WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
-      SELECT 'IKS' AS source, pm.iksId AS objectId, i.systemName AS objectName
+      SELECT 'IKS' AS source, 'IKS' AS objectType, pm.iksId AS objectId,
+        i.systemName AS objectName, i.subdivisionName, NULL AS premisesNumber, NULL AS address
       FROM iks_protection_means pm
       JOIN iks i ON pm.iksId = i.id
       WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
-      SELECT 'Inventory' AS source, NULL AS objectId, 'На складі' AS objectName
+      SELECT 'Inventory' AS source, NULL AS objectType, NULL AS objectId,
+        'На складі' AS objectName, NULL AS subdivisionName,
+        NULL AS premisesNumber, NULL AS address
       FROM protection_means_inventory pi
       WHERE pi.categoryId = ? AND COALESCE(pi.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       ${excludeInventoryId ? 'AND pi.id != ?' : ''}
@@ -132,9 +100,48 @@ const findExistingProtectionMean = (
         `    📊 Query returned ${rows?.length || 0} rows`,
         rows?.length > 0 ? `(${rows[0].source})` : '',
       );
-      if (!rows?.length) return resolve(null);
-      resolve(rows[0]);
+      resolve(rows || []);
     });
+  });
+};
+
+const getCategoryId = (item) => {
+  if (item.categoryId) return Number(item.categoryId);
+  const category = (item.category || item.toolType || '').toString().trim();
+  const categoryIds = {
+    'Генератор радіочастотного зашумлення': 1,
+    'Фільтр електроживлення': 2,
+    'Мережевий трансформатор': 3,
+    'Генератор акустичного зашумлення': 4,
+    Віброперетворювач: 5,
+    'Акустичний випромінювач': 6,
+    'Виріб типу "SRC-300"': 7,
+    'КЗЗ від НСД': 8,
+    'Інші вироби': 9,
+  };
+  return categoryIds[category] || null;
+};
+
+const hasSharedAssignment = (source, objectId, categoryId, serialNumber) => {
+  const objectType = { AS: 'AS', KRT: 'KRT', SP: 'SP' }[source];
+  if (!objectType || !objectId) return Promise.resolve(false);
+
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT 1
+       FROM protection_means pm
+       JOIN protection_mean_assignments pma
+         ON pma.protectionMeanId = pm.id
+       WHERE pma.objectType = ? AND pma.objectId = ?
+         AND pm.categoryId = ?
+         AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
+       LIMIT 1`,
+      [objectType, objectId, categoryId, serialNumber],
+      (error, row) => {
+        if (error) reject(error);
+        else resolve(Boolean(row));
+      },
+    );
   });
 };
 
@@ -159,65 +166,73 @@ const validateProtectionMeansAgainstExisting = async (
   currentSource,
   currentId,
 ) => {
-  if (!Array.isArray(nestedItems)) return;
+  if (!Array.isArray(nestedItems)) {
+    return { items: nestedItems, warnings: [] };
+  }
 
-  validateProtectionMeansArray(nestedItems, objectName);
-
-  console.log(
-    `🔍 validateProtectionMeansAgainstExisting: checking ${nestedItems.length} items for object "${objectName}" (source: ${currentSource}, id: ${currentId})`,
-  );
+  const acceptedItems = [];
+  const warnings = [];
+  const seen = new Set();
 
   for (const item of nestedItems) {
     if (!item || typeof item !== 'object') continue;
 
-    // Use categoryId if available, otherwise use category field
-    const categoryId = item.categoryId;
+    const categoryId = getCategoryId(item);
     const serialNumber = (item.serialNumber || '').toString().trim();
+    const identity =
+      categoryId && serialNumber
+        ? `${categoryId}|${serialNumber.toLocaleLowerCase('uk-UA')}`
+        : null;
 
-    console.log(
-      `  📍 Checking item: categoryId=${categoryId}, S/N="${serialNumber}"`,
-    );
-
-    if (!categoryId) {
-      console.log(`  ⏭️  Skipping - missing categoryId`);
+    if (identity && seen.has(identity)) {
+      warnings.push({
+        mean: item,
+        locations: [{ source: currentSource, objectName }],
+      });
       continue;
     }
 
-    // Empty serial number is never a duplicate
-    if (!serialNumber) {
-      console.log(`  ℹ️  Empty serial number - not checking for duplicates`);
+    if (identity) seen.add(identity);
+    if (!categoryId || !serialNumber) {
+      acceptedItems.push(categoryId ? { ...item, categoryId } : item);
       continue;
     }
 
-    const existing = await findExistingProtectionMean(categoryId, serialNumber);
+    const alreadySharedHere = currentId
+      ? await hasSharedAssignment(
+          currentSource,
+          currentId,
+          categoryId,
+          serialNumber,
+        )
+      : false;
+    if (alreadySharedHere) {
+      acceptedItems.push({ ...item, categoryId });
+      continue;
+    }
 
-    console.log(
-      `  📡 Query result:`,
-      existing
-        ? `found on ${existing.objectName} (${existing.source})`
-        : 'not found',
+    const existing = await findExistingProtectionMeans(
+      categoryId,
+      serialNumber,
+    );
+    const otherLocations = existing.filter(
+      (location) =>
+        !(
+          currentSource &&
+          currentId &&
+          location.source === currentSource &&
+          Number(location.objectId) === Number(currentId)
+        ),
     );
 
-    if (
-      existing &&
-      !(
-        currentSource &&
-        currentId &&
-        existing.source === currentSource &&
-        existing.objectId === Number(currentId)
-      )
-    ) {
-      const displayCategory = item.category || 'Засіб ТЗІ';
-      const displayName = item.name || '—';
-      const displaySerial = item.serialNumber || '—';
-      console.log(`  ❌ DUPLICATE FOUND! Throwing error...`);
-      const err = new Error(
-        `${displayCategory} "${displayName}" (S/N: ${displaySerial}) вже встановлений на "${existing.objectName}"`,
-      );
-      err.status = 400;
-      throw err;
+    if (otherLocations.length) {
+      warnings.push({ mean: item, locations: otherLocations });
+      continue;
     }
+    acceptedItems.push({ ...item, categoryId });
   }
+
+  return { items: acceptedItems, warnings };
 };
 
 /**
@@ -331,9 +346,11 @@ export const getObjectWithNested = (config, id) => {
           if (!objectType) return resolve(result);
 
           db.all(
-            `SELECT pm.id, pm.toolType, pm.name, pm.serialNumber,
+            `SELECT pm.id, pm.categoryId, pm.toolType, pm.name, pm.serialNumber,
               pm.invertarNumber, pm.releaseYear,
               pm.manufacturerExploitationTerm, pm.certificateInfo, pm.notes,
+              (SELECT COUNT(*) FROM protection_mean_assignments counts
+               WHERE counts.protectionMeanId = pm.id) AS assignmentCount,
               1 as isSharedKtzi
              FROM protection_means pm
              JOIN protection_mean_assignments pma
@@ -378,6 +395,10 @@ export const getObjectWithNested = (config, id) => {
 export const createObjectWithNested = (config, data) => {
   return new Promise(async (resolve, reject) => {
     const { table, nestedTables, foreignKeyName } = config;
+    const normalizedData = { ...data };
+    const protectionMeanWarnings = [];
+    const currentSource = getProtectionMeanSource(table);
+    delete normalizedData.id;
 
     // ✅ ВИДАЛІТЬ id і вложені таблиці з основних даних
     const mainData = { ...data };
@@ -402,11 +423,10 @@ export const createObjectWithNested = (config, data) => {
         console.log(
           `🔐 Pre-insert validation: checking ${nestedKeys.length} nested table types (table: ${table})`,
         );
-        const currentSource = getProtectionMeanSource(table);
         console.log(`  📍 Detected source: ${currentSource}`);
         for (const nestedKey of nestedKeys) {
           const nestedConfig = nestedTables[nestedKey];
-          const nestedItems = data[nestedKey];
+          const nestedItems = normalizedData[nestedKey];
           console.log(
             `  🗂️  ${nestedKey}: isProtectionMeansTable=${isProtectionMeansTable(nestedKey, nestedConfig)}, isArray=${Array.isArray(nestedItems)}, length=${Array.isArray(nestedItems) ? nestedItems.length : 'N/A'}`,
           );
@@ -417,12 +437,14 @@ export const createObjectWithNested = (config, data) => {
             console.log(
               `  🔍 Validating protection means for ${nestedKey} (new object, no ID exclusion)...`,
             );
-            await validateProtectionMeansAgainstExisting(
+            const validation = await validateProtectionMeansAgainstExisting(
               nestedItems,
               objectName,
               currentSource,
               null,
             );
+            normalizedData[nestedKey] = validation.items;
+            protectionMeanWarnings.push(...validation.warnings);
           }
         }
       }
@@ -448,7 +470,7 @@ export const createObjectWithNested = (config, data) => {
         if (nestedTables && nestedKeys.length > 0) {
           for (const nestedKey of nestedKeys) {
             const nestedConfig = nestedTables[nestedKey];
-            const nestedItems = data[nestedKey];
+            const nestedItems = normalizedData[nestedKey];
 
             if (!Array.isArray(nestedItems)) {
               console.warn(`⚠️ ${nestedKey} is not an array, skipping`);
@@ -514,7 +536,15 @@ export const createObjectWithNested = (config, data) => {
         }
 
         console.log(`✅ All nested data inserted successfully`);
-        resolve({ id, ...data });
+        resolve({
+          id,
+          ...normalizedData,
+          protectionMeanWarnings,
+          shareableProtectionMeans:
+            currentSource === 'AS' || currentSource === 'KRT'
+              ? normalizedData.protectionMeans || []
+              : [],
+        });
       } catch (nestedErr) {
         console.error(`❌ Nested error:`, nestedErr);
         reject(nestedErr);
@@ -530,6 +560,8 @@ export const updateObjectWithNested = (config, id, data) => {
   return new Promise(async (resolve, reject) => {
     const nestedKeys = Object.keys(config.nestedTables || {});
     const mainData = { ...data };
+    const normalizedData = { ...data };
+    const protectionMeanWarnings = [];
 
     // ✅ ВИДАЛІТЬ id і вложені ключі
     delete mainData.id;
@@ -554,7 +586,7 @@ export const updateObjectWithNested = (config, id, data) => {
         );
         for (const nestedKey of nestedKeys) {
           const nestedConfig = config.nestedTables[nestedKey];
-          const nestedItems = data[nestedKey] || [];
+          const nestedItems = normalizedData[nestedKey] || [];
           console.log(
             `  🗂️  ${nestedKey}: isProtectionMeansTable=${isProtectionMeansTable(nestedKey, nestedConfig)}, length=${nestedItems.length}`,
           );
@@ -565,12 +597,14 @@ export const updateObjectWithNested = (config, id, data) => {
             console.log(
               `  🔍 Validating protection means for ${nestedKey} with global check (excluding ${currentSource}#${id})...`,
             );
-            await validateProtectionMeansAgainstExisting(
+            const validation = await validateProtectionMeansAgainstExisting(
               nestedItems,
               objectName,
               currentSource,
               id,
             );
+            normalizedData[nestedKey] = validation.items;
+            protectionMeanWarnings.push(...validation.warnings);
           }
         }
       }
@@ -599,7 +633,7 @@ export const updateObjectWithNested = (config, id, data) => {
 
       nestedKeys.forEach((nestedKey) => {
         const nestedConfig = config.nestedTables[nestedKey];
-        const nestedItems = data[nestedKey] || [];
+        const nestedItems = normalizedData[nestedKey] || [];
         const foreignKeyName =
           config.foreignKeyName || `${config.table.slice(0, -1)}Id`;
 
@@ -620,7 +654,14 @@ export const updateObjectWithNested = (config, id, data) => {
               completed++;
               if (completed === nestedKeys.length) {
                 console.log(`✅ All nested data updated successfully`);
-                resolve(result);
+                resolve({
+                  ...result,
+                  protectionMeanWarnings,
+                  shareableProtectionMeans:
+                    currentSource === 'AS' || currentSource === 'KRT'
+                      ? normalizedData.protectionMeans || []
+                      : [],
+                });
               }
               return;
             }
@@ -658,7 +699,14 @@ export const updateObjectWithNested = (config, id, data) => {
                   completed++;
                   if (completed === nestedKeys.length) {
                     console.log(`✅ All nested data updated successfully`);
-                    resolve(result);
+                    resolve({
+                      ...result,
+                      protectionMeanWarnings,
+                      shareableProtectionMeans:
+                        currentSource === 'AS' || currentSource === 'KRT'
+                          ? normalizedData.protectionMeans || []
+                          : [],
+                    });
                   }
                 }
               });
@@ -699,19 +747,26 @@ export const checkProtectionMeanDuplicate = async (
   excludeInventoryId = null,
 ) => {
   try {
-    const existing = await findExistingProtectionMean(
+    const existing = await findExistingProtectionMeans(
       categoryId,
       serialNumber,
       excludeInventoryId,
     );
-    if (existing) {
+    const uniqueLocations = [
+      ...new Map(
+        existing.map((location) => [
+          `${location.source}:${location.objectId ?? ''}`,
+          location,
+        ]),
+      ).values(),
+    ];
+    if (uniqueLocations.length) {
       return {
         isDuplicate: true,
         duplicateAt: {
-          source: existing.source,
-          objectName: existing.objectName,
-          objectId: existing.objectId,
+          ...uniqueLocations[0],
         },
+        duplicateLocations: uniqueLocations,
       };
     }
     return { isDuplicate: false };

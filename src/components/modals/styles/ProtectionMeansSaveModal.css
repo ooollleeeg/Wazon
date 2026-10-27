@@ -1,0 +1,32 @@
+.protection-means-save-modal {
+  max-width: 720px;
+  max-height: 85vh;
+  overflow: auto;
+}
+
+.protection-means-save-modal section + section {
+  margin-top: 24px;
+}
+
+.protection-mean-warning,
+.protection-mean-share-group {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #d5dbe3;
+  border-radius: 6px;
+}
+
+.protection-mean-warning ul {
+  margin-bottom: 0;
+}
+
+.protection-mean-share-target {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 8px 0;
+}
+
+.protection-mean-save-error {
+  color: #b42318;
+}

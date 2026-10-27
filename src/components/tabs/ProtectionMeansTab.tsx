@@ -46,11 +46,15 @@ const ProtectionMeansTab = () => {
     category: string;
     name: string;
     serialNumber?: string;
-    location: {
+    locations: Array<{
       source: string;
       objectName: string;
-      objectId: number;
-    };
+      objectId?: number;
+      objectType?: string;
+      subdivisionName?: string;
+      premisesNumber?: string | number | null;
+      address?: string | null;
+    }>;
   } | null>(null);
 
   // Загрузка даних з backend
@@ -258,24 +262,35 @@ const ProtectionMeansTab = () => {
   // Обробник додавання або редагування засобу на складі
   const handleAddNewMean = async (formData: Record<string, any>) => {
     try {
-      // Check for duplicates before submitting (тільки якщо це не редагування)
-      if (!selectedMean) {
-        const validationResult = await validateBeforeSave(
-          formData.category,
-          formData.serialNumber,
-        );
+      const showDuplicateWarning = (locations: NonNullable<
+        typeof duplicateError
+      >['locations']) => {
+        setDuplicateError({
+          category: formData.category,
+          name: formData.name,
+          serialNumber: formData.serialNumber,
+          locations,
+        });
+        setShowDuplicateError(true);
+      };
 
-        if (!validationResult.isValid && validationResult.duplicateAt) {
-          // Show duplicate error modal
-          setDuplicateError({
-            category: formData.category,
-            name: formData.name,
-            serialNumber: formData.serialNumber,
-            location: validationResult.duplicateAt,
-          });
-          setShowDuplicateError(true);
-          return;
-        }
+      const validationResult = await validateBeforeSave(
+        formData.category,
+        formData.serialNumber,
+        selectedMean?.id,
+      );
+
+      if (validationResult.error) {
+        throw new Error(validationResult.error);
+      }
+
+      if (!validationResult.isValid && validationResult.duplicateAt) {
+        showDuplicateWarning(
+          validationResult.duplicateLocations || [
+            validationResult.duplicateAt,
+          ],
+        );
+        return;
       }
 
       // Якщо редагується существуючий запис
@@ -298,6 +313,10 @@ const ProtectionMeansTab = () => {
 
         if (!response.ok) {
           const errData = await response.json();
+          if (errData.duplicateLocations?.length) {
+            showDuplicateWarning(errData.duplicateLocations);
+            return;
+          }
           throw new Error(errData.error || 'Помилка при оновленні засобу');
         }
 
@@ -319,6 +338,10 @@ const ProtectionMeansTab = () => {
 
       if (!response.ok) {
         const errData = await response.json();
+        if (errData.duplicateLocations?.length) {
+          showDuplicateWarning(errData.duplicateLocations);
+          return;
+        }
         throw new Error(errData.error || 'Помилка при додаванні засобу');
       }
 
@@ -429,7 +452,7 @@ const ProtectionMeansTab = () => {
           category={duplicateError.category}
           name={duplicateError.name}
           serialNumber={duplicateError.serialNumber}
-          duplicateLocation={duplicateError.location}
+          duplicateLocations={duplicateError.locations}
           onClose={() => {
             setShowDuplicateError(false);
             setDuplicateError(null);

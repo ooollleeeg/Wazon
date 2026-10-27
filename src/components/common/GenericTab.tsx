@@ -1,5 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import '../../styles/TabContent.css';
+import ProtectionMeansSaveModal from '../modals/ProtectionMeansSaveModal';
+import ObjectDeleteProtectionMeansModal from '../modals/ObjectDeleteProtectionMeansModal';
+
+type ProtectionMeansNotice = Omit<
+  React.ComponentProps<typeof ProtectionMeansSaveModal>,
+  'onShare' | 'onApplyChanges' | 'onClose'
+>;
+type ProtectionMeanDeleteOption = {
+  categoryId?: number;
+  toolType?: string;
+  name?: string;
+  serialNumber?: string;
+  invertarNumber?: string;
+  isSharedKtzi?: number;
+  assignmentCount?: number;
+};
 
 export interface TabConfig {
   apiEndpoint: string; // '/api/objects/personnel'
@@ -30,6 +46,13 @@ export default function GenericTab({
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [protectionMeansNotice, setProtectionMeansNotice] =
+    useState<ProtectionMeansNotice | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{
+    id: number;
+    name: string;
+    means: ProtectionMeanDeleteOption[];
+  } | null>(null);
 
   const formContainerRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +125,20 @@ export default function GenericTab({
       setShowForm(false);
       setEditingId(null);
       onDataChanged?.();
+      if (
+        result.protectionMeanWarnings?.length ||
+        result.shareableProtectionMeans?.length ||
+        result.sharedProtectionMeanChanges?.length
+      ) {
+        setProtectionMeansNotice({
+          warnings: result.protectionMeanWarnings || [],
+          means: result.shareableProtectionMeans || [],
+          changes: result.sharedProtectionMeanChanges || [],
+          targets: result.shareTargets || [],
+          sourceType: result.shareSourceType,
+          sourceObjectId: result.id,
+        });
+      }
       console.log('=== SUBMIT END (SUCCESS) ===');
     } catch (err) {
       console.error('=== SUBMIT ERROR ===', err);
@@ -110,7 +147,11 @@ export default function GenericTab({
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const performDelete = async (
+    id: number,
+    protectionMeansAction?: 'return' | 'remove',
+    removeSharedAssignments = false,
+  ) => {
     try {
       setIsLoading(true);
       setError('');
@@ -119,13 +160,24 @@ export default function GenericTab({
 
       const response = await fetch(`${config.apiEndpoint}/${id}`, {
         method: 'DELETE',
+        ...(protectionMeansAction
+          ? {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                protectionMeansAction,
+                removeSharedAssignments,
+              }),
+            }
+          : {}),
       });
 
       if (!response.ok) {
-        throw new Error('Помилка видалення');
+        const result = await response.json();
+        throw new Error(result.error || 'Помилка видалення');
       }
 
       console.log('Item deleted successfully');
+      setPendingDelete(null);
       await fetchItems();
       onDataChanged?.();
     } catch (err) {
@@ -134,6 +186,49 @@ export default function GenericTab({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDelete = (id: number) => {
+    const item = items.find((record) => Number(record.id) === Number(id));
+    if (!item) {
+      setError('Не вдалося знайти об’єкт для видалення');
+      return;
+    }
+
+    const means = [
+      ...(Array.isArray(item.protectionMeans) ? item.protectionMeans : []),
+      ...(Array.isArray(item.sharedProtectionMeans)
+        ? item.sharedProtectionMeans
+        : []),
+    ];
+    const uniqueMeans = new Map<string, ProtectionMeanDeleteOption>();
+    means.forEach((mean) => {
+      const key = [
+        mean.categoryId || mean.toolType || '',
+        mean.serialNumber || '',
+        mean.invertarNumber || '',
+        mean.name || '',
+      ].join('|');
+      const existing = uniqueMeans.get(key);
+      if (!existing || mean.isSharedKtzi) {
+        uniqueMeans.set(key, mean);
+      }
+    });
+
+    if (uniqueMeans.size) {
+      setPendingDelete({
+        id,
+        name:
+          item.systemName ||
+          item.serviceName ||
+          item.subdivisionName ||
+          item.name ||
+          config.displayName,
+        means: [...uniqueMeans.values()],
+      });
+      return;
+    }
+    void performDelete(id);
   };
 
   const handleEdit = (item: any) => {
@@ -212,6 +307,70 @@ export default function GenericTab({
             onClose={handleCloseForm}
           />
         </div>
+      )}
+
+      {protectionMeansNotice && (
+        <ProtectionMeansSaveModal
+          {...protectionMeansNotice}
+          onClose={() => setProtectionMeansNotice(null)}
+          onShare={async (assignments) => {
+            const response = await fetch('/api/protection-means/share', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                objectType: protectionMeansNotice.sourceType,
+                objectId: protectionMeansNotice.sourceObjectId,
+                assignments,
+              }),
+            });
+            const result = await response.json();
+            if (!response.ok) {
+              throw new Error(
+                result.error || 'Не вдалося створити спільні призначення',
+              );
+            }
+            await fetchItems();
+            onDataChanged?.();
+          }}
+          onApplyChanges={async (changes) => {
+            const response = await fetch(
+              '/api/protection-means/propagate-changes',
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  objectType: protectionMeansNotice.sourceType,
+                  objectId: protectionMeansNotice.sourceObjectId,
+                  changes,
+                }),
+              },
+            );
+            const result = await response.json();
+            if (!response.ok) {
+              throw new Error(
+                result.error || 'Не вдалося застосувати зміни до пов’язаних карток',
+              );
+            }
+            await fetchItems();
+            onDataChanged?.();
+          }}
+        />
+      )}
+
+      {pendingDelete && (
+        <ObjectDeleteProtectionMeansModal
+          objectName={pendingDelete.name}
+          means={pendingDelete.means}
+          isLoading={isLoading}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={(action, removeSharedAssignments) =>
+            void performDelete(
+              pendingDelete.id,
+              action,
+              removeSharedAssignments,
+            )
+          }
+        />
       )}
 
       <config.ListComponent

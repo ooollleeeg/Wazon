@@ -6,7 +6,12 @@ export interface DuplicateCheckResult {
     source: string;
     objectName: string;
     objectId: number;
+    objectType?: string;
+    subdivisionName?: string;
+    premisesNumber?: string | number | null;
+    address?: string | null;
   };
+  duplicateLocations?: DuplicateCheckResult['duplicateAt'][];
   error?: string;
 }
 
@@ -78,11 +83,9 @@ export const validateBeforeSave = async (
   excludeInventoryId?: string,
 ): Promise<{
   isValid: boolean;
-  duplicateAt?: {
-    source: string;
-    objectName: string;
-    objectId: number;
-  };
+  duplicateAt?: DuplicateCheckResult['duplicateAt'];
+  duplicateLocations?: DuplicateCheckResult['duplicateLocations'];
+  error?: string;
 }> => {
   const result = await checkDuplicateProtectionMean(
     categoryName,
@@ -92,13 +95,14 @@ export const validateBeforeSave = async (
 
   if (result.error) {
     console.warn('⚠️ Validation error:', result.error);
-    return { isValid: true }; // Continue on validation errors
+    return { isValid: false, error: result.error };
   }
 
   if (result.isDuplicate && result.duplicateAt) {
     return {
       isValid: false,
       duplicateAt: result.duplicateAt,
+      duplicateLocations: result.duplicateLocations,
     };
   }
 

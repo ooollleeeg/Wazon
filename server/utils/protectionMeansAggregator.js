@@ -516,12 +516,16 @@ export function createInventoryItem(data, callback) {
   checkProtectionMeanDuplicate(categoryId, serialNumber)
     .then((result) => {
       if (result.isDuplicate && result.duplicateAt) {
-        const objectName = result.duplicateAt.objectName || "невідомий об'єкт";
+        const duplicateLocation =
+          result.duplicateAt.source === 'Inventory'
+            ? 'вже перебуває на складі'
+            : `вже встановлений на "${result.duplicateAt.objectName || "невідомому об'єкті"}"`;
         const displayCategory = category || 'Засіб ТЗІ';
         const displaySerial = serialNumber || '—';
-        const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) вже встановлений на "${objectName}"`;
+        const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) ${duplicateLocation}`;
         const duplicateError = new Error(message);
         duplicateError.status = 400;
+        duplicateError.duplicateLocations = result.duplicateLocations;
         return callback(duplicateError);
       }
 
@@ -593,12 +597,16 @@ export function updateInventoryItem(id, data, callback) {
     .then((result) => {
       // Дозволяємо дублікат, якщо це той самий запис (id)
       if (result.isDuplicate && result.duplicateAt) {
-        const objectName = result.duplicateAt.objectName || "невідомий об'єкт";
+        const duplicateLocation =
+          result.duplicateAt.source === 'Inventory'
+            ? 'вже перебуває на складі'
+            : `вже встановлений на "${result.duplicateAt.objectName || "невідомому об'єкті"}"`;
         const displayCategory = category || 'Засіб ТЗІ';
         const displaySerial = serialNumber || '—';
-        const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) вже встановлений на "${objectName}"`;
+        const message = `${displayCategory} "${name}" (S/N: ${displaySerial}) ${duplicateLocation}`;
         const duplicateError = new Error(message);
         duplicateError.status = 400;
+        duplicateError.duplicateLocations = result.duplicateLocations;
         return callback(duplicateError);
       }
 
