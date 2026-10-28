@@ -194,27 +194,39 @@ const ProtectionMeansTab = () => {
     assignments?: Array<{ objectId: string; objectType: string }>,
   ) => {
     try {
-      // Перевіримо дублювання перед встановленням
-      const validationResult =
-        objectType === 'KTZI'
-          ? { isValid: true }
-          : await validateBeforeSave(
-              mean.category,
-              mean.serialNumber,
-              mean.id,
-            );
+      if (mean.category !== 'КЗЗ від НСД') {
+        const validationResult = await validateBeforeSave(
+          mean.category,
+          mean.serialNumber,
+          mean.id,
+        );
 
-      if (!validationResult.isValid && validationResult.duplicateAt) {
-        // Показуємо помилку дублювання
-        setDuplicateError({
-          category: mean.category,
-          name: mean.name,
-          serialNumber: mean.serialNumber || '',
-          location: validationResult.duplicateAt,
-        });
-        setShowDuplicateError(true);
-        handleCloseInstallModal();
-        return;
+        if (validationResult.error) {
+          throw new Error(validationResult.error);
+        }
+
+        if (!validationResult.isValid) {
+          if (!validationResult.duplicateAt) {
+            throw new Error('Не вдалося перевірити засіб ТЗІ на дублікати');
+          }
+
+          const duplicateLocations =
+            validationResult.duplicateLocations?.filter(
+              (location): location is NonNullable<typeof location> =>
+                Boolean(location),
+            ) || [];
+          setDuplicateError({
+            category: mean.category,
+            name: mean.name,
+            serialNumber: mean.serialNumber || '',
+            locations: duplicateLocations.length
+              ? duplicateLocations
+              : [validationResult.duplicateAt],
+          });
+          setShowDuplicateError(true);
+          handleCloseInstallModal();
+          return;
+        }
       }
 
       // Готуємо дані для встановлення
@@ -233,7 +245,21 @@ const ProtectionMeansTab = () => {
         body: JSON.stringify(installData),
       });
 
-      if (!response.ok) throw new Error('Помилка при встановленні засобу');
+      if (!response.ok) {
+        const result = await response.json();
+        if (result.duplicateLocations?.length) {
+          setDuplicateError({
+            category: mean.category,
+            name: mean.name,
+            serialNumber: mean.serialNumber || '',
+            locations: result.duplicateLocations,
+          });
+          setShowDuplicateError(true);
+          handleCloseInstallModal();
+          return;
+        }
+        throw new Error(result.error || 'Помилка при встановленні засобу');
+      }
 
       console.log('✅ Засіб успішно встановлено');
       handleCloseInstallModal();

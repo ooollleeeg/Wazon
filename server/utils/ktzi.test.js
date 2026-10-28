@@ -62,12 +62,16 @@ const install = (data) =>
     });
   });
 
-const returnToInventory = (meanId) =>
+const returnToInventory = (meanId, assignment) =>
   new Promise((resolve, reject) => {
-    returnProtectionMeanToInventory(meanId, (error, result) => {
-      if (error) reject(error);
-      else resolve(result);
-    });
+    returnProtectionMeanToInventory(
+      meanId,
+      assignment,
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      },
+    );
   });
 
 const createRequiredTables = async () => {
@@ -335,7 +339,7 @@ describe('KTZI protection means', () => {
       ktziId: ktzi.id,
     });
     const inventoryId = await seedObject('protection_means_inventory', {
-      categoryId: 1,
+      categoryId: 2,
       category: 'Фільтр електроживлення',
       name: 'Засіб 2',
       serialNumber: 'SN-2',
@@ -374,6 +378,31 @@ describe('KTZI protection means', () => {
         `KRT:${krtObjectId}`,
       ].sort(),
     );
+
+    const localCopies = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT systemId AS objectId FROM class_a_systems_protection_means
+         WHERE serialNumber = ?
+         UNION ALL
+         SELECT krtId AS objectId FROM krt_protection_means
+         WHERE serialNumber = ?`,
+        ['SN-2', 'SN-2'],
+        (error, rows) => (error ? reject(error) : resolve(rows)),
+      );
+    });
+    assert.equal(localCopies.length, 3);
+
+    await syncKtziProtectionMeans('class_a_systems', firstObjectId, ktzi.id);
+    await syncKtziProtectionMeans('class_a_systems', secondObjectId, ktzi.id);
+    await syncKtziProtectionMeans('krt', krtObjectId, ktzi.id);
+    const survivingAssignments = await get(
+      `SELECT COUNT(*) AS count
+       FROM protection_mean_assignments pma
+       JOIN protection_means pm ON pm.id = pma.protectionMeanId
+       WHERE pm.ktziId = ?`,
+      [ktzi.id],
+    );
+    assert.equal(survivingAssignments.count, 3);
   });
 
   it('shares a saved card mean only with selected objects in the same KTZI', async () => {
@@ -655,6 +684,54 @@ describe('KTZI protection means', () => {
     );
   });
 
+  it('rejects duplicate installation without removing the inventory record', async () => {
+    const objectId = await seedObject('class_a_systems', {
+      systemName: 'АС з наявним засобом',
+      subdivisionName: 'Відділ Ж',
+    });
+    await seedObject('class_a_systems_protection_means', {
+      systemId: objectId,
+      categoryId: 2,
+      toolType: 'Фільтр електроживлення',
+      name: 'Вже встановлений',
+      serialNumber: 'SN-INSTALL-DUP',
+    });
+    const inventoryId = await seedObject('protection_means_inventory', {
+      categoryId: 2,
+      category: 'Фільтр електроживлення',
+      name: 'Дублікат зі складу',
+      serialNumber: 'SN-INSTALL-DUP',
+    });
+
+    await assert.rejects(
+      install({
+        meanId: inventoryId,
+        objectId,
+        objectType: 'AS',
+        category: 'Фільтр електроживлення',
+      }),
+      (error) =>
+        error.status === 409 &&
+        Array.isArray(error.duplicateLocations) &&
+        error.duplicateLocations.length > 0,
+    );
+
+    assert.ok(
+      await get('SELECT id FROM protection_means_inventory WHERE id = ?', [
+        inventoryId,
+      ]),
+    );
+    const installedRows = await new Promise((resolve, reject) => {
+      db.all(
+        `SELECT id FROM class_a_systems_protection_means
+         WHERE systemId = ? AND serialNumber = ?`,
+        [objectId, 'SN-INSTALL-DUP'],
+        (error, rows) => (error ? reject(error) : resolve(rows)),
+      );
+    });
+    assert.equal(installedRows.length, 1);
+  });
+
   it('rejects an assignment to an object from another KTZI', async () => {
     const firstKtzi = await ensureKtzi({
       address: 'Перший 1',
@@ -732,4 +809,111 @@ describe('KTZI protection means', () => {
     });
   });
 
+  it('unlinks only the selected object while shared assignments remain', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Точкове відв’язування 1',
+      premisesNumber: '611',
+      subdivisionName: 'Відділ Е2',
+    });
+    const asId = await seedObject('class_a_systems', {
+      systemName: 'АС для відв’язування',
+      subdivisionName: 'Відділ Е2',
+      ktziId: ktzi.id,
+    });
+    const krtId = await seedObject('krt', {
+      systemName: 'КРТ для відв’язування',
+      subdivisionName: 'Відділ Е2',
+      ktziId: ktzi.id,
+    });
+    const mean = await run(
+      `INSERT INTO protection_means
+       (ktziId, categoryId, toolType, name, serialNumber)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        ktzi.id,
+        2,
+        'Фільтр електроживлення',
+        'Спільний для двох об’єктів',
+        'SN-UNLINK-ONE',
+      ],
+    );
+    for (const [table, foreignKey, objectId] of [
+      ['class_a_systems_protection_means', 'systemId', asId],
+      ['krt_protection_means', 'krtId', krtId],
+    ]) {
+      await seedObject(table, {
+        [foreignKey]: objectId,
+        categoryId: 2,
+        toolType: 'Фільтр електроживлення',
+        name: 'Спільний для двох об’єктів',
+        serialNumber: 'SN-UNLINK-ONE',
+      });
+    }
+    await run(
+      `INSERT INTO protection_mean_assignments
+       (protectionMeanId, objectType, objectId)
+       VALUES (?, ?, ?), (?, ?, ?)`,
+      [mean.id, 'AS', asId, mean.id, 'KRT', krtId],
+    );
+
+    await returnToInventory(mean.id, {
+      objectType: 'AS',
+      objectId: asId,
+      assignmentOnly: true,
+    });
+
+    assert.equal(
+      await get(
+        `SELECT id FROM protection_mean_assignments
+         WHERE protectionMeanId = ? AND objectType = 'AS' AND objectId = ?`,
+        [mean.id, asId],
+      ),
+      null,
+    );
+    assert.ok(
+      await get(
+        `SELECT id FROM protection_mean_assignments
+         WHERE protectionMeanId = ? AND objectType = 'KRT' AND objectId = ?`,
+        [mean.id, krtId],
+      ),
+    );
+    assert.equal(
+      await get(
+        `SELECT id FROM class_a_systems_protection_means
+         WHERE systemId = ? AND serialNumber = ?`,
+        [asId, 'SN-UNLINK-ONE'],
+      ),
+      null,
+    );
+    assert.ok(
+      await get(
+        `SELECT id FROM krt_protection_means
+         WHERE krtId = ? AND serialNumber = ?`,
+        [krtId, 'SN-UNLINK-ONE'],
+      ),
+    );
+    assert.equal(
+      await get(
+        'SELECT id FROM protection_means_inventory WHERE serialNumber = ?',
+        ['SN-UNLINK-ONE'],
+      ),
+      null,
+    );
+
+    await returnToInventory(mean.id, {
+      objectType: 'KRT',
+      objectId: krtId,
+      assignmentOnly: true,
+    });
+    assert.ok(
+      await get(
+        'SELECT id FROM protection_means_inventory WHERE serialNumber = ?',
+        ['SN-UNLINK-ONE'],
+      ),
+    );
+    assert.equal(
+      await get('SELECT id FROM protection_means WHERE id = ?', [mean.id]),
+      null,
+    );
+  });
 });

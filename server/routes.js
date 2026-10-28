@@ -925,7 +925,10 @@ router.post('/protection-means/install', (req, res) => {
         installProtectionMean(req.body, (err, result) => {
           if (err) {
             console.error('❌ Error installing protection mean:', err);
-            res.status(err.status || 500).json({ error: err.message });
+            res.status(err.status || 500).json({
+              error: err.message,
+              duplicateLocations: err.duplicateLocations,
+            });
           } else {
             console.log('✅ Protection mean installed successfully');
             res.json(result);
@@ -942,11 +945,24 @@ router.post('/protection-means/install', (req, res) => {
 router.delete('/protection-means/:id/assignments', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ returnProtectionMeanToInventory }) => {
-      const { objectType, objectId, name, serialNumber, invertarNumber } =
-        req.body || {};
+      const {
+        objectType,
+        objectId,
+        name,
+        serialNumber,
+        invertarNumber,
+        assignmentOnly,
+      } = req.body || {};
       returnProtectionMeanToInventory(
         req.params.id,
-        { objectType, objectId, name, serialNumber, invertarNumber },
+        {
+          objectType,
+          objectId,
+          name,
+          serialNumber,
+          invertarNumber,
+          assignmentOnly,
+        },
         (error, result) => {
         if (error) {
           console.error('❌ Error returning protection mean to inventory:', error);

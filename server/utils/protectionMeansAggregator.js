@@ -795,6 +795,84 @@ export function returnProtectionMeanToInventory(
         (assignmentsSelectError, assignments) => {
           if (assignmentsSelectError) return callback(assignmentsSelectError);
 
+          if (assignment?.assignmentOnly) {
+            const selectedAssignment = (assignments || []).find(
+              (item) =>
+                item.objectType === assignment.objectType &&
+                String(item.objectId) === String(assignment.objectId),
+            );
+            if (!selectedAssignment) {
+              const error = new Error(
+                'Прив’язку засобу до вибраного об’єкта не знайдено',
+              );
+              error.status = 404;
+              return callback(error);
+            }
+
+            const remainingAssignments = assignments.filter(
+              (item) => item !== selectedAssignment,
+            );
+            if (remainingAssignments.length > 0) {
+              const sourceTables = {
+                AS: ['class_a_systems_protection_means', 'systemId'],
+                SP: ['service_premises_protection_means', 'premisesId'],
+                KRT: ['krt_protection_means', 'krtId'],
+                IKS: ['iks_protection_means', 'iksId'],
+              };
+              const sourceConfig = sourceTables[assignment.objectType];
+              if (!sourceConfig) {
+                const error = new Error(
+                  'Невідомий тип об’єкта для видалення прив’язки',
+                );
+                error.status = 400;
+                return callback(error);
+              }
+
+              const [sourceTable, foreignKey] = sourceConfig;
+              return db.run(
+                `DELETE FROM ${sourceTable}
+                 WHERE ${foreignKey} = ?
+                   AND (categoryId = ? OR (categoryId IS NULL AND ? IS NULL))
+                   AND name = ?
+                   AND COALESCE(serialNumber, '') = COALESCE(?, '')
+                   AND COALESCE(invertarNumber, '') = COALESCE(?, '')`,
+                [
+                  assignment.objectId,
+                  mean.categoryId,
+                  mean.categoryId,
+                  mean.name,
+                  mean.serialNumber,
+                  mean.invertarNumber,
+                ],
+                (localDeleteError) => {
+                  if (localDeleteError) return callback(localDeleteError);
+
+                  db.run(
+                    `DELETE FROM protection_mean_assignments
+                     WHERE protectionMeanId = ?
+                       AND objectType = ? AND objectId = ?`,
+                    [
+                      protectionMeanId,
+                      assignment.objectType,
+                      assignment.objectId,
+                    ],
+                    (assignmentDeleteError) => {
+                      if (assignmentDeleteError) {
+                        return callback(assignmentDeleteError);
+                      }
+                      callback(null, {
+                        success: true,
+                        returnedToInventory: false,
+                        protectionMeanId,
+                        message: 'Прив’язку засобу до об’єкта видалено',
+                      });
+                    },
+                  );
+                },
+              );
+            }
+          }
+
           db.run(
             `INSERT INTO protection_means_inventory
               (categoryId, category, name, serialNumber, invertarNumber,
@@ -964,41 +1042,79 @@ function validateAssignmentTargets(ktziId, targets, callback) {
   });
 }
 
-function removeObjectCopiesForMean(mean, callback) {
-  const sourceTables = [
-    ['class_a_systems_protection_means', 'systemId'],
-    ['service_premises_protection_means', 'premisesId'],
-    ['krt_protection_means', 'krtId'],
-    ['iks_protection_means', 'iksId'],
-  ];
+function ensureObjectCopiesForMean(mean, assignments, callback) {
+  const sourceTables = {
+    AS: ['class_a_systems_protection_means', 'systemId'],
+    SP: ['service_premises_protection_means', 'premisesId'],
+    KRT: ['krt_protection_means', 'krtId'],
+    IKS: ['iks_protection_means', 'iksId'],
+  };
 
-  const removeNext = (index) => {
-    if (index >= sourceTables.length) {
+  const addNext = (index) => {
+    if (index >= assignments.length) {
       callback(null);
       return;
     }
 
-    const [table] = sourceTables[index];
-    db.run(
-      `DELETE FROM ${table}
-       WHERE name = ?
-         AND toolType = ?
+    const assignment = assignments[index];
+    const sourceConfig = sourceTables[assignment.objectType];
+    if (!sourceConfig) {
+      addNext(index + 1);
+      return;
+    }
+
+    const [table, foreignKey] = sourceConfig;
+    db.get(
+      `SELECT id FROM ${table}
+       WHERE ${foreignKey} = ?
+         AND (categoryId = ? OR (categoryId IS NULL AND ? IS NULL))
+         AND name = ?
          AND COALESCE(serialNumber, '') = COALESCE(?, '')
-         AND COALESCE(invertarNumber, '') = COALESCE(?, '')`,
+         AND COALESCE(invertarNumber, '') = COALESCE(?, '')
+       LIMIT 1`,
       [
+        assignment.objectId,
+        mean.categoryId,
+        mean.categoryId,
         mean.name,
-        mean.category,
         mean.serialNumber,
         mean.invertarNumber,
       ],
-      (error) => {
-        if (error) return callback(error);
-        removeNext(index + 1);
+      (selectError, existing) => {
+        if (selectError) return callback(selectError);
+        if (existing) {
+          addNext(index + 1);
+          return;
+        }
+
+        db.run(
+          `INSERT INTO ${table}
+           (${foreignKey}, categoryId, toolType, name, serialNumber,
+            invertarNumber, releaseYear, manufacturerExploitationTerm,
+            certificateInfo, notes, createdAt)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+          [
+            assignment.objectId,
+            mean.categoryId,
+            mean.category,
+            mean.name,
+            mean.serialNumber,
+            mean.invertarNumber,
+            mean.releaseYear,
+            mean.manufacturerExploitationTerm,
+            mean.certificateInfo,
+            mean.notes,
+          ],
+          (insertError) => {
+            if (insertError) return callback(insertError);
+            addNext(index + 1);
+          },
+        );
       },
     );
   };
 
-  removeNext(0);
+  addNext(0);
 }
 
 /**
@@ -1089,8 +1205,31 @@ export function installProtectionMean(data, callback) {
         }
       }
 
-      // Для інших засобів або якщо перевірка пройшла, продовжуємо встановлення
-      proceedWithInstall();
+      if (meanCategory === 'КЗЗ від НСД') {
+        proceedWithInstall();
+      } else {
+        checkProtectionMeanDuplicate(
+          mean.categoryId,
+          mean.serialNumber,
+          meanId,
+        )
+          .then((duplicateCheck) => {
+            if (duplicateCheck.isDuplicate) {
+              const error = new Error(
+                'Цей засіб ТЗІ вже перебуває на складі або встановлений на іншому об’єкті',
+              );
+              error.status = 409;
+              error.duplicateLocations =
+                duplicateCheck.duplicateLocations ||
+                (duplicateCheck.duplicateAt
+                  ? [duplicateCheck.duplicateAt]
+                  : []);
+              return callback(error);
+            }
+            proceedWithInstall();
+          })
+          .catch(callback);
+      }
 
       function proceedWithInstall() {
         let insertQuery, insertParams;
@@ -1377,8 +1516,9 @@ export function installProtectionMean(data, callback) {
                                 if (assignmentError) {
                                   return callback(assignmentError);
                                 }
-                                removeObjectCopiesForMean(
+                                ensureObjectCopiesForMean(
                                   mean,
+                                  validTargets,
                                   (cleanupError) => {
                                     if (cleanupError) {
                                       return callback(cleanupError);

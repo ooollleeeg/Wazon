@@ -56,6 +56,8 @@ const ProtectionMeansTable = ({
   };
 
   const getObjectTypeLabel = (mean: ProtectionMean): string => {
+    if (mean.status === 'in_stock') return '—';
+
     const typeMap: Record<string, string> = {
       AS: 'АС',
       SP: 'Службове приміщення',
