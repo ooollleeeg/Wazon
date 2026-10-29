@@ -48,6 +48,99 @@ const queryOne = (query, params = []) =>
     });
   });
 
+const countOidObjects = async ({
+  table,
+  categorizationTable,
+  foreignKey,
+  subdivision,
+  category,
+  objectType,
+}) => {
+  const conditions = [
+    `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
+    `c.categorizationRank = ?`,
+  ];
+  const params = [`%${subdivision}%`, category];
+
+  if (objectType) {
+    conditions.push(`o.objectType = ?`);
+    params.push(objectType);
+  }
+
+  const row = await queryOne(
+    `SELECT COUNT(DISTINCT o.id) AS count
+     FROM ${table} o
+     JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
+     WHERE ${conditions.join(' AND ')}`,
+    params,
+  );
+  return Number(row?.count || 0);
+};
+
+router.get('/oid-report', async (req, res) => {
+  try {
+    const categories = ['II', 'III', 'IV'];
+    const subdivisions = [
+      { key: 'apparatus', pattern: 'апарат' },
+      { key: 'territorial', pattern: 'територіал' },
+    ];
+    const sources = [
+      {
+        key: 'servicePremises',
+        table: 'service_premises',
+        categorizationTable: 'service_premises_categorization',
+        foreignKey: 'premisesId',
+      },
+      {
+        key: 'electronicComputers',
+        table: 'class_a_systems',
+        categorizationTable: 'class_a_systems_categorization',
+        foreignKey: 'systemId',
+        objectType: "об'єкт ЕОТ",
+      },
+      {
+        key: 'combined',
+        table: 'class_a_systems',
+        categorizationTable: 'class_a_systems_categorization',
+        foreignKey: 'systemId',
+        objectType: 'комбінований ОІД',
+      },
+      {
+        key: 'copyingEquipment',
+        table: 'krt',
+        categorizationTable: 'krt_categorization',
+        foreignKey: 'krtId',
+      },
+    ];
+
+    const rows = await Promise.all(
+      sources.map(async (source) => {
+        const values = {};
+        for (const subdivision of subdivisions) {
+          values[subdivision.key] = {};
+          for (const category of categories) {
+            values[subdivision.key][category] = await countOidObjects({
+              ...source,
+              subdivision: subdivision.pattern,
+              category,
+            });
+          }
+        }
+        return { key: source.key, values };
+      }),
+    );
+
+    res.json({
+      categories,
+      subdivisions: subdivisions.map(({ key }) => key),
+      rows,
+    });
+  } catch (err) {
+    console.error('❌ Error in GET /oid-report:', err);
+    res.status(500).json({ error: 'Не вдалося сформувати відомості про ОІД' });
+  }
+});
+
 const getSharedProtectionMeanSnapshots = async (table, objectId) => {
   const config = {
     class_a_systems: {

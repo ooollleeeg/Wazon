@@ -1,0 +1,86 @@
+.oid-information-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+.oid-information-header {
+  border-bottom: 3px solid #667eea;
+  padding-bottom: 1rem;
+}
+
+.oid-information-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.8rem;
+}
+
+.oid-table-wrapper {
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.oid-information-table {
+  width: 100%;
+  min-width: 1050px;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.oid-information-table th,
+.oid-information-table td {
+  padding: 0.8rem 0.65rem;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.oid-information-table th {
+  background: #f8f9fa;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+}
+
+.oid-information-table td:first-child {
+  min-width: 360px;
+  color: #555;
+}
+
+.oid-information-table td:not(:first-child) {
+  min-width: 65px;
+  color: #555;
+  text-align: center;
+}
+
+.oid-information-table tbody tr:hover {
+  background: #f9f9f9;
+}
+
+.oid-information-table .oid-total-row,
+.oid-information-table .oid-total-row td,
+.oid-information-table .oid-total-cell {
+  font-weight: 600;
+}
+
+.oid-information-table .oid-total-row {
+  background: #f0f2ff;
+}
+
+.oid-information-state,
+.oid-information-error {
+  margin: 2rem;
+  padding: 1.25rem;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.oid-information-error {
+  border-left: 4px solid #e74c3c;
+  color: #c0392b;
+}

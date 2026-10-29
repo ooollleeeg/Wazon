@@ -14,6 +14,7 @@ import GUNPResearchTab from './components/tabs/GUNPResearchTab';
 import NPUResearchTab from './components/tabs/NPUResearchTab';
 import DocumentsTab from './components/tabs/DocumentsTab';
 import ExpirationMonitoringTab from './components/tabs/ExpirationMonitoringTab';
+import OidInformationTab from './components/tabs/OidInformationTab';
 import ComputerIcon from './components/icons/ComputerIcon';
 import CopierIcon from './components/icons/CopierIcon';
 
@@ -123,6 +124,13 @@ const TABS: Tab[] = [
     icon: '📄',
     component: DocumentsTab,
     color: '#dfe6e9',
+  },
+  {
+    id: 'oid-information',
+    label: 'Відомості про ОІД',
+    icon: '📊',
+    component: OidInformationTab,
+    color: '#0984e3',
   },
 ];
 
