@@ -260,6 +260,32 @@
   color: #667eea;
 }
 
+.documents-report-container .gunp-header h2 {
+  line-height: 1.35;
+}
+
+.documents-report-table .documents-category {
+  min-width: 360px;
+  line-height: 1.4;
+}
+
+.documents-report-table th,
+.documents-report-table td {
+  vertical-align: middle;
+}
+
+.documents-report-table th.documents-total-column,
+.documents-report-table td.documents-total-column {
+  background-color: #f0f4ff;
+  border-left: 2px solid #667eea;
+  color: #333;
+  font-weight: 600;
+}
+
+.documents-report-table th.documents-total-column {
+  border-top: 2px solid #667eea;
+}
+
 .empty-state {
   background-color: #fff;
   padding: 3rem;

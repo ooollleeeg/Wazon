@@ -1807,6 +1807,156 @@ router.get('/gunp-research-report', async (req, res) => {
   }
 });
 
+// ===== DOCUMENTS REPORT ENDPOINT =====
+
+/**
+ * GET /api/documents-report - Звіт про підготовлені документи з ТЗІ
+ * Query params: dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD
+ */
+router.get('/documents-report', async (req, res) => {
+  try {
+    const { dateFrom, dateTo } = req.query;
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (
+      typeof dateFrom !== 'string' ||
+      typeof dateTo !== 'string' ||
+      !datePattern.test(dateFrom) ||
+      !datePattern.test(dateTo) ||
+      dateFrom > dateTo
+    ) {
+      return res.status(400).json({
+        error:
+          'Потрібні коректні параметри dateFrom та dateTo у форматі YYYY-MM-DD',
+      });
+    }
+
+    const subdivisionCase = `
+      CASE
+        WHEN lower(COALESCE(subdivisionType, '')) LIKE '%територ%'
+          THEN 'territorial'
+        ELSE 'apparatus'
+      END
+    `;
+
+    const [ktziDocuments, classAComplianceDocuments] = await Promise.all([
+      queryAll(
+        `SELECT documentType, ${subdivisionCase} AS subdivision,
+                documentNumber, documentDate
+         FROM ktzi
+         JOIN ktzi_documents ON ktzi_documents.ktziId = ktzi.id
+         WHERE documentType IN (
+           'technicalTask',
+           'atestation',
+           'Акт завершення робіт',
+           'Декларація про відповідність вимогам нормативних документів',
+           'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+           'Атестат відповідності'
+         )
+           AND documentDate BETWEEN ? AND ?
+         `,
+        [dateFrom, dateTo],
+      ),
+      queryAll(
+        `SELECT docs.documentType, ${subdivisionCase} AS subdivision,
+                docs.dsszzіNumber AS documentNumber,
+                docs.dsszzіDate AS documentDate
+         FROM class_a_systems_compliance_documents docs
+         JOIN class_a_systems cas ON docs.systemId = cas.id
+         WHERE docs.dsszzіDate BETWEEN ? AND ?`,
+        [dateFrom, dateTo],
+      ),
+    ]);
+
+    const reportTypeByStoredType = {
+      'Акт завершення робіт': 'completionAct',
+      'Акт про завершення робіт': 'completionAct',
+      'Декларація про відповідність вимогам нормативних документів':
+        'declaration',
+      'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки':
+        'authorizationNotice',
+      'Повідомлення про включення АС до переліку авторизованих систем безпеки':
+        'authorizationNotice',
+      'Атестат відповідності': 'certificate',
+    };
+    const counts = new Map();
+    const documentKeys = new Set();
+    const addCounts = (rows) => {
+      rows.forEach((row) => {
+        const documentType =
+          row.documentType === 'technicalTask'
+            ? 'technicalTask'
+            : row.documentType === 'atestation'
+              ? 'atestation'
+              : reportTypeByStoredType[row.documentType];
+        if (!documentType) return;
+
+        const documentKey = [
+          documentType,
+          row.subdivision,
+          row.documentNumber || '',
+          row.documentDate || '',
+        ].join('|');
+        if (documentKeys.has(documentKey)) return;
+        documentKeys.add(documentKey);
+
+        const countKey = `${documentType}:${row.subdivision}`;
+        counts.set(
+          countKey,
+          (counts.get(countKey) || 0) + 1,
+        );
+      });
+    };
+
+    addCounts(ktziDocuments);
+    addCounts(classAComplianceDocuments);
+
+    const getCount = (documentType, subdivision) =>
+      counts.get(`${documentType}:${subdivision}`) || 0;
+    const documentTypes = [
+      ['technicalTask', 'Технічні завдання, погоджені з ДРТЗІ НПУ'],
+      ['atestation', 'Акти атестації, зареєстровані в ДССЗЗІ України'],
+      ['completionAct', 'Акти про завершення робіт, зареєстровані в ДССЗЗІ України'],
+      [
+        'declaration',
+        'Декларації про відповідність вимогам нормативних документів з ТЗІ, зареєстровані в ДССЗЗІ України',
+      ],
+      [
+        'authorizationNotice',
+        'Повідомлення про включення АС до переліку авторизованих систем безпеки, зареєстровані в ДССЗЗІ України',
+      ],
+      ['certificate', 'Атестати відповідності, зареєстровані в ДССЗЗІ України'],
+    ];
+
+    const rows = documentTypes.map(([documentType, label], index) => {
+      const apparatus = getCount(documentType, 'apparatus');
+      const territorial = getCount(documentType, 'territorial');
+      return {
+        rowNumber: index + 1,
+        category: label,
+        apparatus,
+        territorial,
+        total: apparatus + territorial,
+      };
+    });
+
+    res.json({
+      success: true,
+      dateFrom,
+      dateTo,
+      rows,
+      totals: {
+        apparatus: rows.reduce((sum, row) => sum + row.apparatus, 0),
+        territorial: rows.reduce((sum, row) => sum + row.territorial, 0),
+        total: rows.reduce((sum, row) => sum + row.total, 0),
+      },
+    });
+  } catch (err) {
+    console.error('❌ Error in GET /api/documents-report:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ============================================================================
 // NPU RESEARCH ENDPOINTS
 // ============================================================================

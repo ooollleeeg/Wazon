@@ -8,10 +8,7 @@ import {
 interface ProtectionMeansModalProps {
   mean: ProtectionMean;
   onClose: () => void;
-  onNavigate: (
-    mean: ProtectionMean,
-    object?: AssignedProtectionObject,
-  ) => void;
+  onNavigate: (mean: ProtectionMean, object?: AssignedProtectionObject) => void;
   onEdit?: (mean: ProtectionMean) => void;
   onDelete?: () => void;
   onAssignmentChange?: () => void;
@@ -89,9 +86,7 @@ const ProtectionMeansModal = ({
       INVENTORY: 'Запас (склад)',
     };
     return (
-      (object.objectType && map[object.objectType]) ||
-      object.objectType ||
-      '—'
+      (object.objectType && map[object.objectType]) || object.objectType || '—'
     );
   };
 
@@ -142,7 +137,8 @@ const ProtectionMeansModal = ({
     }
   };
 
-  const assignedObjects: AssignedProtectionObject[] = mean.assignedObjects?.length
+  const assignedObjects: AssignedProtectionObject[] = mean.assignedObjects
+    ?.length
     ? mean.assignedObjects
     : [
         {
@@ -220,9 +216,7 @@ const ProtectionMeansModal = ({
               {(mean.inStockDate || mean.status === 'in_stock') && (
                 <div className='info-item'>
                   <label>Дата надходження на склад:</label>
-                  <strong>
-                    {formatDate(mean.inStockDate)}
-                  </strong>
+                  <strong>{formatDate(mean.inStockDate)}</strong>
                 </div>
               )}
               <div className='info-item full-width'>
@@ -252,9 +246,7 @@ const ProtectionMeansModal = ({
                           (object) => object.objectType || mean.objectType,
                         ),
                       )
-                        .map((type) =>
-                          getObjectTypeLabel({ objectType: type }),
-                        )
+                        .map((type) => getObjectTypeLabel({ objectType: type }))
                         .join(', ') || '—'}
                     </strong>
                   </div>
@@ -312,8 +304,8 @@ const ProtectionMeansModal = ({
                             <strong>
                               {object.objectType === 'SP'
                                 ? `Приміщення ${object.premisesNumber || '—'}`
-                                : object.objectName || 'Без назви'} (
-                              {getObjectTypeLabel(object)})
+                                : object.objectName || 'Без назви'}{' '}
+                              ({getObjectTypeLabel(object)})
                             </strong>
                             {object.subdivisionName && (
                               <span>, {object.subdivisionName}</span>
@@ -347,7 +339,7 @@ const ProtectionMeansModal = ({
                               {removingAssignment ===
                               `${object.objectType}-${object.objectId}`
                                 ? 'Повернення...'
-                                : 'Відв’язати і повернути на склад'}
+                                : 'Відв’язати засіб'}
                             </button>
                           )}
                         </div>

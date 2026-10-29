@@ -94,7 +94,7 @@ const syncDocument = async (ktziId, documentType, document) => {
   const values = {
     technicalTask: {
       number: document.taskNumber,
-      date: document.taskDate,
+      date: document.taskClearance,
     },
     categorization: {
       number: document.categorizationActNumber,
@@ -105,6 +105,10 @@ const syncDocument = async (ktziId, documentType, document) => {
       number: document.attestationRegNumber,
       date: document.attestationRegDate,
       validUntil: document.attestationValidUntil,
+    },
+    [document.documentType]: {
+      number: document.dsszzіNumber,
+      date: document.dsszzіDate,
     },
   }[documentType];
 
@@ -134,11 +138,17 @@ export const syncKtziDocuments = async (ktziId, data) => {
   const technicalTask = firstNestedRecord(data.technicalTask, 'taskDate') || data;
   const atestation =
     firstNestedRecord(data.atestation, 'attestationRegDate') || data;
+  const complianceDocuments = Array.isArray(data.complianceDocuments)
+    ? data.complianceDocuments
+    : [];
 
   await Promise.all([
     syncDocument(ktziId, 'technicalTask', technicalTask),
     syncDocument(ktziId, 'categorization', categorization),
     syncDocument(ktziId, 'atestation', atestation),
+    ...complianceDocuments.map((document) =>
+      syncDocument(ktziId, document.documentType, document),
+    ),
   ]);
 };
 

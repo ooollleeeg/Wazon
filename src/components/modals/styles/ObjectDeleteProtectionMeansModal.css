@@ -1,7 +1,6 @@
 .object-delete-option {
   display: flex;
   gap: 8px;
-  align-items: flex-start;
   margin: 12px 0;
 }
 
