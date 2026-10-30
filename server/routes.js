@@ -90,7 +90,7 @@ const countOidObjects = async ({
         : 'o.id'
     }) AS count
      FROM ${table} o
-     JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
+     LEFT JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
      WHERE ${conditions.join(' AND ')}`,
     params,
   );
@@ -130,16 +130,22 @@ const countOidAttested = async ({
           TRIM(d.dsszzіNumber) <> '' AND
           d.documentType IN (?, ?, ?, ?))`
       : '0';
-    conditions.push(`(
-      ${localComplianceCondition}
-      OR EXISTS (
-        SELECT 1
-        FROM ktzi_documents kd
-        WHERE kd.ktziId = o.ktziId
-          AND TRIM(COALESCE(kd.documentNumber, '')) <> ''
-          AND kd.documentType IN (?, ?, ?, ?)
-      )
-    )`);
+    const sharedComplianceCondition = objectCategoryField
+      ? `(COALESCE(TRIM(o.${objectCategoryField}), '') = '' AND EXISTS (
+          SELECT 1
+          FROM ktzi_documents kd
+          WHERE kd.ktziId = o.ktziId
+            AND TRIM(COALESCE(kd.documentNumber, '')) <> ''
+            AND kd.documentType IN (?, ?, ?, ?)
+        ))`
+      : `EXISTS (
+          SELECT 1
+          FROM ktzi_documents kd
+          WHERE kd.ktziId = o.ktziId
+            AND TRIM(COALESCE(kd.documentNumber, '')) <> ''
+            AND kd.documentType IN (?, ?, ?, ?)
+        )`;
+    conditions.push(`(${localComplianceCondition} OR ${sharedComplianceCondition})`);
     const documentTypes = [
       'Атестат відповідності',
       'Акт завершення робіт',
@@ -181,7 +187,7 @@ const countOidAttested = async ({
   const row = await queryOne(
     `SELECT COUNT(DISTINCT ${uniqueKey}) AS count
      FROM ${table} o
-     JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
+     LEFT JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
      ${join}
      WHERE ${conditions.join(' AND ')}`,
     params,

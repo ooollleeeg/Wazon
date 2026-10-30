@@ -831,6 +831,11 @@ const classASCardConfig: CardConfig = {
         { label: 'Клас системи', value: 'systemClass', format: 'badge' },
         { label: 'Назва системи', value: 'systemName' },
         {
+          label: 'Вищий гриф ІзОД',
+          value: 'informationCategory',
+          format: 'badge',
+        },
+        {
           label: "Тип об'єкта інформаційної діяльності",
           value: 'objectType',
           format: 'badge',

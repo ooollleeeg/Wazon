@@ -520,6 +520,11 @@ const krtCardConfig: CardConfig = {
         { label: 'Тип підрозділу', value: 'subdivisionType' },
         { label: 'Назва служби', value: 'serviceName' },
         { label: 'Назва КРА', value: 'systemName' },
+        {
+          label: 'Вищий гриф ІзОД',
+          value: 'informationCategory',
+          format: 'badge',
+        },
       ],
     },
     {
