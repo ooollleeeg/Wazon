@@ -60,6 +60,16 @@ const krtFormConfig: FormConfig = {
           placeholder: 'Назва копіювально-розмножувальної апаратури',
           required: true,
         },
+        {
+          name: 'informationCategory',
+          label: 'Вищий гриф ІзОД, яка обробляється в цій КРТ',
+          type: 'select',
+          options: [
+            { value: 'II', label: 'II' },
+            { value: 'III', label: 'III' },
+            { value: 'IV', label: 'IV' },
+          ],
+        },
       ],
     },
 

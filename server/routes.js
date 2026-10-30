@@ -56,10 +56,14 @@ const countOidObjects = async ({
   category,
   objectType,
   uniqueAct,
+  objectCategoryField,
 }) => {
+  const categoryExpression = objectCategoryField
+    ? `COALESCE(NULLIF(o.${objectCategoryField}, ''), c.categorizationRank)`
+    : 'c.categorizationRank';
   const conditions = [
     `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
-    `c.categorizationRank = ?`,
+    `${categoryExpression} = ?`,
   ];
   const params = [`%${subdivision}%`, category];
 
@@ -72,6 +76,11 @@ const countOidObjects = async ({
     `SELECT COUNT(DISTINCT ${
       uniqueAct
         ? `CASE
+             WHEN ${
+               objectCategoryField
+                 ? `o.${objectCategoryField} = 'IV'`
+                 : '0'
+             } THEN 'object:' || o.id
              WHEN o.ktziId IS NOT NULL THEN 'ktzi:' || o.ktziId
              ELSE 'act:' ||
                COALESCE(c.categorizationActNumber, '') || '|' ||
@@ -82,6 +91,98 @@ const countOidObjects = async ({
     }) AS count
      FROM ${table} o
      JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
+     WHERE ${conditions.join(' AND ')}`,
+    params,
+  );
+  return Number(row?.count || 0);
+};
+
+const countOidAttested = async ({
+  table,
+  categorizationTable,
+  foreignKey,
+  attestationTable,
+  attestationForeignKey,
+  complianceTable,
+  complianceForeignKey,
+  subdivision,
+  category,
+  objectType,
+  objectCategoryField,
+}) => {
+  const categoryExpression = objectCategoryField
+    ? `COALESCE(NULLIF(o.${objectCategoryField}, ''), c.categorizationRank)`
+    : 'c.categorizationRank';
+  const conditions = [
+    `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
+    `${categoryExpression} = ?`,
+  ];
+  const params = [`%${subdivision}%`, category];
+
+  if (objectType) {
+    conditions.push(`o.objectType = ?`);
+    params.push(objectType);
+  }
+
+  if (category === 'IV') {
+    const localComplianceCondition = complianceTable
+      ? `(d.dsszzіNumber IS NOT NULL AND
+          TRIM(d.dsszzіNumber) <> '' AND
+          d.documentType IN (?, ?, ?, ?))`
+      : '0';
+    conditions.push(`(
+      ${localComplianceCondition}
+      OR EXISTS (
+        SELECT 1
+        FROM ktzi_documents kd
+        WHERE kd.ktziId = o.ktziId
+          AND TRIM(COALESCE(kd.documentNumber, '')) <> ''
+          AND kd.documentType IN (?, ?, ?, ?)
+      )
+    )`);
+    const documentTypes = [
+      'Атестат відповідності',
+      'Акт завершення робіт',
+      'Декларація про відповідність вимогам нормативних документів',
+      'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+    ];
+    params.push(...(complianceTable ? [...documentTypes, ...documentTypes] : documentTypes));
+  } else {
+    conditions.push(
+      `a.attestationDsszziNumber IS NOT NULL`,
+      `TRIM(a.attestationDsszziNumber) <> ''`,
+    );
+  }
+
+  const join = category === 'IV'
+    ? complianceTable
+      ? `LEFT JOIN ${complianceTable} d ON d.${complianceForeignKey} = o.id`
+      : ''
+    : `JOIN ${attestationTable} a ON a.${attestationForeignKey} = o.id`;
+  const uniqueKey = category === 'IV'
+    ? `CASE
+         WHEN ${
+           objectCategoryField ? `o.${objectCategoryField} = 'IV'` : '0'
+         } THEN 'object:' || o.id
+         WHEN o.ktziId IS NOT NULL THEN 'ktzi:' || o.ktziId
+         ELSE ${
+           complianceTable
+             ? `'document:' || COALESCE(d.dsszzіNumber, '') || '|' ||
+                COALESCE(d.dsszzіDate, '')`
+             : `'document:' || o.id`
+         }
+       END`
+    : `CASE
+         WHEN o.ktziId IS NOT NULL THEN 'ktzi:' || o.ktziId
+         ELSE 'attestation:' || COALESCE(a.attestationDsszziNumber, '') || '|' ||
+           COALESCE(a.attestationDsszziDate, '')
+       END`;
+
+  const row = await queryOne(
+    `SELECT COUNT(DISTINCT ${uniqueKey}) AS count
+     FROM ${table} o
+     JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
+     ${join}
      WHERE ${conditions.join(' AND ')}`,
     params,
   );
@@ -101,6 +202,8 @@ router.get('/oid-report', async (req, res) => {
         table: 'service_premises',
         categorizationTable: 'service_premises_categorization',
         foreignKey: 'premisesId',
+        attestationTable: 'service_premises_atestation',
+        attestationForeignKey: 'premisesId',
       },
       {
         key: 'electronicComputers',
@@ -109,6 +212,11 @@ router.get('/oid-report', async (req, res) => {
         foreignKey: 'systemId',
         objectType: "об'єкт ЕОТ",
         uniqueAct: true,
+        objectCategoryField: 'informationCategory',
+        attestationTable: 'class_a_systems_atestation',
+        attestationForeignKey: 'systemId',
+        complianceTable: 'class_a_systems_compliance_documents',
+        complianceForeignKey: 'systemId',
       },
       {
         key: 'combined',
@@ -117,6 +225,11 @@ router.get('/oid-report', async (req, res) => {
         foreignKey: 'systemId',
         objectType: 'комбінований ОІД',
         uniqueAct: true,
+        objectCategoryField: 'informationCategory',
+        attestationTable: 'class_a_systems_atestation',
+        attestationForeignKey: 'systemId',
+        complianceTable: 'class_a_systems_compliance_documents',
+        complianceForeignKey: 'systemId',
       },
       {
         key: 'copyingEquipment',
@@ -124,16 +237,19 @@ router.get('/oid-report', async (req, res) => {
         categorizationTable: 'krt_categorization',
         foreignKey: 'krtId',
         uniqueAct: true,
+        objectCategoryField: 'informationCategory',
+        attestationTable: 'krt_atestation',
+        attestationForeignKey: 'krtId',
       },
     ];
 
-    const rows = await Promise.all(
+    const buildRows = (counter) => Promise.all(
       sources.map(async (source) => {
         const values = {};
         for (const subdivision of subdivisions) {
           values[subdivision.key] = {};
           for (const category of categories) {
-            values[subdivision.key][category] = await countOidObjects({
+            values[subdivision.key][category] = await counter({
               ...source,
               subdivision: subdivision.pattern,
               category,
@@ -143,11 +259,14 @@ router.get('/oid-report', async (req, res) => {
         return { key: source.key, values };
       }),
     );
+    const rows = await buildRows(countOidObjects);
+    const attestedRows = await buildRows(countOidAttested);
 
     res.json({
       categories,
       subdivisions: subdivisions.map(({ key }) => key),
       rows,
+      attestedRows,
     });
   } catch (err) {
     console.error('❌ Error in GET /oid-report:', err);

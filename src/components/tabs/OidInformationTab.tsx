@@ -17,6 +17,7 @@ interface ReportRow {
 
 interface ReportData {
   rows: ReportRow[];
+  attestedRows?: ReportRow[];
 }
 
 const categories: Category[] = ['II', 'III', 'IV'];
@@ -67,8 +68,31 @@ function OidInformationTab() {
     });
   }, [report]);
 
+  const attestedRows = useMemo(() => {
+    if (!report?.attestedRows) return [];
+    return report.attestedRows.map((row) => {
+      const apparatusTotal = getTotal(row.values.apparatus);
+      const territorialTotal = getTotal(row.values.territorial);
+      return {
+        ...row,
+        apparatusTotal,
+        territorialTotal,
+        total: apparatusTotal + territorialTotal,
+      };
+    });
+  }, [report]);
+
   const totalBySubdivision = (subdivision: Subdivision, category: Category) =>
     rows.reduce((total, row) => total + row.values[subdivision][category], 0);
+
+  const attestedTotalBySubdivision = (
+    subdivision: Subdivision,
+    category: Category,
+  ) =>
+    attestedRows.reduce(
+      (total, row) => total + row.values[subdivision][category],
+      0,
+    );
 
   const renderCategoryCells = (
     values: Record<Category, number>,
@@ -98,6 +122,15 @@ function OidInformationTab() {
   );
   const territorialGrandTotal = categories.reduce(
     (total, category) => total + totalBySubdivision('territorial', category),
+    0,
+  );
+  const attestedApparatusGrandTotal = categories.reduce(
+    (total, category) => total + attestedTotalBySubdivision('apparatus', category),
+    0,
+  );
+  const attestedTerritorialGrandTotal = categories.reduce(
+    (total, category) =>
+      total + attestedTotalBySubdivision('territorial', category),
     0,
   );
 
@@ -149,6 +182,35 @@ function OidInformationTab() {
             </tr>
             {rows.map((row) => (
               <tr key={row.key}>
+                <td>{sourceLabels[row.key]}</td>
+                {renderCategoryCells(row.values.apparatus, row.apparatusTotal)}
+                {renderCategoryCells(
+                  row.values.territorial,
+                  row.territorialTotal,
+                )}
+                <td className='oid-total-cell'>{row.total}</td>
+              </tr>
+            ))}
+            <tr className='oid-total-row'>
+              <td>2. Кількість атестованих об'єктів, у тому числі</td>
+              {categories.map((category) => (
+                <td key={`attested-a-total-${category}`}>
+                  {attestedTotalBySubdivision('apparatus', category)}
+                </td>
+              ))}
+              <td>{attestedApparatusGrandTotal}</td>
+              {categories.map((category) => (
+                <td key={`attested-t-total-${category}`}>
+                  {attestedTotalBySubdivision('territorial', category)}
+                </td>
+              ))}
+              <td>{attestedTerritorialGrandTotal}</td>
+              <td>
+                {attestedApparatusGrandTotal + attestedTerritorialGrandTotal}
+              </td>
+            </tr>
+            {attestedRows.map((row) => (
+              <tr key={`attested-${row.key}`}>
                 <td>{sourceLabels[row.key]}</td>
                 {renderCategoryCells(row.values.apparatus, row.apparatusTotal)}
                 {renderCategoryCells(

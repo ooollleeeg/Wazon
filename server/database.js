@@ -1057,6 +1057,25 @@ function initializeDatabase() {
     // ADD PROCESSING SUSPENSION STATUS COLUMNS
     // ============================================================================
 
+    // Add per-object information category to AS and KRT
+    db.run(
+      `ALTER TABLE class_a_systems ADD COLUMN informationCategory TEXT`,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Не вдалося додати informationCategory до class_a_systems:', err.message);
+        }
+      },
+    );
+
+    db.run(
+      `ALTER TABLE krt ADD COLUMN informationCategory TEXT`,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Не вдалося додати informationCategory до krt:', err.message);
+        }
+      },
+    );
+
     // Add isProcessingSuspended to class_a_systems
     db.run(
       `

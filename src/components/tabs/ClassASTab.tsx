@@ -72,6 +72,16 @@ const classASFormConfig: FormConfig = {
           required: true,
         },
         {
+          name: 'informationCategory',
+          label: 'Вищий гриф ІзОД, яка обробляється в цій АС',
+          type: 'select',
+          options: [
+            { value: 'II', label: 'II' },
+            { value: 'III', label: 'III' },
+            { value: 'IV', label: 'IV' },
+          ],
+        },
+        {
           name: 'objectType',
           label: "Тип об'єкта інформаційної діяльності",
           type: 'select',
