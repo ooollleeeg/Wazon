@@ -55,6 +55,7 @@ const countOidObjects = async ({
   subdivision,
   category,
   objectType,
+  uniqueAct,
 }) => {
   const conditions = [
     `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
@@ -68,7 +69,17 @@ const countOidObjects = async ({
   }
 
   const row = await queryOne(
-    `SELECT COUNT(DISTINCT o.id) AS count
+    `SELECT COUNT(DISTINCT ${
+      uniqueAct
+        ? `CASE
+             WHEN o.ktziId IS NOT NULL THEN 'ktzi:' || o.ktziId
+             ELSE 'act:' ||
+               COALESCE(c.categorizationActNumber, '') || '|' ||
+               COALESCE(c.categorizationActDate, '') || '|' ||
+               COALESCE(c.categorizationValidUntil, '')
+           END`
+        : 'o.id'
+    }) AS count
      FROM ${table} o
      JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
      WHERE ${conditions.join(' AND ')}`,
@@ -97,6 +108,7 @@ router.get('/oid-report', async (req, res) => {
         categorizationTable: 'class_a_systems_categorization',
         foreignKey: 'systemId',
         objectType: "об'єкт ЕОТ",
+        uniqueAct: true,
       },
       {
         key: 'combined',
@@ -104,12 +116,14 @@ router.get('/oid-report', async (req, res) => {
         categorizationTable: 'class_a_systems_categorization',
         foreignKey: 'systemId',
         objectType: 'комбінований ОІД',
+        uniqueAct: true,
       },
       {
         key: 'copyingEquipment',
         table: 'krt',
         categorizationTable: 'krt_categorization',
         foreignKey: 'krtId',
+        uniqueAct: true,
       },
     ];
 

@@ -23,12 +23,10 @@ const categories: Category[] = ['II', 'III', 'IV'];
 const sourceLabels: Record<SourceKey, string> = {
   servicePremises:
     '- службових приміщень, призначених для оброблення мовної ІзОД',
-  electronicComputers:
-    '- автоматизованих систем, призначених для оброблення ІзОД',
+  electronicComputers: "- об'єктів ЕОТ, призначених для оброблення ІзОД",
   combined:
     '- комбінованих ОІД, де інформація обробляється в АС та озвучується',
-  copyingEquipment:
-    '- копіювально-розмножувальної техніки, яка призначена для оброблення ІзОД',
+  copyingEquipment: "- об'єктів КРТ, призначених для оброблення ІзОД",
 };
 
 const getTotal = (values: Record<Category, number>) =>
@@ -77,13 +75,17 @@ function OidInformationTab() {
     total: number,
   ) => (
     <>
-      {categories.map((category) => <td key={category}>{values[category]}</td>)}
+      {categories.map((category) => (
+        <td key={category}>{values[category]}</td>
+      ))}
       <td className='oid-total-cell'>{total}</td>
     </>
   );
 
   if (loading) {
-    return <div className='oid-information-state'>Завантаження відомостей...</div>;
+    return (
+      <div className='oid-information-state'>Завантаження відомостей...</div>
+    );
   }
 
   if (error || !report) {
@@ -118,9 +120,13 @@ function OidInformationTab() {
               <th colSpan={4}>кількість об'єктів по категоріям</th>
             </tr>
             <tr>
-              {categories.map((category) => <th key={`a-${category}`}>{category}</th>)}
+              {categories.map((category) => (
+                <th key={`a-${category}`}>{category}</th>
+              ))}
               <th>всього по апарату</th>
-              {categories.map((category) => <th key={`t-${category}`}>{category}</th>)}
+              {categories.map((category) => (
+                <th key={`t-${category}`}>{category}</th>
+              ))}
               <th>всього по підрозділах</th>
             </tr>
           </thead>
@@ -145,7 +151,10 @@ function OidInformationTab() {
               <tr key={row.key}>
                 <td>{sourceLabels[row.key]}</td>
                 {renderCategoryCells(row.values.apparatus, row.apparatusTotal)}
-                {renderCategoryCells(row.values.territorial, row.territorialTotal)}
+                {renderCategoryCells(
+                  row.values.territorial,
+                  row.territorialTotal,
+                )}
                 <td className='oid-total-cell'>{row.total}</td>
               </tr>
             ))}
