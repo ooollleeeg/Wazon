@@ -195,6 +195,61 @@ const countOidAttested = async ({
   return Number(row?.count || 0);
 };
 
+const countOidEquipped = async ({
+  table,
+  categorizationTable,
+  foreignKey,
+  protectionTable,
+  protectionForeignKey,
+  subdivision,
+  category,
+  objectType,
+  objectCategoryField,
+}) => {
+  const categoryExpression = objectCategoryField
+    ? `COALESCE(NULLIF(o.${objectCategoryField}, ''), c.categorizationRank)`
+    : 'c.categorizationRank';
+  const conditions = [
+    `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
+    `${categoryExpression} = ?`,
+  ];
+  const params = [`%${subdivision}%`, category];
+
+  if (objectType) {
+    conditions.push(`o.objectType = ?`);
+    params.push(objectType);
+  }
+
+  const hasLocalMeans = `EXISTS (
+    SELECT 1
+    FROM ${protectionTable} localMeans
+    WHERE localMeans.${protectionForeignKey} = o.id
+  )`;
+  const hasKtziMeans = `EXISTS (
+    SELECT 1
+    FROM protection_means ktziMeans
+    WHERE ktziMeans.ktziId = o.ktziId
+  )`;
+  const meansCondition = category === 'IV'
+    ? hasLocalMeans
+    : `((${hasKtziMeans}) OR (o.ktziId IS NULL AND ${hasLocalMeans}))`;
+  const isNonIvCategory = category === 'IV' ? 0 : 1;
+
+  const row = await queryOne(
+    `SELECT COUNT(DISTINCT CASE
+       WHEN ${isNonIvCategory} = 1 AND o.ktziId IS NOT NULL
+         THEN 'ktzi:' || o.ktziId
+       ELSE 'object:' || o.id
+     END) AS count
+     FROM ${table} o
+     LEFT JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
+     WHERE ${conditions.join(' AND ')}
+       AND ${meansCondition}`,
+    params,
+  );
+  return Number(row?.count || 0);
+};
+
 router.get('/oid-report', async (req, res) => {
   try {
     const categories = ['II', 'III', 'IV'];
@@ -210,6 +265,8 @@ router.get('/oid-report', async (req, res) => {
         foreignKey: 'premisesId',
         attestationTable: 'service_premises_atestation',
         attestationForeignKey: 'premisesId',
+        protectionTable: 'service_premises_protection_means',
+        protectionForeignKey: 'premisesId',
       },
       {
         key: 'electronicComputers',
@@ -223,6 +280,8 @@ router.get('/oid-report', async (req, res) => {
         attestationForeignKey: 'systemId',
         complianceTable: 'class_a_systems_compliance_documents',
         complianceForeignKey: 'systemId',
+        protectionTable: 'class_a_systems_protection_means',
+        protectionForeignKey: 'systemId',
       },
       {
         key: 'combined',
@@ -236,6 +295,8 @@ router.get('/oid-report', async (req, res) => {
         attestationForeignKey: 'systemId',
         complianceTable: 'class_a_systems_compliance_documents',
         complianceForeignKey: 'systemId',
+        protectionTable: 'class_a_systems_protection_means',
+        protectionForeignKey: 'systemId',
       },
       {
         key: 'copyingEquipment',
@@ -246,6 +307,8 @@ router.get('/oid-report', async (req, res) => {
         objectCategoryField: 'informationCategory',
         attestationTable: 'krt_atestation',
         attestationForeignKey: 'krtId',
+        protectionTable: 'krt_protection_means',
+        protectionForeignKey: 'krtId',
       },
     ];
 
@@ -267,12 +330,14 @@ router.get('/oid-report', async (req, res) => {
     );
     const rows = await buildRows(countOidObjects);
     const attestedRows = await buildRows(countOidAttested);
+    const equippedRows = await buildRows(countOidEquipped);
 
     res.json({
       categories,
       subdivisions: subdivisions.map(({ key }) => key),
       rows,
       attestedRows,
+      equippedRows,
     });
   } catch (err) {
     console.error('❌ Error in GET /oid-report:', err);

@@ -18,6 +18,7 @@ interface ReportRow {
 interface ReportData {
   rows: ReportRow[];
   attestedRows?: ReportRow[];
+  equippedRows?: ReportRow[];
 }
 
 const categories: Category[] = ['II', 'III', 'IV'];
@@ -82,6 +83,20 @@ function OidInformationTab() {
     });
   }, [report]);
 
+  const equippedRows = useMemo(() => {
+    if (!report?.equippedRows) return [];
+    return report.equippedRows.map((row) => {
+      const apparatusTotal = getTotal(row.values.apparatus);
+      const territorialTotal = getTotal(row.values.territorial);
+      return {
+        ...row,
+        apparatusTotal,
+        territorialTotal,
+        total: apparatusTotal + territorialTotal,
+      };
+    });
+  }, [report]);
+
   const totalBySubdivision = (subdivision: Subdivision, category: Category) =>
     rows.reduce((total, row) => total + row.values[subdivision][category], 0);
 
@@ -90,6 +105,15 @@ function OidInformationTab() {
     category: Category,
   ) =>
     attestedRows.reduce(
+      (total, row) => total + row.values[subdivision][category],
+      0,
+    );
+
+  const equippedTotalBySubdivision = (
+    subdivision: Subdivision,
+    category: Category,
+  ) =>
+    equippedRows.reduce(
       (total, row) => total + row.values[subdivision][category],
       0,
     );
@@ -131,6 +155,15 @@ function OidInformationTab() {
   const attestedTerritorialGrandTotal = categories.reduce(
     (total, category) =>
       total + attestedTotalBySubdivision('territorial', category),
+    0,
+  );
+  const equippedApparatusGrandTotal = categories.reduce(
+    (total, category) => total + equippedTotalBySubdivision('apparatus', category),
+    0,
+  );
+  const equippedTerritorialGrandTotal = categories.reduce(
+    (total, category) =>
+      total + equippedTotalBySubdivision('territorial', category),
     0,
   );
 
@@ -211,6 +244,35 @@ function OidInformationTab() {
             </tr>
             {attestedRows.map((row) => (
               <tr key={`attested-${row.key}`}>
+                <td>{sourceLabels[row.key]}</td>
+                {renderCategoryCells(row.values.apparatus, row.apparatusTotal)}
+                {renderCategoryCells(
+                  row.values.territorial,
+                  row.territorialTotal,
+                )}
+                <td className='oid-total-cell'>{row.total}</td>
+              </tr>
+            ))}
+            <tr className='oid-total-row'>
+              <td>3. Кількість об'єктів, які обладнані засобами ТЗІ</td>
+              {categories.map((category) => (
+                <td key={`equipped-a-total-${category}`}>
+                  {equippedTotalBySubdivision('apparatus', category)}
+                </td>
+              ))}
+              <td>{equippedApparatusGrandTotal}</td>
+              {categories.map((category) => (
+                <td key={`equipped-t-total-${category}`}>
+                  {equippedTotalBySubdivision('territorial', category)}
+                </td>
+              ))}
+              <td>{equippedTerritorialGrandTotal}</td>
+              <td>
+                {equippedApparatusGrandTotal + equippedTerritorialGrandTotal}
+              </td>
+            </tr>
+            {equippedRows.map((row) => (
+              <tr key={`equipped-${row.key}`}>
                 <td>{sourceLabels[row.key]}</td>
                 {renderCategoryCells(row.values.apparatus, row.apparatusTotal)}
                 {renderCategoryCells(
