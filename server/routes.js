@@ -593,20 +593,16 @@ router.get('/objects/:type', validateObjectType, async (req, res) => {
     const { query } = req;
     const filters = query.filter ? JSON.parse(query.filter) : {};
 
-    console.log(`📥 GET /api/objects/${req.params.type}`);
-
     // Если есть вложенные таблицы, получить с ними
     if (req.objectConfig.nestedTables) {
       const rows = await getAllObjects(req.objectConfig.table, filters);
       const withNested = await Promise.all(
         rows.map((row) => getObjectWithNested(req.objectConfig, row.id)),
       );
-      console.log(`✅ Retrieved ${withNested.length} objects with nested data`);
       return res.json(withNested);
     }
 
     const rows = await getAllObjects(req.objectConfig.table, filters);
-    console.log(`✅ Retrieved ${rows.length} objects`);
     res.json(rows);
   } catch (err) {
     console.error(`❌ Error in GET /objects:`, err);
@@ -619,8 +615,6 @@ router.get('/objects/:type', validateObjectType, async (req, res) => {
  */
 router.get('/objects/:type/:id', validateObjectType, async (req, res) => {
   try {
-    console.log(`📥 GET /api/objects/${req.params.type}/${req.params.id}`);
-
     let row;
 
     if (req.objectConfig.nestedTables) {
@@ -630,10 +624,8 @@ router.get('/objects/:type/:id', validateObjectType, async (req, res) => {
     }
 
     if (!row) {
-      console.log(`⚠️ Object not found`);
       return res.status(404).json({ error: "Об'єкт не знайдено" });
     }
-    console.log(`✅ Object retrieved`);
     res.json(row);
   } catch (err) {
     console.error(`❌ Error in GET /objects/:id:`, err);
@@ -646,9 +638,6 @@ router.get('/objects/:type/:id', validateObjectType, async (req, res) => {
  */
 router.post('/objects/:type', validateObjectType, async (req, res) => {
   try {
-    console.log(`📝 POST /api/objects/${req.params.type}`);
-    console.log(`📦 Payload:`, req.body);
-
     const objectData = await attachObjectToKtzi(
       req.objectConfig.table,
       req.body,
@@ -674,7 +663,6 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
       );
     }
 
-    console.log(`✅ Object created with ID:`, result.id);
     res.status(201).json(result);
   } catch (err) {
     console.error(`❌ Error in POST /objects:`, err);
@@ -688,9 +676,6 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
  */
 router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
   try {
-    console.log(`📝 PUT /api/objects/${req.params.type}/${req.params.id}`);
-    console.log(`📦 Payload:`, req.body);
-
     const currentObject = await getObjectById(
       req.objectConfig.table,
       req.params.id,
@@ -736,7 +721,6 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
       );
     }
 
-    console.log(`✅ Object updated`);
     res.json(result);
   } catch (err) {
     console.error(`❌ Error in PUT /objects:`, err);
@@ -750,8 +734,6 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
  */
 router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
   try {
-    console.log(`🗑️ DELETE /api/objects/${req.params.type}/${req.params.id}`);
-
     const object = await getObjectById(
       req.objectConfig.table,
       req.params.id,
@@ -902,7 +884,6 @@ router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
       });
     }
 
-    console.log(`✅ Object deleted`);
     res.json({ success: true, id: req.params.id });
   } catch (err) {
     console.error(`❌ Error in DELETE /objects:`, err);
@@ -915,9 +896,6 @@ router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
  */
 router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
   try {
-    console.log(`🔄 PATCH /api/objects/${req.params.type}/${req.params.id}`);
-    console.log(`📦 Payload:`, req.body);
-
     const currentObject = await getObjectById(
       req.objectConfig.table,
       req.params.id,
@@ -963,7 +941,6 @@ router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
       );
     }
 
-    console.log(`✅ Object patched`);
     res.json(result);
   } catch (err) {
     console.error(`❌ Error in PATCH /objects:`, err);
@@ -1165,7 +1142,6 @@ router.post('/protection-means/inventory', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ createInventoryItem }) => {
       try {
-        console.log('📝 POST /api/protection-means/inventory', req.body);
         createInventoryItem(req.body, (err, result) => {
           if (err) {
             console.error('❌ Error creating inventory item:', err);
@@ -1175,7 +1151,6 @@ router.post('/protection-means/inventory', (req, res) => {
               duplicateLocations: err.duplicateLocations,
             });
           } else {
-            console.log('✅ Inventory item created');
             res.json(result);
           }
         });
@@ -1194,7 +1169,6 @@ router.put('/protection-means/inventory/:id', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ updateInventoryItem }) => {
       try {
-        console.log('✏️ PUT /api/protection-means/inventory/:id', req.body);
         updateInventoryItem(req.params.id, req.body, (err, result) => {
           if (err) {
             console.error('❌ Error updating inventory item:', err);
@@ -1204,7 +1178,6 @@ router.put('/protection-means/inventory/:id', (req, res) => {
               duplicateLocations: err.duplicateLocations,
             });
           } else {
-            console.log('✅ Inventory item updated');
             res.json(result);
           }
         });
@@ -1223,13 +1196,11 @@ router.delete('/protection-means/inventory/:id', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ deleteInventoryItem }) => {
       try {
-        console.log('🗑️ DELETE /api/protection-means/inventory/:id');
         deleteInventoryItem(req.params.id, (err, result) => {
           if (err) {
             console.error('❌ Error deleting inventory item:', err);
             res.status(500).json({ error: err.message });
           } else {
-            console.log('✅ Inventory item deleted');
             res.json(result);
           }
         });
@@ -1251,12 +1222,6 @@ router.post('/protection-means/check-duplicate', async (req, res) => {
   try {
     const { categoryId, serialNumber, excludeInventoryId } = req.body;
 
-    console.log('🔍 POST /api/protection-means/check-duplicate', {
-      categoryId,
-      serialNumber,
-      excludeInventoryId,
-    });
-
     if (!categoryId) {
       return res.status(400).json({
         error: "categoryId обов'язковий",
@@ -1269,7 +1234,6 @@ router.post('/protection-means/check-duplicate', async (req, res) => {
       excludeInventoryId || null,
     );
 
-    console.log('✅ Check completed:', result);
     res.json(result);
   } catch (err) {
     console.error('❌ Error checking duplicate:', err.message);
@@ -1287,7 +1251,6 @@ router.post('/protection-means/install', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ installProtectionMean }) => {
       try {
-        console.log('🔧 POST /api/protection-means/install', req.body);
         installProtectionMean(req.body, (err, result) => {
           if (err) {
             console.error('❌ Error installing protection mean:', err);
@@ -1296,7 +1259,6 @@ router.post('/protection-means/install', (req, res) => {
               duplicateLocations: err.duplicateLocations,
             });
           } else {
-            console.log('✅ Protection mean installed successfully');
             res.json(result);
           }
         });
@@ -1399,28 +1361,16 @@ router.get('/search-control-equipment', (req, res) => {
           );
         } else {
           rows.forEach((equipment, index) => {
-            console.log(
-              `✅ Fetching verifications for equipment ${equipment.id}`,
-            );
             db.all(
               'SELECT * FROM search_control_equipment_verification WHERE equipmentId = ? ORDER BY verificationDate DESC',
               [equipment.id],
               (verifyErr, verifications) => {
-                console.log(
-                  `  Verifications for ID ${equipment.id}:`,
-                  verifications,
-                );
                 equipmentWithVerifications[index] = {
                   ...equipment,
                   verifications: verifications || [],
                 };
                 completed++;
-                console.log(`  Completed: ${completed}/${rows.length}`);
-
                 if (completed === rows.length) {
-                  console.log(
-                    '✅ All verifications loaded, returning response',
-                  );
                   // Отримати статистику
                   db.all(
                     `SELECT 
@@ -1430,10 +1380,6 @@ router.get('/search-control-equipment', (req, res) => {
                     FROM search_control_equipment`,
                     (statsErr, statsRows) => {
                       const stats = statsErr ? null : statsRows[0];
-                      console.log(
-                        '📤 Response items:',
-                        equipmentWithVerifications.length,
-                      );
                       res.json({ items: equipmentWithVerifications, stats });
                     },
                   );
@@ -1579,11 +1525,6 @@ router.put('/search-control-equipment/:id', (req, res) => {
       verifications = [],
     } = req.body;
 
-    console.log('📝 PUT /search-control-equipment/:id');
-    console.log('  Equipment ID:', id);
-    console.log('  Body keys:', Object.keys(req.body));
-    console.log('  Verifications received:', verifications?.length || 0);
-
     if (!category || !name) {
       console.error('❌ Missing required fields: category or name');
       return res.status(400).json({ error: 'Category and name are required' });
@@ -1688,13 +1629,8 @@ function addNewVerifications(equipmentId, verifications, callback) {
   // Отримаємо лише нові повірки (id = 0 або не визначено)
   const newVerifications = verifications.filter((v) => !v.id || v.id <= 0);
 
-  console.log(
-    `🔄 Додавання ${newVerifications.length} нових повірок для техніки ID ${equipmentId}`,
-  );
-
   // Якщо немає нових повірок - готово
   if (newVerifications.length === 0) {
-    console.log('✅ Нових повірок немає');
     return callback(null);
   }
 
@@ -1732,8 +1668,6 @@ function addNewVerifications(equipmentId, verifications, callback) {
             err,
           );
           hasError = true;
-        } else {
-          console.log(`  ✅ Повірка додана (${deviceName})`);
         }
 
         // Коли всі операції додавання завершені
@@ -1741,9 +1675,6 @@ function addNewVerifications(equipmentId, verifications, callback) {
           if (hasError) {
             callback(new Error('Error adding some verifications'));
           } else {
-            console.log(
-              `✅ Усі ${newVerifications.length} нові повірки успішно додані`,
-            );
             callback(null);
           }
         }
@@ -1793,21 +1724,6 @@ router.post('/search-control-equipment/:id/verification', (req, res) => {
       verificationCost,
     } = req.body;
 
-    console.log('📝 POST /search-control-equipment/:id/verification');
-    console.log('  equipmentId:', id);
-    console.log('  deviceName:', deviceName, '(type:', typeof deviceName, ')');
-    console.log(
-      '  serialNumber:',
-      serialNumber,
-      '(type:',
-      typeof serialNumber,
-      ')',
-    );
-    console.log('  certificateRegNumber:', certificateRegNumber);
-    console.log('  verificationDate:', verificationDate);
-    console.log('  validUntil:', validUntil);
-    console.log('  verificationCost:', verificationCost);
-
     if (!deviceName || !serialNumber || !verificationDate || !validUntil) {
       return res.status(400).json({
         error:
@@ -1832,10 +1748,6 @@ router.post('/search-control-equipment/:id/verification', (req, res) => {
           console.error('❌ Error creating verification:', err);
           res.status(500).json({ error: err.message });
         } else {
-          console.log(
-            '✅ Verification created successfully with ID:',
-            this.lastID,
-          );
           res.json({
             id: this.lastID,
             message: 'Verification created successfully',
@@ -1893,7 +1805,6 @@ router.delete(
  */
 router.get('/antivirus', async (req, res) => {
   try {
-    console.log('📥 GET /api/antivirus');
     const data = await getAntivirusData();
 
     // Обчислити статистику
@@ -1928,7 +1839,6 @@ router.get('/antivirus', async (req, res) => {
 
     stats.uniqueAntivirus = Array.from(stats.uniqueAntivirus);
 
-    console.log(`✅ Retrieved ${data.length} antivirus records`);
     res.json({ items: data, stats });
   } catch (err) {
     console.error('❌ Error in GET /api/antivirus:', err);
@@ -1945,12 +1855,6 @@ router.put('/antivirus/update-opinion', async (req, res) => {
   try {
     const { antivirusName, opinionNumber, opinionDate } = req.body;
 
-    console.log('✏️ PUT /api/antivirus/update-opinion', {
-      antivirusName,
-      opinionNumber,
-      opinionDate,
-    });
-
     if (!antivirusName) {
       return res.status(400).json({
         error: "Назва антивіруса обов'язкова",
@@ -1963,7 +1867,6 @@ router.put('/antivirus/update-opinion', async (req, res) => {
       opinionDate,
     );
 
-    console.log('✅ Antivirus opinion updated:', result);
     res.json({
       success: true,
       message: `Експертний висновок для "${antivirusName}" успішно оновлено`,
@@ -1990,8 +1893,6 @@ router.put('/antivirus/update-opinion', async (req, res) => {
 router.get('/gunp-research-report', async (req, res) => {
   try {
     const { dateFrom, dateTo } = req.query;
-
-    console.log('📥 GET /api/gunp-research-report', { dateFrom, dateTo });
 
     if (!dateFrom || !dateTo) {
       return res.status(400).json({
@@ -2157,9 +2058,6 @@ router.get('/gunp-research-report', async (req, res) => {
       ),
     };
 
-    console.log(
-      `✅ GUNP research report generated: ${reportWithNumbers.length} rows`,
-    );
     res.json({
       success: true,
       dateFrom,
@@ -2334,7 +2232,7 @@ router.get('/npu-research', async (req, res) => {
   try {
     const { dateFrom, dateTo } = req.query;
 
-    console.log('📥 GET /api/npu-research', { dateFrom, dateTo });
+
 
     let query = 'SELECT * FROM npu_research';
     const params = [];
@@ -2385,9 +2283,6 @@ router.get('/npu-research', async (req, res) => {
         ),
       };
 
-      console.log(
-        `✅ NPU research report retrieved: ${rowsWithNumbers.length} rows`,
-      );
       res.json({
         success: true,
         dateFrom: dateFrom || null,
@@ -2421,8 +2316,6 @@ router.post('/npu-research', async (req, res) => {
       attestationActs,
     } = req.body;
 
-    console.log('📝 POST /api/npu-research', req.body);
-
     if (!startDate || !endDate || !organName) {
       return res.status(400).json({
         error: "Обов'язкові поля: startDate, endDate, organName",
@@ -2453,7 +2346,6 @@ router.post('/npu-research', async (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        console.log('✅ NPU research record created with id:', this.lastID);
         res.json({
           success: true,
           id: this.lastID,
@@ -2486,8 +2378,6 @@ router.put('/npu-research/:id', async (req, res) => {
       ksp,
       attestationActs,
     } = req.body;
-
-    console.log('✏️ PUT /api/npu-research/:id', { id, ...req.body });
 
     if (!startDate || !endDate || !organName) {
       return res.status(400).json({
@@ -2525,7 +2415,6 @@ router.put('/npu-research/:id', async (req, res) => {
           return res.status(404).json({ error: 'Запис не знайдено' });
         }
 
-        console.log('✅ NPU research record updated:', id);
         res.json({
           success: true,
           message: 'Запис успішно оновлено',
@@ -2545,8 +2434,6 @@ router.delete('/npu-research/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log('🗑️ DELETE /api/npu-research/:id', { id });
-
     db.run('DELETE FROM npu_research WHERE id = ?', [id], function (err) {
       if (err) {
         console.error('❌ Error in DELETE /api/npu-research/:id:', err);
@@ -2557,7 +2444,6 @@ router.delete('/npu-research/:id', async (req, res) => {
         return res.status(404).json({ error: 'Запис не знайдено' });
       }
 
-      console.log('✅ NPU research record deleted:', id);
       res.json({
         success: true,
         message: 'Запис успішно видалено',
@@ -2579,8 +2465,6 @@ router.delete('/npu-research/:id', async (req, res) => {
 router.get('/tzi-check', async (req, res) => {
   try {
     const { dateFrom, dateTo } = req.query;
-
-    console.log('📥 GET /api/tzi-check', { dateFrom, dateTo });
 
     let query = 'SELECT * FROM tzi_check';
     const params = [];
@@ -2622,9 +2506,6 @@ router.get('/tzi-check', async (req, res) => {
         ),
       };
 
-      console.log(
-        `✅ TZI check report retrieved: ${rowsWithNumbers.length} rows`,
-      );
       res.json({
         success: true,
         dateFrom: dateFrom || null,
@@ -2656,8 +2537,6 @@ router.post('/tzi-check', async (req, res) => {
       detailsViolation,
       holdAccountable,
     } = req.body;
-
-    console.log('📝 POST /api/tzi-check', req.body);
 
     if (!startDate || !endDate || !organName) {
       return res.status(400).json({
@@ -2696,7 +2575,6 @@ router.post('/tzi-check', async (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        console.log('✅ TZI check record created with id:', this.lastID);
         res.json({
           success: true,
           id: this.lastID,
@@ -2728,8 +2606,6 @@ router.put('/tzi-check/:id', async (req, res) => {
       detailsViolation,
       holdAccountable,
     } = req.body;
-
-    console.log('✏️ PUT /api/tzi-check/:id', { id, ...req.body });
 
     if (!startDate || !endDate || !organName) {
       return res.status(400).json({
@@ -2765,7 +2641,6 @@ router.put('/tzi-check/:id', async (req, res) => {
           return res.status(404).json({ error: 'Запис не знайдено' });
         }
 
-        console.log('✅ TZI check record updated:', id);
         res.json({
           success: true,
           message: 'Запис успішно оновлено',
@@ -2785,8 +2660,6 @@ router.delete('/tzi-check/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log('🗑️ DELETE /api/tzi-check/:id', { id });
-
     db.run('DELETE FROM tzi_check WHERE id = ?', [id], function (err) {
       if (err) {
         console.error('❌ Error in DELETE /api/tzi-check/:id:', err);
@@ -2797,7 +2670,6 @@ router.delete('/tzi-check/:id', async (req, res) => {
         return res.status(404).json({ error: 'Запис не знайдено' });
       }
 
-      console.log('✅ TZI check record deleted:', id);
       res.json({
         success: true,
         message: 'Запис успішно видалено',
@@ -2833,8 +2705,6 @@ function formatUADate(dateStr) {
 router.get('/radio-monitoring', async (req, res) => {
   try {
     const { dateFrom, dateTo, mode } = req.query;
-
-    console.log('📥 GET /api/radio-monitoring', { dateFrom, dateTo, mode });
 
     let query = 'SELECT * FROM radio_monitoring';
     const params = [];
@@ -2944,10 +2814,6 @@ router.get('/radio-monitoring', async (req, res) => {
         equipment: '—',
       };
 
-      console.log(
-        `✅ Radio monitoring data retrieved: ${rowsWithNumbers.length} rows`,
-      );
-
       res.json({
         success: true,
         dateFrom: dateFrom || null,
@@ -2977,8 +2843,6 @@ router.post('/radio-monitoring', async (req, res) => {
       equipment,
     } = req.body;
 
-    console.log('📝 POST /api/radio-monitoring', req.body);
-
     if (!monitoringType || !eventDate || !department || !equipment) {
       return res.status(400).json({
         error:
@@ -3004,7 +2868,6 @@ router.post('/radio-monitoring', async (req, res) => {
           return res.status(500).json({ error: err.message });
         }
 
-        console.log('✅ Radio monitoring record created with id:', this.lastID);
         res.json({
           success: true,
           id: this.lastID,
@@ -3032,8 +2895,6 @@ router.put('/radio-monitoring/:id', async (req, res) => {
       department,
       equipment,
     } = req.body;
-
-    console.log('✏️ PUT /api/radio-monitoring/:id', { id, ...req.body });
 
     if (!monitoringType || !eventDate || !department || !equipment) {
       return res.status(400).json({
@@ -3071,7 +2932,6 @@ router.put('/radio-monitoring/:id', async (req, res) => {
           return res.status(404).json({ error: 'Запис не знайдено' });
         }
 
-        console.log('✅ Radio monitoring record updated:', id);
         res.json({
           success: true,
           message: 'Запис успішно оновлено',
@@ -3091,8 +2951,6 @@ router.delete('/radio-monitoring/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log('🗑️ DELETE /api/radio-monitoring/:id', { id });
-
     db.run('DELETE FROM radio_monitoring WHERE id = ?', [id], function (err) {
       if (err) {
         console.error('❌ Error in DELETE /api/radio-monitoring/:id:', err);
@@ -3103,7 +2961,6 @@ router.delete('/radio-monitoring/:id', async (req, res) => {
         return res.status(404).json({ error: 'Запис не знайдено' });
       }
 
-      console.log('✅ Radio monitoring record deleted:', id);
       res.json({
         success: true,
         message: 'Запис успішно видалено',

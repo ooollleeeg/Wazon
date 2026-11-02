@@ -272,11 +272,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     JOIN iks i ON pm.iksId = i.id
     `,
     (err, rows) => {
-      console.log(`🔵 IKS query result:`, {
-        err: err?.message,
-        count: rows?.length || 0,
-        rows: rows?.slice(0, 2),
-      });
       if (!err && rows) {
         allMeans.push(
           ...rows.map((row) => ({
@@ -341,10 +336,6 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     WHERE i.kzzName IS NOT NULL AND i.kzzName != ''
     `,
     (err, rows) => {
-      console.log(`🔵 КЗЗ від НСД query result:`, {
-        err: err?.message,
-        count: rows?.length || 0,
-      });
       if (!err && rows) {
         allMeans.push(...rows);
       }
@@ -1148,23 +1139,6 @@ export function installProtectionMean(data, callback) {
 
       // Визначити категорію засобу (використовуємо з параметру або з запису)
       const meanCategory = category || mean.category;
-
-      console.log(
-        '[installProtectionMean] meanId:',
-        meanId,
-        'objectId:',
-        objectId,
-        'objectType:',
-        objectType,
-        'category param:',
-        category,
-        'mean.category:',
-        mean.category,
-        'meanCategory:',
-        meanCategory,
-        'mean keys:',
-        Object.keys(mean).slice(0, 10),
-      );
 
       // Спеціальна обробка для КЗЗ від НСД - перевіримо, чи вже встановлено
       if (meanCategory === 'КЗЗ від НСД') {

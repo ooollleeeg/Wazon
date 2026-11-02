@@ -90,8 +90,6 @@ export default function GenericForm({
 
   // Инициализируем данные формы
   const [formData, setFormData] = useState<any>(() => {
-    console.log('Initializing form with:', initialData);
-
     if (initialData) {
       return initialData;
     }
@@ -206,7 +204,6 @@ export default function GenericForm({
         }
       }
 
-      console.log('Input changed:', name, '=', value);
       return updated;
     });
   };
@@ -230,7 +227,6 @@ export default function GenericForm({
 
   // ===== ВЛОЖЁННЫЕ ПОЛЯ =====
   const addNestedItem = (nestedName: string, config: NestedFieldConfig) => {
-    console.log(`Adding ${nestedName}`);
     setFormData((prev: { [x: string]: any }) => {
       const newItems = [
         ...prev[nestedName],
@@ -269,7 +265,6 @@ export default function GenericForm({
     field: string,
     value: any,
   ) => {
-    console.log(`Updating ${nestedName}[${index}].${field} = ${value}`);
     setFormData((prev: { [x: string]: any }) => {
       const newItems = [...prev[nestedName]];
       newItems[index] = { ...newItems[index], [field]: value };
@@ -334,7 +329,6 @@ export default function GenericForm({
   };
 
   const removeNestedItem = (nestedName: string, index: number) => {
-    console.log(`Removing ${nestedName}[${index}]`);
     setFormData((prev: { [x: string]: any[] }) => ({
       ...prev,
       [nestedName]: prev[nestedName].filter((_: any, i: number) => i !== index),
@@ -379,7 +373,6 @@ export default function GenericForm({
       }
     });
 
-    console.log('Form submitting with cleaned data:', cleanedData);
     onSubmit(cleanedData);
   };
 

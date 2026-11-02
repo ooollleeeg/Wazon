@@ -844,7 +844,7 @@ function initializeDatabase() {
       `ALTER TABLE search_control_equipment_verification ADD COLUMN deviceName TEXT`,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ deviceName колона вже існує');
+          console.error('❌ Failed to add deviceName column:', err.message);
         }
       },
     );
@@ -852,7 +852,7 @@ function initializeDatabase() {
       `ALTER TABLE search_control_equipment_verification ADD COLUMN serialNumber TEXT`,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ serialNumber колона вже існує');
+          console.error('❌ Failed to add serialNumber column:', err.message);
         }
       },
     );
@@ -865,8 +865,9 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log(
-            'ℹ️ categoryId колона вже існує в protection_means_inventory або DB оновлена',
+          console.error(
+            '❌ Failed to add categoryId to protection_means_inventory:',
+            err.message,
           );
         }
       },
@@ -879,8 +880,9 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log(
-            'ℹ️ categoryId колона вже існує в class_a_systems_protection_means',
+          console.error(
+            '❌ Failed to add categoryId to class_a_systems_protection_means:',
+            err.message,
           );
         }
       },
@@ -893,8 +895,9 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log(
-            'ℹ️ categoryId колона вже існує в service_premises_protection_means',
+          console.error(
+            '❌ Failed to add categoryId to service_premises_protection_means:',
+            err.message,
           );
         }
       },
@@ -907,7 +910,10 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ categoryId колона вже існує в krt_protection_means');
+          console.error(
+            '❌ Failed to add categoryId to krt_protection_means:',
+            err.message,
+          );
         }
       },
     );
@@ -919,7 +925,10 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ categoryId колона вже існує в iks_protection_means');
+          console.error(
+            '❌ Failed to add categoryId to iks_protection_means:',
+            err.message,
+          );
         }
       },
     );
@@ -932,7 +941,10 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ kzzCategoryId колона вже існує в class_a_systems');
+          console.error(
+            '❌ Failed to add kzzCategoryId to class_a_systems:',
+            err.message,
+          );
         }
       },
     );
@@ -945,7 +957,10 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ kzzCategoryId колона вже існує в iks');
+          console.error(
+            '❌ Failed to add kzzCategoryId to iks:',
+            err.message,
+          );
         }
       },
     );
@@ -1022,10 +1037,12 @@ function initializeDatabase() {
               `ALTER TABLE iks ADD COLUMN subdivisionName TEXT`,
               (alterErr) => {
                 if (alterErr) {
-                  console.log(
-                    'ℹ️ subdivisionName already exists or error:',
-                    alterErr.message,
-                  );
+                  if (!alterErr.message.includes('duplicate column name')) {
+                    console.error(
+                      '❌ Failed to add subdivisionName to iks:',
+                      alterErr.message,
+                    );
+                  }
                 } else {
                   console.log('✅ Added subdivisionName to iks table');
                 }
@@ -1039,10 +1056,12 @@ function initializeDatabase() {
               `ALTER TABLE iks ADD COLUMN subdivisionType TEXT`,
               (alterErr) => {
                 if (alterErr) {
-                  console.log(
-                    'ℹ️ subdivisionType already exists or error:',
-                    alterErr.message,
-                  );
+                  if (!alterErr.message.includes('duplicate column name')) {
+                    console.error(
+                      '❌ Failed to add subdivisionType to iks:',
+                      alterErr.message,
+                    );
+                  }
                 } else {
                   console.log('✅ Added subdivisionType to iks table');
                 }
@@ -1084,8 +1103,9 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log(
-            'ℹ️ isProcessingSuspended колона вже існує в class_a_systems',
+          console.error(
+            '❌ Failed to add isProcessingSuspended to class_a_systems:',
+            err.message,
           );
         } else if (!err) {
           console.log(
@@ -1103,8 +1123,9 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log(
-            'ℹ️ isProcessingSuspended колона вже існує в service_premises',
+          console.error(
+            '❌ Failed to add isProcessingSuspended to service_premises:',
+            err.message,
           );
         } else if (!err) {
           console.log(
@@ -1122,7 +1143,10 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ isProcessingSuspended колона вже існує в krt');
+          console.error(
+            '❌ Failed to add isProcessingSuspended to krt:',
+            err.message,
+          );
         } else if (!err) {
           console.log('✅ Added isProcessingSuspended to krt table');
         }
@@ -1137,7 +1161,10 @@ function initializeDatabase() {
     `,
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
-          console.log('ℹ️ isProcessingSuspended колона вже існує в iks');
+          console.error(
+            '❌ Failed to add isProcessingSuspended to iks:',
+            err.message,
+          );
         } else if (!err) {
           console.log('✅ Added isProcessingSuspended to iks table');
         }

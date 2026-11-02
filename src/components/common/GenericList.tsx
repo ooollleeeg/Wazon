@@ -69,7 +69,6 @@ export default function GenericList({
   }, [expandedId, filteredItems, isLoading]);
 
   useEffect(() => {
-    console.log(`Filtering ${items.length} items with term: "${searchTerm}"`);
 
     if (!searchTerm) {
       // Применяем сортировку если есть

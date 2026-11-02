@@ -173,8 +173,6 @@ const SearchControlEquipmentModal = ({
             : parseFloat(String(newVerification.verificationCost)) || 0,
       };
 
-      console.log('📤 Відправка повірки:', verificationData);
-
       const response = await fetch(
         `/api/search-control-equipment/${equipment.id}/verification`,
         {
@@ -190,7 +188,6 @@ const SearchControlEquipmentModal = ({
       }
 
       const result = await response.json();
-      console.log('✅ Повірка успішно додана:', result);
 
       setVerifications([
         ...verifications,
@@ -221,10 +218,6 @@ const SearchControlEquipmentModal = ({
     }
 
     try {
-      console.log(
-        `🗑️ Видалення повірки ${verificationId} з обладнання ${equipment.id}`,
-      );
-
       const response = await fetch(
         `/api/search-control-equipment/${equipment.id}/verification/${verificationId}`,
         { method: 'DELETE' },
@@ -235,7 +228,6 @@ const SearchControlEquipmentModal = ({
         throw new Error(errorData.error || 'Помилка при видаленні повірки');
       }
 
-      console.log('✅ Повірка успішно видалена');
       setVerifications(verifications.filter((v) => v.id !== verificationId));
     } catch (err) {
       console.error('❌ Error deleting verification:', err);

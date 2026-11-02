@@ -29,9 +29,6 @@ const findExistingProtectionMeans = (
     const trimmedSerial = (serialNumber || '').trim();
 
     if (!trimmedSerial) {
-      console.log(
-        `  ℹ️  Skipping duplicate check: empty serial number (categoryId=${categoryId})`,
-      );
       return resolve(null);
     }
 
@@ -87,19 +84,11 @@ const findExistingProtectionMeans = (
       params.push(excludeInventoryId);
     }
 
-    console.log(
-      `  🔎 Checking duplicate: categoryId=${categoryId}, serial="${trimmedSerial}"${excludeInventoryId ? `, excludeId=${excludeInventoryId}` : ''}`,
-    );
-
     db.all(sql, params, (err, rows) => {
       if (err) {
         console.error(`    ❌ SQL Error:`, err.message);
         return reject(err);
       }
-      console.log(
-        `    📊 Query returned ${rows?.length || 0} rows`,
-        rows?.length > 0 ? `(${rows[0].source})` : '',
-      );
       resolve(rows || []);
     });
   });
@@ -404,10 +393,7 @@ export const createObjectWithNested = (config, data) => {
     const mainData = { ...data };
     delete mainData.id;
     const nestedKeys = Object.keys(nestedTables || {});
-    console.log(`🔍 DEBUG: nestedKeys from config:`, nestedKeys);
-    console.log(`🔍 DEBUG: data before delete:`, Object.keys(data));
     nestedKeys.forEach((key) => delete mainData[key]);
-    console.log(`🔍 DEBUG: mainData after delete:`, Object.keys(mainData));
 
     const fields = Object.keys(mainData);
     const placeholders = fields.map(() => '?').join(',');
@@ -415,28 +401,16 @@ export const createObjectWithNested = (config, data) => {
     const values = Object.values(mainData);
     const query = `INSERT INTO ${table} (${columns}) VALUES (${placeholders})`;
 
-    console.log(`🔵 Creating in ${table}:`, { columns, values });
-
     const objectName = getObjectDisplayName(mainData);
     try {
       if (nestedTables && nestedKeys.length > 0) {
-        console.log(
-          `🔐 Pre-insert validation: checking ${nestedKeys.length} nested table types (table: ${table})`,
-        );
-        console.log(`  📍 Detected source: ${currentSource}`);
         for (const nestedKey of nestedKeys) {
           const nestedConfig = nestedTables[nestedKey];
           const nestedItems = normalizedData[nestedKey];
-          console.log(
-            `  🗂️  ${nestedKey}: isProtectionMeansTable=${isProtectionMeansTable(nestedKey, nestedConfig)}, isArray=${Array.isArray(nestedItems)}, length=${Array.isArray(nestedItems) ? nestedItems.length : 'N/A'}`,
-          );
           if (
             isProtectionMeansTable(nestedKey, nestedConfig) &&
             Array.isArray(nestedItems)
           ) {
-            console.log(
-              `  🔍 Validating protection means for ${nestedKey} (new object, no ID exclusion)...`,
-            );
             const validation = await validateProtectionMeansAgainstExisting(
               nestedItems,
               objectName,
@@ -463,8 +437,6 @@ export const createObjectWithNested = (config, data) => {
       }
 
       const id = this.lastID;
-      console.log(`✅ Main record created with ID: ${id}`);
-
       try {
         // Зберігаємо вложені дані
         if (nestedTables && nestedKeys.length > 0) {
@@ -480,8 +452,6 @@ export const createObjectWithNested = (config, data) => {
             if (nestedItems.length === 0) {
               continue;
             }
-
-            console.log(`📦 Inserting ${nestedItems.length} ${nestedKey}`);
 
             for (const item of nestedItems) {
               if (!item || typeof item !== 'object') {
@@ -511,11 +481,6 @@ export const createObjectWithNested = (config, data) => {
               const nestedPlaceholders = allFields.map(() => '?').join(', ');
               const nestedQuery = `INSERT INTO ${nestedConfig.table} (${allFields.join(', ')}) VALUES (${nestedPlaceholders})`;
 
-              console.log(`  ↳ ${nestedConfig.table}:`, {
-                fields: allFields,
-                values: allValues,
-              });
-
               await new Promise((resolveNested, rejectNested) => {
                 db.run(nestedQuery, allValues, function (nestedErr) {
                   if (nestedErr) {
@@ -525,9 +490,6 @@ export const createObjectWithNested = (config, data) => {
                     );
                     return rejectNested(nestedErr);
                   }
-                  console.log(
-                    `✅ ${nestedKey} record created with ID: ${this.lastID}`,
-                  );
                   resolveNested();
                 });
               });
@@ -535,7 +497,6 @@ export const createObjectWithNested = (config, data) => {
           }
         }
 
-        console.log(`✅ All nested data inserted successfully`);
         resolve({
           id,
           ...normalizedData,
@@ -574,29 +535,18 @@ export const updateObjectWithNested = (config, id, data) => {
       ? `UPDATE ${config.table} SET ${setClause}, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`
       : `UPDATE ${config.table} SET updatedAt = CURRENT_TIMESTAMP WHERE id = ?`;
 
-    console.log(`🔵 Updating in ${config.table}:`, { id, values });
-
     const objectName = getObjectDisplayName(mainData);
     const currentSource = getProtectionMeanSource(config.table);
 
     try {
       if (nestedKeys.length > 0) {
-        console.log(
-          `🔐 PRE-UPDATE VALIDATION: checking ${nestedKeys.length} nested table types (table: ${config.table}, source: ${currentSource}, id: ${id})`,
-        );
         for (const nestedKey of nestedKeys) {
           const nestedConfig = config.nestedTables[nestedKey];
           const nestedItems = normalizedData[nestedKey] || [];
-          console.log(
-            `  🗂️  ${nestedKey}: isProtectionMeansTable=${isProtectionMeansTable(nestedKey, nestedConfig)}, length=${nestedItems.length}`,
-          );
           if (
             isProtectionMeansTable(nestedKey, nestedConfig) &&
             Array.isArray(nestedItems)
           ) {
-            console.log(
-              `  🔍 Validating protection means for ${nestedKey} with global check (excluding ${currentSource}#${id})...`,
-            );
             const validation = await validateProtectionMeansAgainstExisting(
               nestedItems,
               objectName,
@@ -622,7 +572,6 @@ export const updateObjectWithNested = (config, id, data) => {
         return reject(new Error(err.message));
       }
 
-      console.log(`✅ Main record updated`);
       let result = { id, ...mainData };
 
       if (nestedKeys.length === 0) {
@@ -653,7 +602,6 @@ export const updateObjectWithNested = (config, id, data) => {
             if (nestedItems.length === 0) {
               completed++;
               if (completed === nestedKeys.length) {
-                console.log(`✅ All nested data updated successfully`);
                 resolve({
                   ...result,
                   protectionMeanWarnings,
@@ -698,7 +646,6 @@ export const updateObjectWithNested = (config, id, data) => {
                 if (itemCompleted === nestedItems.length) {
                   completed++;
                   if (completed === nestedKeys.length) {
-                    console.log(`✅ All nested data updated successfully`);
                     resolve({
                       ...result,
                       protectionMeanWarnings,
@@ -823,7 +770,6 @@ export const getAntivirusData = () => {
         console.error('❌ Error getting antivirus data:', err.message);
         reject(err);
       } else {
-        console.log(`✅ Retrieved ${rows?.length || 0} antivirus records`);
         resolve(rows || []);
       }
     });
@@ -866,7 +812,6 @@ export const updateAntivirusOnAllObjects = (
           results.classA = 0;
         } else {
           results.classA = this.changes;
-          console.log(`✅ Updated ${this.changes} records in class_a_systems`);
         }
 
         completed++;
@@ -875,7 +820,6 @@ export const updateAntivirusOnAllObjects = (
             console.error('⚠️ Partial update with errors:', results.errors);
             reject(new Error(results.errors.join('; ')));
           } else {
-            console.log(`✅ Successfully updated all antivirus records`);
             resolve(results);
           }
         }
@@ -899,7 +843,6 @@ export const updateAntivirusOnAllObjects = (
           results.iks = 0;
         } else {
           results.iks = this.changes;
-          console.log(`✅ Updated ${this.changes} records in iks`);
         }
 
         completed++;
@@ -908,7 +851,6 @@ export const updateAntivirusOnAllObjects = (
             console.error('⚠️ Partial update with errors:', results.errors);
             reject(new Error(results.errors.join('; ')));
           } else {
-            console.log(`✅ Successfully updated all antivirus records`);
             resolve(results);
           }
         }

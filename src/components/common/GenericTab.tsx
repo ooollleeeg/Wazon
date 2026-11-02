@@ -57,7 +57,6 @@ export default function GenericTab({
   const formContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    console.log(`${config.displayName} mounted, fetching items...`);
     fetchItems();
   }, [config.apiEndpoint]);
 
@@ -65,18 +64,13 @@ export default function GenericTab({
     try {
       setIsLoading(true);
       setError('');
-      console.log(`Fetching from ${config.apiEndpoint}`);
-
       const response = await fetch(config.apiEndpoint);
-
-      console.log('Response status:', response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Received data:', data);
       setItems(data);
     } catch (err) {
       console.error('Fetch error:', err);
@@ -96,18 +90,11 @@ export default function GenericTab({
         : config.apiEndpoint;
       const method = editingId ? 'PUT' : 'POST';
 
-      console.log('=== SUBMIT START ===');
-      console.log('URL:', url);
-      console.log('Method:', method);
-      console.log('Data:', data);
-
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
-      console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -118,7 +105,6 @@ export default function GenericTab({
       }
 
       const result = await response.json();
-      console.log('Success response:', result);
 
       setIsSaving(false);
       await fetchItems();
@@ -139,7 +125,6 @@ export default function GenericTab({
           sourceObjectId: result.id,
         });
       }
-      console.log('=== SUBMIT END (SUCCESS) ===');
     } catch (err) {
       console.error('=== SUBMIT ERROR ===', err);
       setError(`Помилка збереження: ${(err as Error).message}`);
@@ -155,8 +140,6 @@ export default function GenericTab({
     try {
       setIsLoading(true);
       setError('');
-
-      console.log(`Deleting from ${config.apiEndpoint}/${id}`);
 
       const response = await fetch(`${config.apiEndpoint}/${id}`, {
         method: 'DELETE',
@@ -176,7 +159,6 @@ export default function GenericTab({
         throw new Error(result.error || 'Помилка видалення');
       }
 
-      console.log('Item deleted successfully');
       setPendingDelete(null);
       await fetchItems();
       onDataChanged?.();
@@ -232,8 +214,6 @@ export default function GenericTab({
   };
 
   const handleEdit = (item: any) => {
-    console.log('=== EDIT START ===');
-    console.log('Item data:', item);
     setEditingId(item.id || null);
     setShowForm(true);
 
@@ -245,8 +225,6 @@ export default function GenericTab({
         });
       }
     }, 100);
-
-    console.log('=== EDIT END ===');
   };
 
   const handleCloseForm = () => {

@@ -261,7 +261,6 @@ const ProtectionMeansTab = () => {
         throw new Error(result.error || 'Помилка при встановленні засобу');
       }
 
-      console.log('✅ Засіб успішно встановлено');
       handleCloseInstallModal();
 
       // Перезавантажуємо дані та переходимо на об'єкт
@@ -346,7 +345,6 @@ const ProtectionMeansTab = () => {
           throw new Error(errData.error || 'Помилка при оновленні засобу');
         }
 
-        console.log('✅ Inventory item updated');
         setSuccessMessage(`Засіб ТЗІ "${formData.name}" успішно редаговано`);
         setShowSuccessModal(true);
         setShowAddForm(false);
@@ -371,7 +369,6 @@ const ProtectionMeansTab = () => {
         throw new Error(errData.error || 'Помилка при додаванні засобу');
       }
 
-      console.log('✅ New inventory item created');
       setShowAddForm(false);
       fetchData(); // Перезавантажуємо дані
     } catch (err) {
