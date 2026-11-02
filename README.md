@@ -1,161 +1,107 @@
-```
-vazon
-├─ data
-├─ index.html
-├─ package-lock.json
-├─ package.json
-├─ project_structure.txt
-├─ README.md
-├─ server
-│  ├─ # Code Citations.md
-│  ├─ config
-│  │  └─ objectTypes.js
-│  ├─ database.js
-│  ├─ index.js
-│  ├─ routes.js
-│  └─ utils
-│     └─ dbHelpers.js
-├─ src
-│  ├─ App.tsx
-│  ├─ components
-│  │  ├─ class-as
-│  │  │  ├─ ClassASCard.tsx
-│  │  │  ├─ ClassASCardCompact.tsx
-│  │  │  ├─ ClassASForm.tsx
-│  │  │  ├─ ClassASList.tsx
-│  │  │  └─ styles
-│  │  │     ├─ ClassASCard.css
-│  │  │     ├─ ClassASCardCompact.css
-│  │  │     ├─ ClassASForm.css
-│  │  │     └─ ClassASList.css
-│  │  ├─ FireEquipmentCard.tsx
-│  │  ├─ FireEquipmentForm.tsx
-│  │  ├─ FireEquipmentList.tsx
-│  │  ├─ modals
-│  │  │  ├─ DeleteConfirmModal.tsx
-│  │  │  └─ styles
-│  │  │     └─ DeleteConfirmModal.css
-│  │  ├─ personnel
-│  │  │  ├─ PersonnelCard.tsx
-│  │  │  ├─ PersonnelCardCompact.tsx
-│  │  │  ├─ PersonnelForm.tsx
-│  │  │  ├─ PersonnelList.tsx
-│  │  │  └─ styles
-│  │  │     ├─ PersonnelCard.css
-│  │  │     └─ PersonnelList.css
-│  │  ├─ PropertyCard.tsx
-│  │  ├─ PropertyForm.tsx
-│  │  ├─ PropertyList.tsx
-│  │  └─ tabs
-│  │     ├─ AntivirusTab.tsx
-│  │     ├─ ClassASTab.tsx
-│  │     ├─ CombinedOIDTab.tsx
-│  │     ├─ DocumentsTab.tsx
-│  │     ├─ ElectricalTab.tsx
-│  │     ├─ FireEquipmentTab.tsx
-│  │     ├─ GUNPResearchTab.tsx
-│  │     ├─ IKSTab.tsx
-│  │     ├─ KRTTab.tsx
-│  │     ├─ MeasurementDevicesTab.tsx
-│  │     ├─ NPUResearchTab.tsx
-│  │     ├─ PersonnelTab.tsx
-│  │     ├─ PropertyTab.tsx
-│  │     ├─ RadioMonitoringTab.tsx
-│  │     ├─ SearchControlEquipmentTab.tsx
-│  │     ├─ ServicePremisesTab.tsx
-│  │     ├─ TZICheckTab.tsx
-│  │     └─ TZIToolsTab.tsx
-│  ├─ main.tsx
-│  └─ styles
-│     ├─ App.css
-│     ├─ PersonnelForm.css
-│     ├─ PropertyCard.css
-│     ├─ PropertyForm.css
-│     ├─ PropertyList.css
-│     └─ TabContent.css
-├─ tsconfig.json
-├─ tsconfig.node.json
-└─ vite.config.ts
+# Vazon
 
+Vazon — вебзастосунок для ведення реєстру об’єктів інформаційної діяльності,
+обліку обладнання та засобів ТЗІ, а також формування звітів і контролю строків.
+
+## Можливості
+
+- облік особового складу;
+- ведення відомостей про АС, ІКС, КРТ і службові приміщення;
+- облік документів з ТЗІ та контроль строків їх дії;
+- облік засобів ТЗІ: склад, встановлення, прив’язки до об’єктів і КТЗІ;
+- облік пошукової та вимірювальної техніки і її повірок;
+- звіти щодо документів, досліджень, перевірок ТЗІ та радіомоніторингу;
+- облік антивірусного програмного забезпечення.
+
+## Технології
+
+- **Інтерфейс:** React, TypeScript, Vite.
+- **Сервер:** Node.js, Express.
+- **База даних:** SQLite (`sqlite3`).
+
+## Запуск локально
+
+Потрібні Node.js та npm.
+
+```bash
+npm ci
+npm start
 ```
 
-```
-vazon
-├─ data
-├─ index.html
-├─ package-lock.json
-├─ package.json
-├─ project_structure.txt
-├─ README.md
-├─ server
-│  ├─ # Code Citations.md
-│  ├─ config
-│  │  └─ objectTypes.js
-│  ├─ database.js
-│  ├─ index.js
-│  ├─ routes.js
-│  └─ utils
-│     └─ dbHelpers.js
-├─ src
-│  ├─ App.tsx
-│  ├─ components
-│  │  ├─ class-as
-│  │  │  ├─ ClassASCard.tsx
-│  │  │  ├─ ClassASCardCompact.tsx
-│  │  │  ├─ ClassASForm.tsx
-│  │  │  ├─ ClassASList.tsx
-│  │  │  └─ styles
-│  │  │     ├─ ClassASCard.css
-│  │  │     ├─ ClassASCardCompact.css
-│  │  │     ├─ ClassASForm.css
-│  │  │     └─ ClassASList.css
-│  │  ├─ FireEquipmentCard.tsx
-│  │  ├─ FireEquipmentForm.tsx
-│  │  ├─ FireEquipmentList.tsx
-│  │  ├─ modals
-│  │  │  ├─ DeleteConfirmModal.tsx
-│  │  │  └─ styles
-│  │  │     └─ DeleteConfirmModal.css
-│  │  ├─ personnel
-│  │  │  ├─ PersonnelCard.tsx
-│  │  │  ├─ PersonnelCardCompact.tsx
-│  │  │  ├─ PersonnelForm.tsx
-│  │  │  ├─ PersonnelList.tsx
-│  │  │  └─ styles
-│  │  │     ├─ PersonnelCard.css
-│  │  │     └─ PersonnelList.css
-│  │  ├─ PropertyCard.tsx
-│  │  ├─ PropertyForm.tsx
-│  │  ├─ PropertyList.tsx
-│  │  └─ tabs
-│  │     ├─ AntivirusTab.tsx
-│  │     ├─ ClassASTab.tsx
-│  │     ├─ CombinedOIDTab.tsx
-│  │     ├─ DocumentsTab.tsx
-│  │     ├─ ElectricalTab.tsx
-│  │     ├─ FireEquipmentTab.tsx
-│  │     ├─ GUNPResearchTab.tsx
-│  │     ├─ IKSTab.tsx
-│  │     ├─ KRTTab.tsx
-│  │     ├─ MeasurementDevicesTab.tsx
-│  │     ├─ NPUResearchTab.tsx
-│  │     ├─ PersonnelTab.tsx
-│  │     ├─ PropertyTab.tsx
-│  │     ├─ RadioMonitoringTab.tsx
-│  │     ├─ SearchControlEquipmentTab.tsx
-│  │     ├─ ServicePremisesTab.tsx
-│  │     ├─ TZICheckTab.tsx
-│  │     └─ TZIToolsTab.tsx
-│  ├─ main.tsx
-│  └─ styles
-│     ├─ App.css
-│     ├─ PersonnelForm.css
-│     ├─ PropertyCard.css
-│     ├─ PropertyForm.css
-│     ├─ PropertyList.css
-│     └─ TabContent.css
-├─ tsconfig.json
-├─ tsconfig.node.json
-└─ vite.config.ts
+Після запуску відкрийте <http://localhost:3000>. Команда `npm start` паралельно
+запускає Vite та API-сервер. Інтерфейс проксуює запити `/api` на сервер
+`http://localhost:3006`.
 
+Для окремого запуску процесів використовуйте два термінали:
+
+```bash
+npm run dev
+npm run server
 ```
+
+Порт сервера за замовчуванням — `3006`; його можна змінити змінною середовища
+`PORT`.
+
+## Збірка та перевірки
+
+```bash
+npm run build
+npm test
+```
+
+`npm run build` створює production-файли у `dist/`. Щоб запустити зібраний
+застосунок, спочатку виконайте збірку, а потім `npm run server`.
+
+`npm test` запускає перевірку міграції бази даних і тести роботи з КТЗІ та
+засобами ТЗІ.
+
+## Дані та база даних
+
+За замовчуванням SQLite-файл створюється за шляхом `data/vazon.db`. Інший шлях
+можна передати через змінну середовища `VAZON_DB_PATH`. Під час запуску сервер
+ініціалізує таблиці та виконує потрібні міграції.
+
+База містить робочі дані. Робіть резервні копії перед оновленнями та не
+видаляйте файл бази даних, якщо потрібно зберегти записи.
+
+## Структура проєкту
+
+```text
+src/
+  App.tsx                  Навігація та перелік вкладок
+  components/tabs/         Екрани функцій застосунку
+  components/common/       Спільні форми, списки та компоненти
+  styles/                  Стилі інтерфейсу
+server/
+  index.js                 Express-сервер, middleware та роздача dist/
+  routes.js                API-маршрути
+  database.js              Підключення, схема SQLite та міграції
+  config/objectTypes.js    Конфігурація типів об’єктів і їхніх полів
+  utils/                   Операції з БД та бізнес-логіка
+data/                      Локальна база даних
+```
+
+Основні розділи API: `/api/objects`, `/api/ktzi`, `/api/protection-means`,
+`/api/search-control-equipment`, `/api/antivirus`, `/api/documents-report`,
+`/api/gunp-research-report`, `/api/npu-research`, `/api/tzi-check` і
+`/api/radio-monitoring`.
+
+## КТЗІ та додаткові матеріали
+
+КТЗІ об’єднує пов’язані об’єкти та спільні документи й засоби захисту.
+Докладніше про ідентифікацію комплексу, документи, засоби та сумісність зі
+старими даними — у [моделі КТЗІ](./KTZI_ARCHITECTURE.md).
+
+Файли нижче містять предметні алгоритми та початкові вимоги для окремих
+сценаріїв:
+
+- [звіт щодо документів](./algoritm_docs.md);
+- [відомості про ОІД](./algoritm_docs%20copy.md);
+- [встановлення засобу ТЗІ](./algoritm_protection_means.md);
+- [додавання засобу ТЗІ на склад](./algoritm_protection_means2.md).
+
+## Розробка
+
+Для додавання вкладки оновіть список `TABS` у `src/App.tsx` і реалізуйте екран у
+`src/components/tabs/`. Загальні типи об’єктів та опис полів налаштовуються в
+`server/config/objectTypes.js`, а API-маршрути — у `server/routes.js`.
