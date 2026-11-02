@@ -4,6 +4,7 @@ import PersonnelTab from './components/tabs/PersonnelTab';
 import ClassASTab from './components/tabs/ClassASTab';
 import ServicePremisesTab from './components/tabs/ServicePremisesTab';
 import KRTTab from './components/tabs/KRTTab';
+import KtziDocumentsTab from './components/tabs/KtziDocumentsTab';
 import IKSTab from './components/tabs/IKSTab';
 import ProtectionMeansTab from './components/tabs/ProtectionMeansTab';
 import SearchControlEquipmentTab from './components/tabs/SearchControlEquipmentTab';
@@ -61,6 +62,13 @@ const TABS: Tab[] = [
     icon: CopierIcon,
     component: KRTTab,
     color: '#667eea',
+  },
+  {
+    id: 'ktzi-documents',
+    label: 'Документи КТЗІ',
+    icon: '📋',
+    component: KtziDocumentsTab,
+    color: '#5b7caa',
   },
   {
     id: 'iks',

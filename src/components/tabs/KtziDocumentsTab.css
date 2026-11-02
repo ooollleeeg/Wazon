@@ -1,0 +1,129 @@
+.ktzi-documents-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.ktzi-documents-intro {
+  margin: 0 0 20px;
+  color: #555;
+}
+
+.ktzi-selector-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.ktzi-selector {
+  width: 100%;
+  max-width: 720px;
+  min-height: 42px;
+  padding: 8px 12px;
+}
+
+.ktzi-objects-list {
+  margin: 14px 0 22px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.ktzi-migration-warning {
+  margin: 16px 0 22px;
+  padding: 16px;
+  border: 1px solid #e8c66a;
+  border-radius: 8px;
+  background: #fff8df;
+  color: #5f4b16;
+  line-height: 1.5;
+}
+
+.ktzi-migration-warning p {
+  margin: 8px 0;
+}
+
+.ktzi-migration-warning ul {
+  margin: 6px 0 0;
+  padding-left: 22px;
+}
+
+.ktzi-documents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.ktzi-document-section {
+  padding: 18px;
+  border: 1px solid #e3e7ed;
+  border-radius: 10px;
+}
+
+.ktzi-document-section h3 {
+  margin: 0 0 16px;
+  color: #394867;
+  font-size: 1.05rem;
+}
+
+.ktzi-document-fields {
+  display: grid;
+  gap: 12px;
+}
+
+.ktzi-document-fields label {
+  display: grid;
+  gap: 5px;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.ktzi-document-fields input,
+.ktzi-document-fields select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #cbd2dc;
+  border-radius: 6px;
+  background: #fff;
+  color: #202938;
+  font: inherit;
+}
+
+.ktzi-documents-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.ktzi-documents-success {
+  color: #218838;
+}
+
+.ktzi-documents-state {
+  padding: 28px;
+  border-radius: 8px;
+  background: #f5f7fa;
+  color: #596579;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .ktzi-documents-container {
+    padding: 16px;
+  }
+
+  .ktzi-documents-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ktzi-documents-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}

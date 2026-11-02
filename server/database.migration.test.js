@@ -33,6 +33,17 @@ await legacyRun(`
   )
 `);
 await legacyRun(`
+  CREATE TABLE ktzi_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ktziId INTEGER NOT NULL,
+    documentType TEXT NOT NULL,
+    documentNumber TEXT,
+    documentDate TEXT,
+    validUntil TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+await legacyRun(`
   CREATE TABLE class_a_systems (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     address TEXT,
@@ -85,6 +96,12 @@ await legacyRun(
   `INSERT INTO ktzi (id, ktziKey, address, premisesNumber, subdivisionName)
    VALUES (?, ?, ?, ?, ?)`,
   [1, 'legacy-ktzi', 'Legacy address', '101', 'Legacy department'],
+);
+await legacyRun(
+  `INSERT INTO ktzi_documents
+   (ktziId, documentType, documentNumber, documentDate)
+   VALUES (?, ?, ?, ?)`,
+  [1, 'technicalTask', 'Legacy task', '2025-01-01'],
 );
 const legacyObjectId = await legacyRun(
   `INSERT INTO class_a_systems
@@ -150,6 +167,18 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
   });
   assert.ok(columns.some((column) => column.name === 'ktziId'));
   assert.ok(columns.some((column) => column.name === 'isProcessingSuspended'));
+  const documentColumns = await tableColumns('ktzi_documents');
+  assert.ok(documentColumns.some((column) => column.name === 'documentData'));
+  const legacyDocument = await get(
+    `SELECT documentNumber, documentDate, documentData
+     FROM ktzi_documents WHERE ktziId = ?`,
+    [1],
+  );
+  assert.deepEqual(legacyDocument, {
+    documentNumber: 'Legacy task',
+    documentDate: '2025-01-01',
+    documentData: null,
+  });
   const protectionMeanColumns = await tableColumns(
     'class_a_systems_protection_means',
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import GenericTab, { TabConfig } from '../common/GenericTab';
-import GenericForm, { FormConfig } from '../common/GenericForm';
+import { FormConfig } from '../common/GenericForm';
+import KtziObjectForm from '../common/KtziObjectForm';
 import GenericList, { ListConfig } from '../common/GenericList';
 import GenericCard, { CardConfig } from '../common/GenericCard';
 import KRTCardCompact from '../krt/KRTCardCompact';
@@ -536,6 +537,12 @@ const krtCardConfig: CardConfig = {
           value: 'passportDate',
           format: 'date',
         },
+        { label: 'Номер акту КСП', value: 'kspActNumber' },
+        {
+          label: 'Дата реєстрації акту КСП',
+          value: 'kspActDate',
+          format: 'date',
+        },
       ],
     },
   ],
@@ -731,7 +738,9 @@ const krtTabConfig: TabConfig = {
   displayName: 'КРТ',
   searchPlaceholder: 'Пошук по назві підрозділу, номеру приміщення, адресі...',
   addButtonLabel: '+ Додати запис про КРТ',
-  FormComponent: (props) => <GenericForm config={krtFormConfig} {...props} />,
+  FormComponent: (props) => (
+    <KtziObjectForm config={krtFormConfig} {...props} />
+  ),
   ListComponent: (props) => <GenericList config={krtListConfig} {...props} />,
 };
 

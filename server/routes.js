@@ -22,7 +22,9 @@ import { db } from './database.js';
 import {
   attachObjectToKtzi,
   getKtziObjects,
-  syncKtziDocuments,
+  getKtziDocumentData,
+  saveKtziDocumentData,
+  syncKtziComplianceDocuments,
   syncKtziProtectionMeans,
   shareKtziProtectionMeans,
   applyKtziProtectionMeanChanges,
@@ -47,6 +49,92 @@ const queryOne = (query, params = []) =>
       else resolve(row || null);
     });
   });
+
+const addKtziDocumentsToObject = async (object) => {
+  if (!object?.ktziId) return object;
+  const { documents } = await getKtziDocumentData(object.ktziId);
+  return {
+    ...object,
+    ktziDocuments: documents,
+    technicalTask: documents.technicalTask
+      ? [documents.technicalTask]
+      : object.technicalTask,
+    categorization: documents.categorization
+      ? [documents.categorization]
+      : object.categorization,
+    atestation: documents.atestation
+      ? [documents.atestation]
+      : object.atestation,
+    passportNumber:
+      documents.passport?.passportNumber ?? object.passportNumber,
+    passportDate: documents.passport?.passportDate ?? object.passportDate,
+    kspActNumber: documents.ksp?.kspActNumber ?? object.kspActNumber,
+    kspActDate: documents.ksp?.kspActDate ?? object.kspActDate,
+  };
+};
+
+const sharedKtziObjectFields = new Set([
+  'categorization',
+  'technicalTask',
+  'atestation',
+  'passportNumber',
+  'passportDate',
+  'kspActNumber',
+  'kspActDate',
+  'categorizationActDate',
+  'categorizationActNumber',
+  'attestationRegDate',
+  'attestationRegNumber',
+  'attestationDsszziDate',
+  'attestationDsszziNumber',
+  'attestationValidUntil',
+  'taskDate',
+  'taskNumber',
+  'taskClearance',
+  'ktziDocuments',
+]);
+
+const removeSharedKtziObjectFields = (data) =>
+  Object.fromEntries(
+    Object.entries(data).filter(([field]) => !sharedKtziObjectFields.has(field)),
+  );
+
+router.get('/ktzi', async (_req, res) => {
+  try {
+    const ktzis = await queryAll(
+      'SELECT * FROM ktzi ORDER BY address, premisesNumber, subdivisionName',
+    );
+    const result = await Promise.all(
+      ktzis.map(async (ktzi) => {
+        const [objects, documentData] = await Promise.all([
+          getKtziObjects(ktzi.id),
+          getKtziDocumentData(ktzi.id),
+        ]);
+        return { ...ktzi, objects, ...documentData };
+      }),
+    );
+    res.json(result);
+  } catch (err) {
+    console.error('Помилка отримання КТЗІ:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/ktzi/:id/documents', async (req, res) => {
+  try {
+    const ktzi = await queryOne('SELECT id FROM ktzi WHERE id = ?', [
+      req.params.id,
+    ]);
+    if (!ktzi) {
+      return res.status(404).json({ error: 'КТЗІ не знайдено' });
+    }
+    const result = await saveKtziDocumentData(ktzi.id, req.body.documents);
+    res.json(result);
+  } catch (err) {
+    console.error('Помилка збереження документів КТЗІ:', err);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
 
 const countOidObjects = async ({
   table,
@@ -599,7 +687,9 @@ router.get('/objects/:type', validateObjectType, async (req, res) => {
       const withNested = await Promise.all(
         rows.map((row) => getObjectWithNested(req.objectConfig, row.id)),
       );
-      return res.json(withNested);
+      return res.json(
+        await Promise.all(withNested.map(addKtziDocumentsToObject)),
+      );
     }
 
     const rows = await getAllObjects(req.objectConfig.table, filters);
@@ -626,7 +716,7 @@ router.get('/objects/:type/:id', validateObjectType, async (req, res) => {
     if (!row) {
       return res.status(404).json({ error: "Об'єкт не знайдено" });
     }
-    res.json(row);
+    res.json(await addKtziDocumentsToObject(row));
   } catch (err) {
     console.error(`❌ Error in GET /objects/:id:`, err);
     res.status(500).json({ error: err.message });
@@ -638,9 +728,12 @@ router.get('/objects/:type/:id', validateObjectType, async (req, res) => {
  */
 router.post('/objects/:type', validateObjectType, async (req, res) => {
   try {
+    const requestData = isKtziTable(req.objectConfig.table)
+      ? removeSharedKtziObjectFields(req.body)
+      : req.body;
     const objectData = await attachObjectToKtzi(
       req.objectConfig.table,
-      req.body,
+      requestData,
     );
     let result;
 
@@ -651,7 +744,10 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
     }
 
     if (isKtziTable(req.objectConfig.table)) {
-      await syncKtziDocuments(result.ktziId, objectData);
+      await syncKtziComplianceDocuments(
+        result.ktziId,
+        objectData.complianceDocuments,
+      );
       await syncKtziProtectionMeans(
         req.objectConfig.table,
         result.id,
@@ -676,13 +772,20 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
  */
 router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
   try {
-    const currentObject = await getObjectById(
-      req.objectConfig.table,
-      req.params.id,
-    );
+    const loadedCurrentObject =
+      isKtziTable(req.objectConfig.table) && req.objectConfig.nestedTables
+        ? await getObjectWithNested(req.objectConfig, req.params.id)
+        : await getObjectById(req.objectConfig.table, req.params.id);
+    const currentObject = loadedCurrentObject ? { ...loadedCurrentObject } : null;
+    if (currentObject && isKtziTable(req.objectConfig.table)) {
+      delete currentObject.sharedProtectionMeans;
+    }
+    const requestData = isKtziTable(req.objectConfig.table)
+      ? removeSharedKtziObjectFields(req.body)
+      : req.body;
     const objectData = await attachObjectToKtzi(
       req.objectConfig.table,
-      { ...currentObject, ...req.body },
+      { ...currentObject, ...requestData },
     );
     const sharedMeanSnapshots = await getSharedProtectionMeanSnapshots(
       req.objectConfig.table,
@@ -705,7 +808,10 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
     }
 
     if (isKtziTable(req.objectConfig.table)) {
-      await syncKtziDocuments(objectData.ktziId, objectData);
+      await syncKtziComplianceDocuments(
+        objectData.ktziId,
+        objectData.complianceDocuments,
+      );
       await syncKtziProtectionMeans(
         req.objectConfig.table,
         req.params.id,
@@ -925,7 +1031,10 @@ router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
     }
 
     if (isKtziTable(req.objectConfig.table)) {
-      await syncKtziDocuments(objectData.ktziId, objectData);
+      await syncKtziComplianceDocuments(
+        objectData.ktziId,
+        objectData.complianceDocuments,
+      );
       await syncKtziProtectionMeans(
         req.objectConfig.table,
         req.params.id,

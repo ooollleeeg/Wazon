@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import GenericTab, { TabConfig } from '../common/GenericTab';
-import GenericForm, { FormConfig } from '../common/GenericForm';
+import { FormConfig } from '../common/GenericForm';
+import KtziObjectForm from '../common/KtziObjectForm';
 import GenericList, { ListConfig } from '../common/GenericList';
 import GenericCard, { CardConfig } from '../common/GenericCard';
 import ServicePremisesCardCompact from '../service-premises/ServicePremisesCardCompact';
@@ -532,6 +533,12 @@ const servicePremisesCardConfig: CardConfig = {
           value: 'passportDate',
           format: 'date',
         },
+        { label: 'Номер акту КСП', value: 'kspActNumber' },
+        {
+          label: 'Дата реєстрації акту КСП',
+          value: 'kspActDate',
+          format: 'date',
+        },
       ],
     },
   ],
@@ -764,7 +771,7 @@ const servicePremisesTabConfig: TabConfig = {
   searchPlaceholder: 'Пошук по назві підрозділу, номеру приміщення, адресі...',
   addButtonLabel: '+ Додати службове приміщення',
   FormComponent: (props) => (
-    <GenericForm config={servicePremisesFormConfig} {...props} />
+    <KtziObjectForm config={servicePremisesFormConfig} {...props} />
   ),
   ListComponent: (props) => (
     <GenericList config={servicePremisesListConfig} {...props} />

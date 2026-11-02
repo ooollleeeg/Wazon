@@ -444,6 +444,8 @@ export const createObjectWithNested = (config, data) => {
             const nestedConfig = nestedTables[nestedKey];
             const nestedItems = normalizedData[nestedKey];
 
+            if (nestedItems === undefined || nestedItems === null) continue;
+
             if (!Array.isArray(nestedItems)) {
               console.warn(`⚠️ ${nestedKey} is not an array, skipping`);
               continue;

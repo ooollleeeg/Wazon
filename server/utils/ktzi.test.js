@@ -16,8 +16,9 @@ const {
   applyKtziProtectionMeanChanges,
   deleteKtziProtectionMean,
   ensureKtzi,
+  getKtziDocumentData,
+  saveKtziDocumentData,
   shareKtziProtectionMeans,
-  syncKtziDocuments,
   syncKtziProtectionMeans,
 } = await import('./ktzi.js');
 const {
@@ -84,6 +85,10 @@ const createRequiredTables = async () => {
       premisesNumber TEXT,
       subdivisionName TEXT,
       subdivisionType TEXT,
+      passportNumber TEXT,
+      passportDate TEXT,
+      kspActNumber TEXT,
+      kspActDate TEXT,
       kzzName TEXT,
       kzzSerial TEXT,
       kzzManufacturerExploitationTerm TEXT,
@@ -106,6 +111,15 @@ const createRequiredTables = async () => {
       certificateInfo TEXT,
       notes TEXT,
       createdAt TEXT
+    )
+  `);
+  await run(`
+    CREATE TABLE IF NOT EXISTS class_a_systems_technical_task (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      systemId INTEGER,
+      taskDate TEXT,
+      taskNumber TEXT,
+      taskClearance TEXT
     )
   `);
   await run(`
@@ -187,38 +201,124 @@ describe('KTZI grouping and shared documents', () => {
     assert.notEqual(first.ktziId, differentRoom.ktziId);
   });
 
-  it('stores one shared document per KTZI and document type', async () => {
+  it('saves the full set of shared KTZI document fields', async () => {
     const ktzi = await ensureKtzi({
-      address: 'Документна 1',
-      premisesNumber: '201',
-      subdivisionName: 'Відділ Б',
+      address: 'Спільна 2',
+      premisesNumber: '202',
+      subdivisionName: 'Відділ В',
     });
-    const data = {
-      categorizationActNumber: 'АКТ-1',
-      categorizationActDate: '2026-01-01',
-      categorizationValidUntil: '2027-01-01',
-      attestationRegNumber: 'АТ-1',
-      attestationRegDate: '2026-02-01',
-      attestationValidUntil: '2027-02-01',
+    const input = {
+      passport: { passportNumber: 'П-1', passportDate: '2026-03-01' },
+      ksp: { kspActNumber: 'КСП-1', kspActDate: '2026-03-02' },
+      technicalTask: {
+        taskNumber: 'ТЗ-1',
+        taskDate: '2026-03-03',
+        taskClearance: '2026-03-04',
+      },
+      categorization: {
+        categorizationActNumber: 'КАТ-1',
+        categorizationActDate: '2026-03-05',
+        categorizationRank: 'II',
+      },
+      atestation: {
+        attestationRegNumber: 'АТ-1',
+        attestationRegDate: '2026-03-06',
+        attestationDsszziNumber: 'ДС-1',
+      },
     };
 
-    await syncKtziDocuments(ktzi.id, data);
-    await syncKtziDocuments(ktzi.id, {
-      ...data,
-      categorizationActNumber: 'АКТ-2',
+    await saveKtziDocumentData(ktzi.id, input);
+    const { documents } = await getKtziDocumentData(ktzi.id);
+
+    assert.deepEqual(documents.passport, {
+      passportNumber: 'П-1',
+      passportDate: '2026-03-01',
+    });
+    assert.deepEqual(documents.ksp, {
+      kspActNumber: 'КСП-1',
+      kspActDate: '2026-03-02',
+    });
+    assert.equal(documents.technicalTask.taskDate, '2026-03-03');
+    assert.equal(documents.categorization.categorizationRank, 'II');
+    assert.equal(documents.atestation.attestationDsszziNumber, 'ДС-1');
+  });
+
+  it('imports legacy object documents once and then uses the shared record', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Спільна 3',
+      premisesNumber: '203',
+      subdivisionName: 'Відділ Г',
+    });
+    const systemId = await seedObject('class_a_systems', {
+      systemName: 'АС для міграції',
+      address: 'Спільна 3',
+      premisesNumber: '203',
+      subdivisionName: 'Відділ Г',
+      ktziId: ktzi.id,
+      passportNumber: 'ПАСП-legacy',
+      passportDate: '2026-04-01',
+      kspActNumber: 'КСП-legacy',
+      kspActDate: '2026-04-02',
+    });
+    await seedObject('class_a_systems_technical_task', {
+      systemId,
+      taskNumber: 'ТЗ-legacy',
+      taskDate: '2026-04-03',
+      taskClearance: '2026-04-04',
     });
 
-    const rows = await new Promise((resolve, reject) => {
-      db.all(
-        'SELECT documentType, documentNumber FROM ktzi_documents WHERE ktziId = ?',
-        [ktzi.id],
-        (error, result) => (error ? reject(error) : resolve(result)),
-      );
+    const { documents: imported } = await getKtziDocumentData(ktzi.id);
+    assert.equal(imported.passport.passportNumber, 'ПАСП-legacy');
+    assert.equal(imported.ksp.kspActNumber, 'КСП-legacy');
+    assert.equal(imported.technicalTask.taskDate, '2026-04-03');
+
+    await run(
+      'UPDATE class_a_systems_technical_task SET taskNumber = ? WHERE systemId = ?',
+      ['ТЗ-змінене', systemId],
+    );
+    const { documents: shared } = await getKtziDocumentData(ktzi.id);
+    assert.equal(shared.technicalTask.taskNumber, 'ТЗ-legacy');
+  });
+
+  it('does not choose between conflicting legacy documents automatically', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Спільна 4',
+      premisesNumber: '204',
+      subdivisionName: 'Відділ Д',
     });
-    assert.equal(rows.length, 2);
+    const firstSystemId = await seedObject('class_a_systems', {
+      systemName: 'АС перша',
+      ktziId: ktzi.id,
+    });
+    const secondSystemId = await seedObject('class_a_systems', {
+      systemName: 'АС друга',
+      ktziId: ktzi.id,
+    });
+    await seedObject('class_a_systems_technical_task', {
+      systemId: firstSystemId,
+      taskNumber: 'ТЗ-А',
+      taskDate: '2026-05-01',
+    });
+    await seedObject('class_a_systems_technical_task', {
+      systemId: secondSystemId,
+      taskNumber: 'ТЗ-Б',
+      taskDate: '2026-05-02',
+    });
+
+    const result = await getKtziDocumentData(ktzi.id);
+    assert.equal(result.documents.technicalTask, undefined);
     assert.equal(
-      rows.find((row) => row.documentType === 'categorization').documentNumber,
-      'АКТ-2',
+      result.migrationConflicts.some(
+        (conflict) => conflict.documentType === 'technicalTask',
+      ),
+      true,
+    );
+    assert.equal(
+      await get(
+        'SELECT id FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
+        [ktzi.id, 'technicalTask'],
+      ),
+      null,
     );
   });
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import GenericTab, { TabConfig } from '../common/GenericTab';
-import GenericForm, { FormConfig } from '../common/GenericForm';
+import { FormConfig } from '../common/GenericForm';
+import KtziObjectForm from '../common/KtziObjectForm';
 import GenericList, { ListConfig } from '../common/GenericList';
 import GenericCard, { CardConfig } from '../common/GenericCard';
 import ClassASCardCompact from '../class-as/ClassASCardCompact';
@@ -898,6 +899,12 @@ const classASCardConfig: CardConfig = {
           value: 'passportDate',
           format: 'date',
         },
+        { label: 'Номер акту КСП', value: 'kspActNumber' },
+        {
+          label: 'Дата реєстрації акту КСП',
+          value: 'kspActDate',
+          format: 'date',
+        },
       ],
     },
   ],
@@ -1170,7 +1177,7 @@ const classASTabConfig: TabConfig = {
   searchPlaceholder: 'Пошук по назві системи, підрозділу, класу...',
   addButtonLabel: '+ Додати автоматизовану систему',
   FormComponent: (props) => (
-    <GenericForm config={classASFormConfig} {...props} />
+    <KtziObjectForm config={classASFormConfig} {...props} />
   ),
   ListComponent: (props) => (
     <GenericList config={classASListConfig} {...props} />

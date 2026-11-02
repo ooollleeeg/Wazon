@@ -79,77 +79,342 @@ export const attachObjectToKtzi = async (table, data) => {
   return { ...data, ktziId: ktzi.id };
 };
 
-const firstNestedRecord = (records, dateField) => {
-  if (!Array.isArray(records) || records.length === 0) return null;
-  return [...records].sort(
-    (a, b) =>
-      new Date(b[dateField] || 0).getTime() -
-      new Date(a[dateField] || 0).getTime(),
-  )[0];
+export const KTZI_DOCUMENT_FIELDS = {
+  technicalTask: ['taskDate', 'taskNumber', 'taskClearance'],
+  categorization: [
+    'categorizationType',
+    'categorizationActDate',
+    'categorizationActNumber',
+    'categorizationRank',
+    'categorizationValidUntil',
+    'foreignCriticalArea',
+    'hightInformationRank',
+  ],
+  atestation: [
+    'attestationRegNumber',
+    'attestationRegDate',
+    'attestationDsszziDate',
+    'attestationDsszziNumber',
+    'attestationValidUntil',
+    'atestationPerformer',
+    'attestationWorkStartDate',
+    'attestationWorkEndDate',
+    'atestationPermissionPerformer',
+  ],
+  passport: ['passportNumber', 'passportDate'],
+  ksp: ['kspActNumber', 'kspActDate'],
 };
 
-const syncDocument = async (ktziId, documentType, document) => {
-  if (!document) return;
+const ktziDocumentLegacySources = {
+  technicalTask: [
+    ['class_a_systems_technical_task', 'class_a_systems', 'systemId', 'taskDate', 'systemName', 'AS'],
+    ['krt_technical_task', 'krt', 'krtId', 'taskDate', 'systemName', 'KRT'],
+    ['service_premises_technical_task', 'service_premises', 'premisesId', 'taskDate', 'serviceName', 'SP'],
+  ],
+  categorization: [
+    ['class_a_systems_categorization', 'class_a_systems', 'systemId', 'categorizationActDate', 'systemName', 'AS'],
+    ['krt_categorization', 'krt', 'krtId', 'categorizationActDate', 'systemName', 'KRT'],
+    ['service_premises_categorization', 'service_premises', 'premisesId', 'categorizationActDate', 'serviceName', 'SP'],
+  ],
+  atestation: [
+    ['class_a_systems_atestation', 'class_a_systems', 'systemId', 'attestationRegDate', 'systemName', 'AS'],
+    ['krt_atestation', 'krt', 'krtId', 'attestationRegDate', 'systemName', 'KRT'],
+    ['service_premises_atestation', 'service_premises', 'premisesId', 'attestationRegDate', 'serviceName', 'SP'],
+  ],
+};
 
-  const values = {
-    technicalTask: {
-      number: document.taskNumber,
-      date: document.taskClearance,
-    },
-    categorization: {
-      number: document.categorizationActNumber,
-      date: document.categorizationActDate,
-      validUntil: document.categorizationValidUntil,
-    },
-    atestation: {
-      number: document.attestationRegNumber,
-      date: document.attestationRegDate,
-      validUntil: document.attestationValidUntil,
-    },
-    [document.documentType]: {
-      number: document.dsszzіNumber,
-      date: document.dsszzіDate,
-    },
-  }[documentType];
+const legacyNestedDocumentCandidates = async (ktziId, documentType) => {
+  const sources = ktziDocumentLegacySources[documentType];
+  if (!sources) return [];
 
-  if (!values || (!values.number && !values.date && !values.validUntil)) return;
+  const candidates = [];
+  for (const [
+    nestedTable,
+    objectTable,
+    foreignKey,
+    dateField,
+    nameField,
+    objectType,
+  ] of sources) {
+    const rows = await all(
+      `SELECT nested.*, object.id AS ktziObjectId,
+              object.${nameField} AS ktziObjectName
+       FROM ${nestedTable} nested
+       JOIN ${objectTable} object ON object.id = nested.${foreignKey}
+       WHERE object.ktziId = ?
+       ORDER BY nested.${dateField} DESC, nested.id DESC`,
+      [ktziId],
+    );
+    const seenObjects = new Set();
+    for (const row of rows) {
+      if (seenObjects.has(row.ktziObjectId)) continue;
+      const data = Object.fromEntries(
+        KTZI_DOCUMENT_FIELDS[documentType].map((field) => [
+          field,
+          String(row[field] || ''),
+        ]),
+      );
+      if (!Object.values(data).some((value) => value.trim())) continue;
+      seenObjects.add(row.ktziObjectId);
+      candidates.push({
+        objectType,
+        objectName: row.ktziObjectName || `Об’єкт ${row.ktziObjectId}`,
+        data,
+      });
+    }
+  }
+  return candidates;
+};
 
-  await run(
-    'DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
-    [ktziId, documentType],
+const legacyScalarDocumentCandidates = async (ktziId, documentType) => {
+  const sources =
+    documentType === 'passport'
+      ? [
+          ['class_a_systems', 'passportNumber', 'passportDate', 'systemName', 'AS'],
+          ['krt', 'passportNumber', 'passportDate', 'systemName', 'KRT'],
+          ['service_premises', 'passportNumber', 'passportDate', 'serviceName', 'SP'],
+        ]
+      : [['class_a_systems', 'kspActNumber', 'kspActDate', 'systemName', 'AS']];
+  const candidates = [];
+  for (const [table, numberField, dateField, nameField, objectType] of sources) {
+    const rows = await all(
+      `SELECT ${numberField}, ${dateField}, id AS ktziObjectId,
+              ${nameField} AS ktziObjectName
+       FROM ${table}
+       WHERE ktziId = ?
+         AND (COALESCE(${numberField}, '') != '' OR COALESCE(${dateField}, '') != '')
+       ORDER BY ${dateField} DESC, id DESC`,
+      [ktziId],
+    );
+    candidates.push(
+      ...rows.map((row) => ({
+        objectType,
+        objectName: row.ktziObjectName || `Об’єкт ${row.ktziObjectId}`,
+        data: {
+          [numberField]: row[numberField] || '',
+          [dateField]: row[dateField] || '',
+        },
+      })),
+    );
+  }
+  return candidates;
+};
+
+const resolveLegacyDocumentCandidates = (documentType, candidates) => {
+  const fields = KTZI_DOCUMENT_FIELDS[documentType];
+  const conflictingFields = fields.filter((field) => {
+    const values = new Set(
+      candidates
+        .map((candidate) => candidate.data[field])
+        .filter((value) => value),
+    );
+    return values.size > 1;
+  });
+  if (conflictingFields.length) {
+    return { data: null, conflict: { documentType, candidates } };
+  }
+
+  const data = Object.fromEntries(fields.map((field) => [field, '']));
+  candidates.forEach((candidate) => {
+    fields.forEach((field) => {
+      if (!data[field] && candidate.data[field]) {
+        data[field] = candidate.data[field];
+      }
+    });
+  });
+  return { data, conflict: null };
+};
+
+const documentSummary = (documentType, data) => {
+  const numberFields = {
+    technicalTask: 'taskNumber',
+    categorization: 'categorizationActNumber',
+    atestation: 'attestationRegNumber',
+    passport: 'passportNumber',
+    ksp: 'kspActNumber',
+  };
+  const dateFields = {
+    technicalTask: 'taskClearance',
+    categorization: 'categorizationActDate',
+    atestation: 'attestationRegDate',
+    passport: 'passportDate',
+    ksp: 'kspActDate',
+  };
+  const validUntilFields = {
+    categorization: 'categorizationValidUntil',
+    atestation: 'attestationValidUntil',
+  };
+  return {
+    number: data[numberFields[documentType]] || '',
+    date: data[dateFields[documentType]] || '',
+    validUntil: data[validUntilFields[documentType]] || '',
+  };
+};
+
+const saveKtziDocument = async (ktziId, documentType, data) => {
+  const fields = KTZI_DOCUMENT_FIELDS[documentType];
+  const documentData = Object.fromEntries(
+    fields.map((field) => [field, String(data[field] || '')]),
   );
+  if (!Object.values(documentData).some((value) => value.trim())) {
+    await run('DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?', [
+      ktziId,
+      documentType,
+    ]);
+    return;
+  }
+
+  const summary = documentSummary(documentType, documentData);
+  await run('DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?', [
+    ktziId,
+    documentType,
+  ]);
   await run(
     `INSERT INTO ktzi_documents
-      (ktziId, documentType, documentNumber, documentDate, validUntil)
-     VALUES (?, ?, ?, ?, ?)`,
+      (ktziId, documentType, documentNumber, documentDate, validUntil, documentData)
+     VALUES (?, ?, ?, ?, ?, ?)`,
     [
       ktziId,
       documentType,
-      values.number || '',
-      values.date || '',
-      values.validUntil || '',
+      summary.number,
+      summary.date,
+      summary.validUntil,
+      JSON.stringify(documentData),
     ],
   );
 };
 
-export const syncKtziDocuments = async (ktziId, data) => {
-  const categorization =
-    firstNestedRecord(data.categorization, 'categorizationActDate') || data;
-  const technicalTask = firstNestedRecord(data.technicalTask, 'taskDate') || data;
-  const atestation =
-    firstNestedRecord(data.atestation, 'attestationRegDate') || data;
-  const complianceDocuments = Array.isArray(data.complianceDocuments)
-    ? data.complianceDocuments
-    : [];
+const hydrateKtziDocument = (row) => {
+  if (row.documentData) {
+    try {
+      return { ...JSON.parse(row.documentData) };
+    } catch (error) {
+      console.error(`Некоректні дані документа КТЗІ ${row.documentType}:`, error);
+    }
+  }
+  const legacyFieldMap = {
+    technicalTask: { taskNumber: row.documentNumber, taskClearance: row.documentDate },
+    categorization: {
+      categorizationActNumber: row.documentNumber,
+      categorizationActDate: row.documentDate,
+      categorizationValidUntil: row.validUntil,
+    },
+    atestation: {
+      attestationRegNumber: row.documentNumber,
+      attestationRegDate: row.documentDate,
+      attestationValidUntil: row.validUntil,
+    },
+  };
+  return legacyFieldMap[row.documentType] || {};
+};
 
-  await Promise.all([
-    syncDocument(ktziId, 'technicalTask', technicalTask),
-    syncDocument(ktziId, 'categorization', categorization),
-    syncDocument(ktziId, 'atestation', atestation),
-    ...complianceDocuments.map((document) =>
-      syncDocument(ktziId, document.documentType, document),
-    ),
-  ]);
+export const getKtziDocumentData = async (ktziId) => {
+  const rows = await all(
+    'SELECT * FROM ktzi_documents WHERE ktziId = ? ORDER BY id',
+    [ktziId],
+  );
+  const documents = {};
+  const migrationConflicts = [];
+  rows.forEach((row) => {
+    if (KTZI_DOCUMENT_FIELDS[row.documentType]) {
+      documents[row.documentType] = hydrateKtziDocument(row);
+    }
+  });
+
+  for (const documentType of Object.keys(KTZI_DOCUMENT_FIELDS)) {
+    const storedRow = rows.find((row) => row.documentType === documentType);
+    if (storedRow?.documentData) continue;
+    const candidates =
+      documentType === 'passport' || documentType === 'ksp'
+        ? await legacyScalarDocumentCandidates(ktziId, documentType)
+        : await legacyNestedDocumentCandidates(ktziId, documentType);
+    const resolution = resolveLegacyDocumentCandidates(
+      documentType,
+      candidates,
+    );
+    if (resolution.conflict && !storedRow) {
+      migrationConflicts.push(resolution.conflict);
+      continue;
+    }
+    if (!candidates.length && !storedRow) continue;
+    const data = {
+      ...(resolution.data || {}),
+      ...(documents[documentType] || {}),
+    };
+    if (!Object.values(data).some((value) => value.trim())) continue;
+    await saveKtziDocument(ktziId, documentType, data);
+    documents[documentType] = data;
+  }
+
+  return { documents, migrationConflicts };
+};
+
+export const saveKtziDocumentData = async (ktziId, documents) => {
+  const invalidInput = (message) => {
+    const error = new Error(message);
+    error.status = 400;
+    return error;
+  };
+  if (!documents || typeof documents !== 'object' || Array.isArray(documents)) {
+    throw invalidInput('Потрібно передати документи КТЗІ');
+  }
+  for (const documentType of Object.keys(documents)) {
+    if (!KTZI_DOCUMENT_FIELDS[documentType]) {
+      throw invalidInput(`Невідомий тип документа КТЗІ: ${documentType}`);
+    }
+    if (!documents[documentType] || typeof documents[documentType] !== 'object') {
+      throw invalidInput(`Некоректні дані документа КТЗІ: ${documentType}`);
+    }
+    const allowedFields = new Set(KTZI_DOCUMENT_FIELDS[documentType]);
+    if (Object.keys(documents[documentType]).some((field) => !allowedFields.has(field))) {
+      throw invalidInput(`Документ ${documentType} містить невідомі поля`);
+    }
+    if (
+      Object.values(documents[documentType]).some(
+        (value) => value !== null && value !== undefined && typeof value !== 'string',
+      )
+    ) {
+      throw invalidInput(`Поля документа ${documentType} мають бути текстовими`);
+    }
+  }
+
+  await run('BEGIN TRANSACTION');
+  try {
+    for (const documentType of Object.keys(KTZI_DOCUMENT_FIELDS)) {
+      await saveKtziDocument(ktziId, documentType, documents[documentType] || {});
+    }
+    await run('COMMIT');
+  } catch (error) {
+    await run('ROLLBACK');
+    throw error;
+  }
+  return getKtziDocumentData(ktziId);
+};
+
+export const syncKtziComplianceDocuments = async (ktziId, documents = []) => {
+  if (!Array.isArray(documents)) return;
+  for (const document of documents) {
+    if (!document?.documentType) continue;
+    const number = document.dsszzіNumber || '';
+    const date = document.dsszzіDate || '';
+    if (!number && !date && !document.validUntil) continue;
+    await run(
+      'DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
+      [ktziId, document.documentType],
+    );
+    await run(
+      `INSERT INTO ktzi_documents
+        (ktziId, documentType, documentNumber, documentDate, validUntil)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        ktziId,
+        document.documentType,
+        number,
+        date,
+        document.validUntil || '',
+      ],
+    );
+  }
 };
 
 const protectionMeanTables = {

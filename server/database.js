@@ -45,10 +45,20 @@ function initializeDatabase() {
         documentNumber TEXT,
         documentDate TEXT,
         validUntil TEXT,
+        documentData TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (ktziId) REFERENCES ktzi(id) ON DELETE CASCADE
       )
     `);
+
+    db.run(
+      'ALTER TABLE ktzi_documents ADD COLUMN documentData TEXT',
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Не вдалося додати documentData до ktzi_documents:', err.message);
+        }
+      },
+    );
 
     db.run(`
       CREATE TABLE IF NOT EXISTS protection_means (
