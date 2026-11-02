@@ -250,6 +250,33 @@ const countOidEquipped = async ({
   return Number(row?.count || 0);
 };
 
+const countCurrentComplianceDocuments = async ({
+  subdivision,
+  category,
+  documentType,
+  validityField,
+}) => {
+  const categoryExpression =
+    `COALESCE(NULLIF(o.informationCategory, ''), c.categorizationRank)`;
+  const row = await queryOne(
+    `SELECT COUNT(DISTINCT o.id) AS count
+     FROM class_a_systems o
+     LEFT JOIN class_a_systems_categorization c ON c.systemId = o.id
+     JOIN class_a_systems_compliance_documents d ON d.systemId = o.id
+     WHERE LOWER(COALESCE(o.subdivisionType, '')) LIKE ?
+       AND ${categoryExpression} = ?
+       AND d.documentType = ?
+       AND TRIM(COALESCE(d.dsszzіNumber, '')) <> ''
+       AND d.dsszzіDate IS NOT NULL
+       AND TRIM(d.dsszzіDate) <> ''
+       AND d.${validityField} IS NOT NULL
+       AND TRIM(d.${validityField}) <> ''
+       AND date(d.${validityField}) >= date('now')`,
+    [`%${subdivision}%`, category, documentType],
+  );
+  return Number(row?.count || 0);
+};
+
 router.get('/oid-report', async (req, res) => {
   try {
     const categories = ['II', 'III', 'IV'];
@@ -331,6 +358,47 @@ router.get('/oid-report', async (req, res) => {
     const rows = await buildRows(countOidObjects);
     const attestedRows = await buildRows(countOidAttested);
     const equippedRows = await buildRows(countOidEquipped);
+    const complianceDocumentTypes = [
+      {
+        key: 'certificates',
+        documentType: 'Атестат відповідності',
+        validityField: 'validUntil',
+      },
+      {
+        key: 'declarations',
+        documentType:
+          'Декларація про відповідність вимогам нормативних документів',
+        validityField: 'validUntil',
+      },
+      {
+        key: 'completionActs',
+        documentType: 'Акт завершення робіт',
+        validityField: 'validUntil',
+      },
+      {
+        key: 'authorizationNotices',
+        documentType:
+          'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+        validityField: 'nextAuthorizationDeadline',
+      },
+    ];
+    const complianceRows = await Promise.all(
+      complianceDocumentTypes.map(async (document) => {
+        const values = {};
+        for (const subdivision of subdivisions) {
+          values[subdivision.key] = {};
+          for (const category of categories) {
+            values[subdivision.key][category] =
+              await countCurrentComplianceDocuments({
+                subdivision: subdivision.pattern,
+                category,
+                ...document,
+              });
+          }
+        }
+        return { key: document.key, values };
+      }),
+    );
 
     res.json({
       categories,
@@ -338,6 +406,7 @@ router.get('/oid-report', async (req, res) => {
       rows,
       attestedRows,
       equippedRows,
+      complianceRows,
     });
   } catch (err) {
     console.error('❌ Error in GET /oid-report:', err);

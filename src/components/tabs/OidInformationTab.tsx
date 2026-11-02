@@ -9,6 +9,11 @@ type SourceKey =
   | 'electronicComputers'
   | 'combined'
   | 'copyingEquipment';
+type ComplianceKey =
+  | 'certificates'
+  | 'declarations'
+  | 'completionActs'
+  | 'authorizationNotices';
 
 interface ReportRow {
   key: SourceKey;
@@ -19,16 +24,29 @@ interface ReportData {
   rows: ReportRow[];
   attestedRows?: ReportRow[];
   equippedRows?: ReportRow[];
+  complianceRows?: Array<{
+    key: ComplianceKey;
+    values: Record<Subdivision, Record<Category, number>>;
+  }>;
 }
 
 const categories: Category[] = ['II', 'III', 'IV'];
 const sourceLabels: Record<SourceKey, string> = {
   servicePremises:
     '- службових приміщень, призначених для оброблення мовної ІзОД',
-  electronicComputers: "- об'єктів ЕОТ, призначених для оброблення ІзОД",
+  electronicComputers: "- об'єктів ЕОТ*, призначених для оброблення ІзОД",
   combined:
     '- комбінованих ОІД, де інформація обробляється в АС та озвучується',
   copyingEquipment: "- об'єктів КРТ, призначених для оброблення ІзОД",
+};
+const complianceLabels: Record<ComplianceKey, string> = {
+  certificates:
+    '- атестати відповідності, видані на підставі Експертних висновків',
+  declarations:
+    '- декларації про відповідність вимогам нормативних документів з ТЗІ',
+  completionActs: '- акти про завершення робіт зі створення КСЗІ в АС',
+  authorizationNotices:
+    '- повідомлення про включення АС до переліку авторизованих систем з безпеки',
 };
 
 const getTotal = (values: Record<Category, number>) =>
@@ -97,6 +115,20 @@ function OidInformationTab() {
     });
   }, [report]);
 
+  const complianceRows = useMemo(() => {
+    if (!report?.complianceRows) return [];
+    return report.complianceRows.map((row) => {
+      const apparatusTotal = getTotal(row.values.apparatus);
+      const territorialTotal = getTotal(row.values.territorial);
+      return {
+        ...row,
+        apparatusTotal,
+        territorialTotal,
+        total: apparatusTotal + territorialTotal,
+      };
+    });
+  }, [report]);
+
   const totalBySubdivision = (subdivision: Subdivision, category: Category) =>
     rows.reduce((total, row) => total + row.values[subdivision][category], 0);
 
@@ -149,7 +181,8 @@ function OidInformationTab() {
     0,
   );
   const attestedApparatusGrandTotal = categories.reduce(
-    (total, category) => total + attestedTotalBySubdivision('apparatus', category),
+    (total, category) =>
+      total + attestedTotalBySubdivision('apparatus', category),
     0,
   );
   const attestedTerritorialGrandTotal = categories.reduce(
@@ -158,7 +191,8 @@ function OidInformationTab() {
     0,
   );
   const equippedApparatusGrandTotal = categories.reduce(
-    (total, category) => total + equippedTotalBySubdivision('apparatus', category),
+    (total, category) =>
+      total + equippedTotalBySubdivision('apparatus', category),
     0,
   );
   const equippedTerritorialGrandTotal = categories.reduce(
@@ -166,11 +200,29 @@ function OidInformationTab() {
       total + equippedTotalBySubdivision('territorial', category),
     0,
   );
+  const complianceTotalBySubdivision = (
+    subdivision: Subdivision,
+    category: Category,
+  ) =>
+    complianceRows.reduce(
+      (total, row) => total + row.values[subdivision][category],
+      0,
+    );
+  const complianceApparatusGrandTotal = categories.reduce(
+    (total, category) =>
+      total + complianceTotalBySubdivision('apparatus', category),
+    0,
+  );
+  const complianceTerritorialGrandTotal = categories.reduce(
+    (total, category) =>
+      total + complianceTotalBySubdivision('territorial', category),
+    0,
+  );
 
   return (
     <div className='oid-information-container'>
       <div className='oid-information-header'>
-        <h2>Відомості про об'єктах інформаційної діяльності</h2>
+        <h2>Відомості про об'єкти інформаційної діяльності</h2>
       </div>
       <div className='oid-table-wrapper'>
         <table className='oid-information-table'>
@@ -282,8 +334,41 @@ function OidInformationTab() {
                 <td className='oid-total-cell'>{row.total}</td>
               </tr>
             ))}
+            <tr className='oid-total-row'>
+              <td>4. Кількість автоматизованих систем, які мають чинні</td>
+              {categories.map((category) => (
+                <td key={`compliance-a-total-${category}`}>
+                  {complianceTotalBySubdivision('apparatus', category)}
+                </td>
+              ))}
+              <td>{complianceApparatusGrandTotal}</td>
+              {categories.map((category) => (
+                <td key={`compliance-t-total-${category}`}>
+                  {complianceTotalBySubdivision('territorial', category)}
+                </td>
+              ))}
+              <td>{complianceTerritorialGrandTotal}</td>
+              <td>
+                {complianceApparatusGrandTotal +
+                  complianceTerritorialGrandTotal}
+              </td>
+            </tr>
+            {complianceRows.map((row) => (
+              <tr key={`compliance-${row.key}`}>
+                <td>{complianceLabels[row.key]}</td>
+                {renderCategoryCells(row.values.apparatus, row.apparatusTotal)}
+                {renderCategoryCells(
+                  row.values.territorial,
+                  row.territorialTotal,
+                )}
+                <td className='oid-total-cell'>{row.total}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
+      </div>
+      <div className='oid-information-futer'>
+        <h4>*В цій таблиці АС IV категорії підраховуються як окремі об'єкти</h4>
       </div>
     </div>
   );
