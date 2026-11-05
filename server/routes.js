@@ -25,10 +25,8 @@ import {
   getKtziDocumentData,
   saveKtziDocumentData,
   syncKtziComplianceDocuments,
-  syncKtziProtectionMeans,
-  shareKtziProtectionMeans,
-  applyKtziProtectionMeanChanges,
-  deleteKtziProtectionMean,
+  updateKtziMainInfo,
+  getKtziProtectionMeans,
   isKtziTable,
 } from './utils/ktzi.js';
 
@@ -99,6 +97,22 @@ const removeSharedKtziObjectFields = (data) =>
     Object.entries(data).filter(([field]) => !sharedKtziObjectFields.has(field)),
   );
 
+// КТЗІ без об'єктів і засобів ТЗІ видаляється разом із документами
+const removeEmptyKtzi = (ktziId) =>
+  new Promise((resolve, reject) => {
+    if (!ktziId) return resolve();
+    db.run(
+      `DELETE FROM ktzi
+       WHERE id = ?
+         AND NOT EXISTS (SELECT 1 FROM class_a_systems WHERE ktziId = ?)
+         AND NOT EXISTS (SELECT 1 FROM krt WHERE ktziId = ?)
+         AND NOT EXISTS (SELECT 1 FROM service_premises WHERE ktziId = ?)
+         AND NOT EXISTS (SELECT 1 FROM protection_means WHERE ktziId = ?)`,
+      [ktziId, ktziId, ktziId, ktziId, ktziId],
+      (error) => (error ? reject(error) : resolve()),
+    );
+  });
+
 router.get('/ktzi', async (_req, res) => {
   try {
     const ktzis = await queryAll(
@@ -106,16 +120,53 @@ router.get('/ktzi', async (_req, res) => {
     );
     const result = await Promise.all(
       ktzis.map(async (ktzi) => {
-        const [objects, documentData] = await Promise.all([
+        const [objects, documentData, protectionMeans] = await Promise.all([
           getKtziObjects(ktzi.id),
           getKtziDocumentData(ktzi.id),
+          getKtziProtectionMeans(ktzi.id),
         ]);
-        return { ...ktzi, objects, ...documentData };
+        return { ...ktzi, objects, ...documentData, protectionMeans };
       }),
     );
     res.json(result);
   } catch (err) {
     console.error('Помилка отримання КТЗІ:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/ktzi/:id', async (req, res) => {
+  try {
+    const ktzi = await updateKtziMainInfo(req.params.id, req.body);
+    res.json(ktzi);
+  } catch (err) {
+    console.error('Помилка збереження основної інформації КТЗІ:', err);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+router.delete('/ktzi/:id', async (req, res) => {
+  try {
+    const ktzi = await queryOne('SELECT id FROM ktzi WHERE id = ?', [
+      req.params.id,
+    ]);
+    if (!ktzi) {
+      return res.status(404).json({ error: 'КТЗІ не знайдено' });
+    }
+    const [objects, protectionMeans] = await Promise.all([
+      getKtziObjects(ktzi.id),
+      getKtziProtectionMeans(ktzi.id),
+    ]);
+    if (objects.length || protectionMeans.length) {
+      return res.status(409).json({
+        error:
+          'Не можна видалити КТЗІ, до складу якого входять об’єкти або встановлені засоби ТЗІ',
+      });
+    }
+    await removeEmptyKtzi(ktzi.id);
+    res.json({ success: true, id: ktzi.id });
+  } catch (err) {
+    console.error('Помилка видалення КТЗІ:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -287,8 +338,6 @@ const countOidEquipped = async ({
   table,
   categorizationTable,
   foreignKey,
-  protectionTable,
-  protectionForeignKey,
   subdivision,
   category,
   objectType,
@@ -308,19 +357,13 @@ const countOidEquipped = async ({
     params.push(objectType);
   }
 
-  const hasLocalMeans = `EXISTS (
-    SELECT 1
-    FROM ${protectionTable} localMeans
-    WHERE localMeans.${protectionForeignKey} = o.id
-  )`;
-  const hasKtziMeans = `EXISTS (
-    SELECT 1
-    FROM protection_means ktziMeans
-    WHERE ktziMeans.ktziId = o.ktziId
-  )`;
   const meansCondition = category === 'IV'
-    ? hasLocalMeans
-    : `((${hasKtziMeans}) OR (o.ktziId IS NULL AND ${hasLocalMeans}))`;
+    ? '0'
+    : `EXISTS (
+        SELECT 1
+        FROM protection_means ktziMeans
+        WHERE ktziMeans.ktziId = o.ktziId
+      )`;
   const isNonIvCategory = category === 'IV' ? 0 : 1;
 
   const row = await queryOne(
@@ -380,8 +423,7 @@ router.get('/oid-report', async (req, res) => {
         foreignKey: 'premisesId',
         attestationTable: 'service_premises_atestation',
         attestationForeignKey: 'premisesId',
-        protectionTable: 'service_premises_protection_means',
-        protectionForeignKey: 'premisesId',
+        objectCategoryField: 'informationCategory',
       },
       {
         key: 'electronicComputers',
@@ -395,8 +437,6 @@ router.get('/oid-report', async (req, res) => {
         attestationForeignKey: 'systemId',
         complianceTable: 'class_a_systems_compliance_documents',
         complianceForeignKey: 'systemId',
-        protectionTable: 'class_a_systems_protection_means',
-        protectionForeignKey: 'systemId',
       },
       {
         key: 'combined',
@@ -410,8 +450,6 @@ router.get('/oid-report', async (req, res) => {
         attestationForeignKey: 'systemId',
         complianceTable: 'class_a_systems_compliance_documents',
         complianceForeignKey: 'systemId',
-        protectionTable: 'class_a_systems_protection_means',
-        protectionForeignKey: 'systemId',
       },
       {
         key: 'copyingEquipment',
@@ -422,8 +460,6 @@ router.get('/oid-report', async (req, res) => {
         objectCategoryField: 'informationCategory',
         attestationTable: 'krt_atestation',
         attestationForeignKey: 'krtId',
-        protectionTable: 'krt_protection_means',
-        protectionForeignKey: 'krtId',
       },
     ];
 
@@ -501,140 +537,6 @@ router.get('/oid-report', async (req, res) => {
     res.status(500).json({ error: 'Не вдалося сформувати відомості про ОІД' });
   }
 });
-
-const getSharedProtectionMeanSnapshots = async (table, objectId) => {
-  const config = {
-    class_a_systems: {
-      objectType: 'AS',
-      table: 'class_a_systems_protection_means',
-      foreignKey: 'systemId',
-    },
-    krt: {
-      objectType: 'KRT',
-      table: 'krt_protection_means',
-      foreignKey: 'krtId',
-    },
-  }[table];
-  if (!config) return [];
-
-  const object = await queryOne(`SELECT ktziId FROM ${table} WHERE id = ?`, [
-    objectId,
-  ]);
-  if (!object?.ktziId) return [];
-
-  const means = await queryAll(
-    `SELECT pm.*, local.id AS localId
-     FROM protection_mean_assignments source
-     JOIN protection_means pm ON pm.id = source.protectionMeanId
-     JOIN ${config.table} local
-       ON local.${config.foreignKey} = source.objectId
-       AND (local.categoryId = pm.categoryId OR
-         (local.categoryId IS NULL AND pm.categoryId IS NULL))
-       AND local.name = pm.name
-       AND COALESCE(local.serialNumber, '') = COALESCE(pm.serialNumber, '')
-       AND COALESCE(local.invertarNumber, '') = COALESCE(pm.invertarNumber, '')
-     WHERE source.objectType = ? AND source.objectId = ?`,
-    [config.objectType, objectId],
-  );
-  const ktziObjects = await getKtziObjects(object.ktziId);
-  const objectByKey = new Map(
-    ktziObjects.map((item) => [`${item.objectType}:${item.id}`, item]),
-  );
-  const snapshots = [];
-
-  for (const mean of means) {
-    const assignments = await queryAll(
-      `SELECT objectType, objectId FROM protection_mean_assignments
-       WHERE protectionMeanId = ? AND NOT (objectType = ? AND objectId = ?)`,
-      [mean.id, config.objectType, objectId],
-    );
-    const targets = assignments
-      .filter((assignment) => ['AS', 'KRT'].includes(assignment.objectType))
-      .map((assignment) =>
-        objectByKey.get(`${assignment.objectType}:${assignment.objectId}`),
-      )
-      .filter(Boolean);
-    if (targets.length) {
-      snapshots.push({
-        protectionMeanId: mean.id,
-        localId: mean.localId,
-        mean,
-        targets,
-      });
-    }
-  }
-
-  return snapshots;
-};
-
-const getChangedSharedProtectionMeans = (snapshots, updatedMeans = []) => {
-  const fields = [
-    'categoryId',
-    'toolType',
-    'name',
-    'serialNumber',
-    'invertarNumber',
-    'releaseYear',
-    'manufacturerExploitationTerm',
-    'certificateInfo',
-    'notes',
-  ];
-  const meanById = new Map(
-    updatedMeans.map((mean) => [String(mean.id), mean]),
-  );
-
-  return snapshots.flatMap((snapshot) => {
-    const updated = meanById.get(String(snapshot.localId));
-    if (
-      updated &&
-      fields.every(
-        (field) =>
-          String(updated[field] ?? '') ===
-          String(snapshot.mean[field] ?? ''),
-      )
-    ) {
-      return [];
-    }
-
-    return [
-      {
-        protectionMeanId: snapshot.protectionMeanId,
-        mean: updated
-          ? Object.fromEntries(fields.map((field) => [field, updated[field]]))
-          : null,
-        previousMean: Object.fromEntries(
-          fields.map((field) => [field, snapshot.mean[field]]),
-        ),
-        targets: snapshot.targets,
-      },
-    ];
-  });
-};
-
-const addProtectionMeanShareOptions = async (result, table) => {
-  const sourceType = { class_a_systems: 'AS', krt: 'KRT' }[table];
-  if (
-    !sourceType ||
-    !result.ktziId ||
-    !result.shareableProtectionMeans?.length
-  ) {
-    return result;
-  }
-
-  const objects = await getKtziObjects(result.ktziId);
-  return {
-    ...result,
-    shareSourceType: sourceType,
-    shareTargets: objects.filter(
-      (object) =>
-        ['AS', 'KRT'].includes(object.objectType) &&
-        !(
-          object.objectType === sourceType &&
-          String(object.id) === String(result.id)
-        ),
-    ),
-  };
-};
 
 /**
  * Middleware для валидации типа объекта
@@ -748,15 +650,6 @@ router.post('/objects/:type', validateObjectType, async (req, res) => {
         result.ktziId,
         objectData.complianceDocuments,
       );
-      await syncKtziProtectionMeans(
-        req.objectConfig.table,
-        result.id,
-        result.ktziId,
-      );
-      result = await addProtectionMeanShareOptions(
-        result,
-        req.objectConfig.table,
-      );
     }
 
     res.status(201).json(result);
@@ -777,19 +670,12 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
         ? await getObjectWithNested(req.objectConfig, req.params.id)
         : await getObjectById(req.objectConfig.table, req.params.id);
     const currentObject = loadedCurrentObject ? { ...loadedCurrentObject } : null;
-    if (currentObject && isKtziTable(req.objectConfig.table)) {
-      delete currentObject.sharedProtectionMeans;
-    }
     const requestData = isKtziTable(req.objectConfig.table)
       ? removeSharedKtziObjectFields(req.body)
       : req.body;
     const objectData = await attachObjectToKtzi(
       req.objectConfig.table,
       { ...currentObject, ...requestData },
-    );
-    const sharedMeanSnapshots = await getSharedProtectionMeanSnapshots(
-      req.objectConfig.table,
-      req.params.id,
     );
     let result;
 
@@ -812,19 +698,8 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
         objectData.ktziId,
         objectData.complianceDocuments,
       );
-      await syncKtziProtectionMeans(
-        req.objectConfig.table,
-        req.params.id,
-        objectData.ktziId,
-      );
-      result = await addProtectionMeanShareOptions(
-        { ...result, ktziId: objectData.ktziId },
-        req.objectConfig.table,
-      );
-      result.sharedProtectionMeanChanges = getChangedSharedProtectionMeans(
-        sharedMeanSnapshots,
-        result.protectionMeans,
-      );
+      result = { ...result, ktziId: objectData.ktziId };
+      await removeEmptyKtzi(currentObject?.ktziId);
     }
 
     res.json(result);
@@ -854,140 +729,44 @@ router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
       service_premises: 'SP',
       iks: 'IKS',
     }[req.objectConfig.table];
-    const foreignKeys = {
-      AS: ['class_a_systems_protection_means', 'systemId'],
-      KRT: ['krt_protection_means', 'krtId'],
-      SP: ['service_premises_protection_means', 'premisesId'],
-      IKS: ['iks_protection_means', 'iksId'],
-    };
-    const { protectionMeansAction, removeSharedAssignments } = req.body || {};
-    const [sourceTable, foreignKey] = foreignKeys[objectType] || [];
+    const { protectionMeansAction } = req.body || {};
 
     if (
-      isKtziTable(req.objectConfig.table) &&
-      object.ktziId &&
+      objectType === 'IKS' &&
       ['return', 'remove'].includes(protectionMeansAction)
     ) {
-      await syncKtziProtectionMeans(
-        req.objectConfig.table,
-        req.params.id,
-        object.ktziId,
-      );
-    }
-
-    if (protectionMeansAction === 'return' && sourceTable) {
-      const { returnProtectionMeanToInventory } = await import(
-        './utils/protectionMeansAggregator.js'
-      );
-      const assignedMeans = objectType === 'IKS'
-        ? []
-        : await new Promise((resolve, reject) => {
-            db.all(
-              `SELECT protectionMeanId FROM protection_mean_assignments
-               WHERE objectType = ? AND objectId = ?`,
-              [objectType, req.params.id],
-              (error, rows) => (error ? reject(error) : resolve(rows || [])),
+      if (protectionMeansAction === 'return') {
+        const { returnProtectionMeanToInventory } = await import(
+          './utils/protectionMeansAggregator.js'
+        );
+        const localMeans = await queryAll(
+          'SELECT id FROM iks_protection_means WHERE iksId = ?',
+          [req.params.id],
+        );
+        for (const mean of localMeans) {
+          await new Promise((resolve, reject) => {
+            returnProtectionMeanToInventory(
+              mean.id,
+              { objectType, objectId: req.params.id },
+              (error, result) => (error ? reject(error) : resolve(result)),
             );
           });
-      const localMeans = await new Promise((resolve, reject) => {
-        db.all(
-          `SELECT id, serialNumber, invertarNumber FROM ${sourceTable}
-           WHERE ${foreignKey} = ?`,
-          [req.params.id],
-          (error, rows) => (error ? reject(error) : resolve(rows || [])),
-        );
-      });
-      const canonicalIds = assignedMeans.map((mean) => mean.protectionMeanId);
-      const meansToReturn = assignedMeans.length
-        ? [
-            ...canonicalIds,
-            ...localMeans
-              .filter(
-                (mean) =>
-                  !String(mean.serialNumber || '').trim() &&
-                  !String(mean.invertarNumber || '').trim(),
-              )
-              .map((mean) => mean.id),
-          ]
-        : localMeans.map((mean) => mean.id);
-
-      for (const meanId of meansToReturn) {
+        }
+      } else {
         await new Promise((resolve, reject) => {
-          returnProtectionMeanToInventory(
-            meanId,
-            { objectType, objectId: req.params.id },
-            (error, result) => (error ? reject(error) : resolve(result)),
+          db.run(
+            'DELETE FROM iks_protection_means WHERE iksId = ?',
+            [req.params.id],
+            (error) => (error ? reject(error) : resolve()),
           );
         });
       }
-    } else if (
-      protectionMeansAction === 'remove' &&
-      removeSharedAssignments &&
-      objectType !== 'IKS'
-    ) {
-      const assignedMeans = await new Promise((resolve, reject) => {
-        db.all(
-          `SELECT protectionMeanId FROM protection_mean_assignments
-           WHERE objectType = ? AND objectId = ?`,
-          [objectType, req.params.id],
-          (error, rows) => (error ? reject(error) : resolve(rows || [])),
-        );
-      });
-      for (const mean of assignedMeans) {
-        await deleteKtziProtectionMean(mean.protectionMeanId);
-      }
-      await new Promise((resolve, reject) => {
-        db.run(
-          `DELETE FROM ${sourceTable} WHERE ${foreignKey} = ?`,
-          [req.params.id],
-          (error) => (error ? reject(error) : resolve()),
-        );
-      });
-    } else if (protectionMeansAction === 'remove' && sourceTable) {
-      await new Promise((resolve, reject) => {
-        db.run(
-          `DELETE FROM ${sourceTable} WHERE ${foreignKey} = ?`,
-          [req.params.id],
-          (error) => (error ? reject(error) : resolve()),
-        );
-      });
     }
 
     await deleteObject(req.objectConfig.table, req.params.id);
 
-    if (isKtziTable(req.objectConfig.table) && object?.ktziId) {
-      await new Promise((resolve, reject) => {
-        db.run(
-          'DELETE FROM protection_mean_assignments WHERE objectType = ? AND objectId = ?',
-          [objectType, req.params.id],
-          (err) => (err ? reject(err) : resolve()),
-        );
-      });
-      await new Promise((resolve, reject) => {
-        db.run(
-          `DELETE FROM protection_means
-           WHERE NOT EXISTS (
-             SELECT 1 FROM protection_mean_assignments
-             WHERE protectionMeanId = protection_means.id
-           )`,
-          (err) => (err ? reject(err) : resolve()),
-        );
-      });
-
-      await new Promise((resolve, reject) => {
-        db.run(
-          `DELETE FROM ktzi
-           WHERE id = ? AND NOT EXISTS (
-             SELECT 1 FROM class_a_systems WHERE ktziId = ?
-           ) AND NOT EXISTS (
-             SELECT 1 FROM krt WHERE ktziId = ?
-           ) AND NOT EXISTS (
-             SELECT 1 FROM service_premises WHERE ktziId = ?
-           )`,
-          [object.ktziId, object.ktziId, object.ktziId, object.ktziId],
-          (err) => (err ? reject(err) : resolve()),
-        );
-      });
+    if (isKtziTable(req.objectConfig.table)) {
+      await removeEmptyKtzi(object?.ktziId);
     }
 
     res.json({ success: true, id: req.params.id });
@@ -1010,10 +789,6 @@ router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
       req.objectConfig.table,
       { ...currentObject, ...req.body },
     );
-    const sharedMeanSnapshots = await getSharedProtectionMeanSnapshots(
-      req.objectConfig.table,
-      req.params.id,
-    );
     let result;
 
     if (req.objectConfig.nestedTables) {
@@ -1035,19 +810,8 @@ router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
         objectData.ktziId,
         objectData.complianceDocuments,
       );
-      await syncKtziProtectionMeans(
-        req.objectConfig.table,
-        req.params.id,
-        objectData.ktziId,
-      );
-      result = await addProtectionMeanShareOptions(
-        { ...result, ktziId: objectData.ktziId },
-        req.objectConfig.table,
-      );
-      result.sharedProtectionMeanChanges = getChangedSharedProtectionMeans(
-        sharedMeanSnapshots,
-        result.protectionMeans,
-      );
+      result = { ...result, ktziId: objectData.ktziId };
+      await removeEmptyKtzi(currentObject?.ktziId);
     }
 
     res.json(result);
@@ -1086,61 +850,6 @@ router.delete(
  */
 router.get('/types', (req, res) => {
   res.json(objectTypes);
-});
-
-router.get('/ktzi', async (req, res) => {
-  try {
-    const rows = await new Promise((resolve, reject) => {
-      db.all('SELECT * FROM ktzi ORDER BY subdivisionName, premisesNumber', (err, result) => {
-        if (err) reject(err);
-        else resolve(result || []);
-      });
-    });
-
-    const withObjects = await Promise.all(
-      rows.map(async (ktzi) => ({
-        ...ktzi,
-        objects: await getKtziObjects(ktzi.id),
-      })),
-    );
-
-    res.json(withObjects);
-  } catch (err) {
-    console.error('❌ Error in GET /ktzi:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.post('/protection-means/share', async (req, res) => {
-  try {
-    const { objectType, objectId, assignments } = req.body || {};
-    const table = { AS: 'class_a_systems', KRT: 'krt' }[objectType];
-    if (!table || !objectId || !Array.isArray(assignments)) {
-      return res.status(400).json({ error: 'Некоректні дані призначення' });
-    }
-
-    await shareKtziProtectionMeans(table, objectId, assignments);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('❌ Error sharing protection means:', err);
-    res.status(err.status || 500).json({ error: err.message });
-  }
-});
-
-router.post('/protection-means/propagate-changes', async (req, res) => {
-  try {
-    const { objectType, objectId, changes } = req.body || {};
-    const table = { AS: 'class_a_systems', KRT: 'krt' }[objectType];
-    if (!table || !objectId || !Array.isArray(changes)) {
-      return res.status(400).json({ error: 'Некоректні дані оновлення засобів' });
-    }
-
-    await applyKtziProtectionMeanChanges(table, objectId, changes);
-    res.json({ success: true });
-  } catch (err) {
-    console.error('❌ Error propagating protection mean changes:', err);
-    res.status(err.status || 500).json({ error: err.message });
-  }
 });
 
 router.get('/ktzi/documents', async (req, res) => {
@@ -1382,24 +1091,11 @@ router.post('/protection-means/install', (req, res) => {
 router.delete('/protection-means/:id/assignments', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ returnProtectionMeanToInventory }) => {
-      const {
-        objectType,
-        objectId,
-        name,
-        serialNumber,
-        invertarNumber,
-        assignmentOnly,
-      } = req.body || {};
+      const { objectType, objectId, name, serialNumber, invertarNumber } =
+        req.body || {};
       returnProtectionMeanToInventory(
         req.params.id,
-        {
-          objectType,
-          objectId,
-          name,
-          serialNumber,
-          invertarNumber,
-          assignmentOnly,
-        },
+        { objectType, objectId, name, serialNumber, invertarNumber },
         (error, result) => {
         if (error) {
           console.error('❌ Error returning protection mean to inventory:', error);

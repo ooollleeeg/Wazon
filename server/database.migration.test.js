@@ -179,10 +179,15 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
     documentDate: '2025-01-01',
     documentData: null,
   });
-  const protectionMeanColumns = await tableColumns(
-    'class_a_systems_protection_means',
-  );
-  assert.ok(protectionMeanColumns.some((column) => column.name === 'notes'));
+  const tableExists = async (tableName) =>
+    Boolean(
+      await get(
+        "SELECT 1 AS found FROM sqlite_master WHERE type = 'table' AND name = ?",
+        [tableName],
+      ),
+    );
+  assert.equal(await tableExists('class_a_systems_protection_means'), false);
+  assert.equal(await tableExists('protection_mean_assignments'), false);
   const sharedMean = await get(
     `SELECT id, ktziId, name, serialNumber, notes
      FROM protection_means WHERE id = ?`,
@@ -194,15 +199,5 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
     name: 'Legacy shared mean',
     serialNumber: 'LEGACY-SN',
     notes: 'Legacy notes',
-  });
-  const assignment = await get(
-    `SELECT protectionMeanId, objectType, objectId
-     FROM protection_mean_assignments WHERE protectionMeanId = ?`,
-    [legacyMeanId],
-  );
-  assert.deepEqual(assignment, {
-    protectionMeanId: legacyMeanId,
-    objectType: 'AS',
-    objectId: legacyObjectId,
   });
 });

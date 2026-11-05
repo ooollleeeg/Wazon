@@ -16,6 +16,7 @@ export interface FormField {
     | 'select'
     | 'checkbox';
   required?: boolean;
+  readOnly?: boolean;
   placeholder?: string;
   min?: string | number;
   max?: string | number;
@@ -449,6 +450,7 @@ export default function GenericForm({
             value={value || ''}
             onChange={handleInputChange}
             required={field.required}
+            disabled={field.readOnly}
           >
             <option value=''>Виберіть опцію</option>
             {field.options?.map((opt) => (
@@ -473,6 +475,7 @@ export default function GenericForm({
           value={value || ''}
           onChange={handleInputChange}
           required={field.required}
+          readOnly={field.readOnly}
           placeholder={field.placeholder}
           min={field.min}
           max={field.max}

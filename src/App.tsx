@@ -4,7 +4,7 @@ import PersonnelTab from './components/tabs/PersonnelTab';
 import ClassASTab from './components/tabs/ClassASTab';
 import ServicePremisesTab from './components/tabs/ServicePremisesTab';
 import KRTTab from './components/tabs/KRTTab';
-import KtziDocumentsTab from './components/tabs/KtziDocumentsTab';
+import KtziTab from './components/tabs/KtziTab';
 import IKSTab from './components/tabs/IKSTab';
 import ProtectionMeansTab from './components/tabs/ProtectionMeansTab';
 import SearchControlEquipmentTab from './components/tabs/SearchControlEquipmentTab';
@@ -64,10 +64,10 @@ const TABS: Tab[] = [
     color: '#667eea',
   },
   {
-    id: 'ktzi-documents',
-    label: 'Документи КТЗІ',
+    id: 'ktzi',
+    label: 'КТЗІ',
     icon: '📋',
-    component: KtziDocumentsTab,
+    component: KtziTab,
     color: '#5b7caa',
   },
   {

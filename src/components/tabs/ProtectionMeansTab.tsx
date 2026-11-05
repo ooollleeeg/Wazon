@@ -191,7 +191,6 @@ const ProtectionMeansTab = () => {
     mean: ProtectionMean,
     objectId: string,
     objectType: string,
-    assignments?: Array<{ objectId: string; objectType: string }>,
   ) => {
     try {
       if (mean.category !== 'КЗЗ від НСД') {
@@ -234,7 +233,6 @@ const ProtectionMeansTab = () => {
         meanId: mean.id,
         objectId,
         objectType,
-        assignments,
         category: mean.category, // Передаємо категорію для правильного обрання поля
       };
 
@@ -266,15 +264,12 @@ const ProtectionMeansTab = () => {
       // Перезавантажуємо дані та переходимо на об'єкт
       await fetchData();
 
-      const navigationTarget = assignments?.[0] || { objectId, objectType };
-      if (navigationTarget.objectType === 'AS') {
-        window.location.hash = `#class-a:${navigationTarget.objectId}`;
-      } else if (navigationTarget.objectType === 'SP') {
-        window.location.hash = `#service-premises:${navigationTarget.objectId}`;
-      } else if (navigationTarget.objectType === 'KRT') {
-        window.location.hash = `#krt:${navigationTarget.objectId}`;
-      } else if (navigationTarget.objectType === 'IKS') {
-        window.location.hash = `#iks:${navigationTarget.objectId}`;
+      if (objectType === 'KTZI') {
+        window.location.hash = `#ktzi:${objectId}`;
+      } else if (objectType === 'AS') {
+        window.location.hash = `#class-a:${objectId}`;
+      } else if (objectType === 'IKS') {
+        window.location.hash = `#iks:${objectId}`;
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';

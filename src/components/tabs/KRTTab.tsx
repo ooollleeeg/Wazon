@@ -65,6 +65,7 @@ const krtFormConfig: FormConfig = {
           name: 'informationCategory',
           label: 'Вищий гриф ІзОД, яка обробляється в цій КРТ',
           type: 'select',
+          required: true,
           options: [
             { value: 'II', label: 'II' },
             { value: 'III', label: 'III' },
@@ -390,86 +391,6 @@ const krtFormConfig: FormConfig = {
       ],
     },
     {
-      name: 'protectionMeans',
-      title: 'Застосовані засоби технічного захисту інформації',
-      icon: '🛡️',
-      dateField: 'protectionDate',
-      defaultItem: {
-        toolType: '',
-        name: '',
-        serialNumber: '',
-        invertarNumber: '',
-        releaseYear: '',
-        manufacturerExploitationTerm: '',
-        certificateInfo: '',
-      },
-      fields: [
-        {
-          name: 'toolType',
-          label: 'Вид засобу ТЗІ',
-          type: 'select',
-          required: true,
-          options: [
-            {
-              value: 'Генератор радіочастотного зашумлення',
-              label: 'Генератор радіочастотного зашумлення',
-            },
-            {
-              value: 'Фільтр електроживлення',
-              label: 'Фільтр електроживлення',
-            },
-            {
-              value: 'Мережевий трансформатор',
-              label: 'Мережевий трансформатор',
-            },
-            {
-              value: 'Генератор акустичного зашумлення',
-              label: 'Генератор акустичного зашумлення',
-            },
-            { value: 'Віброперетворювач', label: 'Віброперетворювач' },
-            {
-              value: 'Акустичний випромінювач',
-              label: 'Акустичний випромінювач',
-            },
-            { value: 'Виріб типу "SRC-300"', label: 'Виріб типу "SRC-300"' },
-            { value: 'Інше', label: 'Інше' },
-          ],
-        },
-        {
-          name: 'name',
-          label: 'Назва',
-          type: 'text',
-          placeholder: 'Наприклад: Базальт-5ГЕШ"',
-        },
-        {
-          name: 'serialNumber',
-          label: 'Серійний номер засобу',
-          type: 'text',
-        },
-        {
-          name: 'invertarNumber',
-          label: 'Інвентарний номер засобу',
-          type: 'text',
-        },
-        {
-          name: 'releaseYear',
-          label: 'Дата виготовлення засобу (DD.MM.YYYY)',
-          type: 'date',
-        },
-        {
-          name: 'manufacturerExploitationTerm',
-          label: 'Встановлений виробником термін експлуатації',
-          type: 'date',
-        },
-        {
-          name: 'certificateInfo',
-          label: 'Інформація про експертний висновок (сертифікат)',
-          type: 'text',
-          fullWidth: true,
-        },
-      ],
-    },
-    {
       name: 'orders',
       title: 'Наказ про введення в експлуатацію та інші розпорядчі документи',
       icon: '📑',
@@ -675,26 +596,6 @@ const krtCardConfig: CardConfig = {
           value: 'atestationPermissionPerformer',
           fullWidth: true,
         },
-      ],
-    },
-    {
-      name: 'protectionMeans',
-      title: 'Застосовані засоби технічного захисту інформації',
-      icon: '🛡️',
-      itemTitle: 'name',
-      hideWhenMoreThan: 2,
-      fields: [
-        { label: 'Вид засобу ТЗІ', value: 'toolType' },
-        { label: 'Назва', value: 'name' },
-        { label: 'Серійний номер', value: 'serialNumber' },
-        { label: 'Інвентарний номер', value: 'invertarNumber' },
-        { label: 'Дата виготовлення', value: 'releaseYear', format: 'date' },
-        {
-          label: 'Термін експлуатації',
-          value: 'manufacturerExploitationTerm',
-          format: 'date',
-        },
-        { label: 'Дані експертного висновку', value: 'certificateInfo' },
       ],
     },
     {

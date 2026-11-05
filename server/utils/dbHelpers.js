@@ -35,22 +35,12 @@ const findExistingProtectionMeans = (
     // NOTE: Do NOT use .toLowerCase() for Cyrillic! JavaScript's toLowerCase() doesn't work properly with Ukrainian characters.
     // Instead, use COLLATE NOCASE in SQL for case-insensitive comparison
     const sql = `
-      SELECT 'AS' AS source, 'AS' AS objectType, pm.systemId AS objectId,
-        a.systemName AS objectName, a.subdivisionName, a.premisesNumber, a.address
-      FROM class_a_systems_protection_means pm
-      JOIN class_a_systems a ON pm.systemId = a.id
-      WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
-      UNION ALL
-      SELECT 'SP' AS source, 'SP' AS objectType, pm.premisesId AS objectId,
-        sp.serviceName AS objectName, sp.subdivisionName, sp.premisesNumber, sp.address
-      FROM service_premises_protection_means pm
-      JOIN service_premises sp ON pm.premisesId = sp.id
-      WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
-      UNION ALL
-      SELECT 'KRT' AS source, 'KRT' AS objectType, pm.krtId AS objectId,
-        k.systemName AS objectName, k.subdivisionName, k.premisesNumber, k.address
-      FROM krt_protection_means pm
-      JOIN krt k ON pm.krtId = k.id
+      SELECT 'KTZI' AS source, 'KTZI' AS objectType, pm.ktziId AS objectId,
+        ('КТЗІ: ' || COALESCE(k.address, 'Без адреси') || ', каб. ' ||
+          COALESCE(k.premisesNumber, '—')) AS objectName,
+        k.subdivisionName, k.premisesNumber, k.address
+      FROM protection_means pm
+      JOIN ktzi k ON pm.ktziId = k.id
       WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
       SELECT 'IKS' AS source, 'IKS' AS objectType, pm.iksId AS objectId,
@@ -68,10 +58,6 @@ const findExistingProtectionMeans = (
     `;
 
     const params = [
-      categoryId,
-      trimmedSerial,
-      categoryId,
-      trimmedSerial,
       categoryId,
       trimmedSerial,
       categoryId,
@@ -109,29 +95,6 @@ const getCategoryId = (item) => {
     'Інші вироби': 9,
   };
   return categoryIds[category] || null;
-};
-
-const hasSharedAssignment = (source, objectId, categoryId, serialNumber) => {
-  const objectType = { AS: 'AS', KRT: 'KRT', SP: 'SP' }[source];
-  if (!objectType || !objectId) return Promise.resolve(false);
-
-  return new Promise((resolve, reject) => {
-    db.get(
-      `SELECT 1
-       FROM protection_means pm
-       JOIN protection_mean_assignments pma
-         ON pma.protectionMeanId = pm.id
-       WHERE pma.objectType = ? AND pma.objectId = ?
-         AND pm.categoryId = ?
-         AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
-       LIMIT 1`,
-      [objectType, objectId, categoryId, serialNumber],
-      (error, row) => {
-        if (error) reject(error);
-        else resolve(Boolean(row));
-      },
-    );
-  });
 };
 
 const getProtectionMeanSource = (tableName) => {
@@ -184,19 +147,6 @@ const validateProtectionMeansAgainstExisting = async (
     if (identity) seen.add(identity);
     if (!categoryId || !serialNumber) {
       acceptedItems.push(categoryId ? { ...item, categoryId } : item);
-      continue;
-    }
-
-    const alreadySharedHere = currentId
-      ? await hasSharedAssignment(
-          currentSource,
-          currentId,
-          categoryId,
-          serialNumber,
-        )
-      : false;
-    if (alreadySharedHere) {
-      acceptedItems.push({ ...item, categoryId });
       continue;
     }
 
@@ -323,36 +273,9 @@ export const getObjectWithNested = (config, id) => {
           return resolve(result);
         }
 
-        let completed = 0;
         const nestedKeys = Object.keys(config.nestedTables);
-        const sharedProtectionMeanTypes = {
-          class_a_systems: 'AS',
-          krt: 'KRT',
-          service_premises: 'SP',
-        };
-        const completeWithSharedProtectionMeans = () => {
-          const objectType = sharedProtectionMeanTypes[config.table];
-          if (!objectType) return resolve(result);
-
-          db.all(
-            `SELECT pm.id, pm.categoryId, pm.toolType, pm.name, pm.serialNumber,
-              pm.invertarNumber, pm.releaseYear,
-              pm.manufacturerExploitationTerm, pm.certificateInfo, pm.notes,
-              (SELECT COUNT(*) FROM protection_mean_assignments counts
-               WHERE counts.protectionMeanId = pm.id) AS assignmentCount,
-              1 as isSharedKtzi
-             FROM protection_means pm
-             JOIN protection_mean_assignments pma
-               ON pma.protectionMeanId = pm.id
-             WHERE pma.objectType = ? AND pma.objectId = ?`,
-            [objectType, id],
-            (sharedError, rows) => {
-              if (sharedError) return reject(sharedError);
-              result.sharedProtectionMeans = rows || [];
-              resolve(result);
-            },
-          );
-        };
+        if (nestedKeys.length === 0) return resolve(result);
+        let completed = 0;
 
         nestedKeys.forEach((nestedKey) => {
           const nestedConfig = config.nestedTables[nestedKey];
@@ -368,7 +291,7 @@ export const getObjectWithNested = (config, id) => {
               }
               completed++;
               if (completed === nestedKeys.length) {
-                completeWithSharedProtectionMeans();
+                resolve(result);
               }
             },
           );

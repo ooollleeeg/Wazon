@@ -1,12 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import '../../styles/TabContent.css';
-import ProtectionMeansSaveModal from '../modals/ProtectionMeansSaveModal';
 import ObjectDeleteProtectionMeansModal from '../modals/ObjectDeleteProtectionMeansModal';
 
-type ProtectionMeansNotice = Omit<
-  React.ComponentProps<typeof ProtectionMeansSaveModal>,
-  'onShare' | 'onApplyChanges' | 'onClose'
->;
 type ProtectionMeanDeleteOption = {
   categoryId?: number;
   toolType?: string;
@@ -46,8 +41,6 @@ export default function GenericTab({
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [protectionMeansNotice, setProtectionMeansNotice] =
-    useState<ProtectionMeansNotice | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{
     id: number;
     name: string;
@@ -111,19 +104,13 @@ export default function GenericTab({
       setShowForm(false);
       setEditingId(null);
       onDataChanged?.();
-      if (
-        result.protectionMeanWarnings?.length ||
-        result.shareableProtectionMeans?.length ||
-        result.sharedProtectionMeanChanges?.length
-      ) {
-        setProtectionMeansNotice({
-          warnings: result.protectionMeanWarnings || [],
-          means: result.shareableProtectionMeans || [],
-          changes: result.sharedProtectionMeanChanges || [],
-          targets: result.shareTargets || [],
-          sourceType: result.shareSourceType,
-          sourceObjectId: result.id,
-        });
+      if (result.protectionMeanWarnings?.length) {
+        const skipped = result.protectionMeanWarnings
+          .map((warning: any) => warning.mean?.name || 'Засіб ТЗІ')
+          .join(', ');
+        setError(
+          `Збережено, але не додано засоби, що вже обліковуються в системі: ${skipped}`,
+        );
       }
     } catch (err) {
       console.error('=== SUBMIT ERROR ===', err);
@@ -285,54 +272,6 @@ export default function GenericTab({
             onClose={handleCloseForm}
           />
         </div>
-      )}
-
-      {protectionMeansNotice && (
-        <ProtectionMeansSaveModal
-          {...protectionMeansNotice}
-          onClose={() => setProtectionMeansNotice(null)}
-          onShare={async (assignments) => {
-            const response = await fetch('/api/protection-means/share', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                objectType: protectionMeansNotice.sourceType,
-                objectId: protectionMeansNotice.sourceObjectId,
-                assignments,
-              }),
-            });
-            const result = await response.json();
-            if (!response.ok) {
-              throw new Error(
-                result.error || 'Не вдалося створити спільні призначення',
-              );
-            }
-            await fetchItems();
-            onDataChanged?.();
-          }}
-          onApplyChanges={async (changes) => {
-            const response = await fetch(
-              '/api/protection-means/propagate-changes',
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  objectType: protectionMeansNotice.sourceType,
-                  objectId: protectionMeansNotice.sourceObjectId,
-                  changes,
-                }),
-              },
-            );
-            const result = await response.json();
-            if (!response.ok) {
-              throw new Error(
-                result.error || 'Не вдалося застосувати зміни до пов’язаних карток',
-              );
-            }
-            await fetchItems();
-            onDataChanged?.();
-          }}
-        />
       )}
 
       {pendingDelete && (

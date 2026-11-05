@@ -1,0 +1,106 @@
+.ktzi-state {
+  padding: 28px;
+  border-radius: 8px;
+  background: #f5f7fa;
+  color: #596579;
+  text-align: center;
+}
+
+.ktzi-success {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #e6f6ea;
+  color: #218838;
+}
+
+.ktzi-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 12px;
+  color: #555;
+}
+
+.ktzi-highlight {
+  outline: 2px solid #5b7caa;
+}
+
+.ktzi-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.ktzi-fields label {
+  display: grid;
+  gap: 5px;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.ktzi-fields input,
+.ktzi-fields select,
+.ktzi-install select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #cbd2dc;
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+}
+
+.ktzi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ktzi-muted {
+  margin: 0;
+  color: #777;
+}
+
+.ktzi-mean {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef0f4;
+}
+
+.ktzi-install {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ktzi-install select {
+  flex: 1 1 280px;
+  width: auto;
+}
+
+.ktzi-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ktzi-migration-warning {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid #e8c66a;
+  border-radius: 8px;
+  background: #fff8df;
+  color: #5f4b16;
+}
+
+.ktzi-migration-warning ul {
+  margin: 4px 0 0;
+  padding-left: 22px;
+}

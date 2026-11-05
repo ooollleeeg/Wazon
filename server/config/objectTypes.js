@@ -232,18 +232,6 @@ export const objectTypes = {
           'nextAuthorizationDeadline',
         ],
       },
-      protectionMeans: {
-        table: 'class_a_systems_protection_means',
-        fields: [
-          'toolType',
-          'name',
-          'serialNumber',
-          'invertarNumber',
-          'releaseYear',
-          'manufacturerExploitationTerm',
-          'certificateInfo',
-        ],
-      },
       software: {
         table: 'class_a_systems_software',
         fields: ['name', 'version', 'manufacturer'],
@@ -342,18 +330,6 @@ export const objectTypes = {
           'atestationPermissionPerformer',
         ],
       },
-      protectionMeans: {
-        table: 'service_premises_protection_means',
-        fields: [
-          'toolType',
-          'name',
-          'serialNumber',
-          'invertarNumber',
-          'releaseYear',
-          'manufacturerExploitationTerm',
-          'certificateInfo',
-        ],
-      },
       governmentalCommunicationMeans: {
         table: 'service_premises_governmental_communication_means',
         fields: ['subscriberDeviceName', 'subscriberDeviceSerialNumber'],
@@ -370,6 +346,7 @@ export const objectTypes = {
       'subdivisionName',
       'subdivisionType',
       'serviceName',
+      'informationCategory',
       'passportNumber',
       'passportDate',
       'categorizationActDate',
@@ -426,18 +403,6 @@ export const objectTypes = {
           'attestationValidUntil',
           'atestationPerformer',
           'atestationPermissionPerformer',
-        ],
-      },
-      protectionMeans: {
-        table: 'krt_protection_means',
-        fields: [
-          'toolType',
-          'name',
-          'serialNumber',
-          'invertarNumber',
-          'releaseYear',
-          'manufacturerExploitationTerm',
-          'certificateInfo',
         ],
       },
       orders: {

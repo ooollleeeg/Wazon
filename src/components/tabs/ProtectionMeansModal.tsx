@@ -113,7 +113,6 @@ const ProtectionMeansModal = ({
             name: mean.name,
             serialNumber: mean.serialNumber,
             invertarNumber: mean.invertarNumber,
-            assignmentOnly: true,
           }),
         },
       );

@@ -78,20 +78,10 @@ function initializeDatabase() {
       )
     `);
 
-    db.run(`
-      CREATE TABLE IF NOT EXISTS protection_mean_assignments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        protectionMeanId INTEGER NOT NULL,
-        objectType TEXT,
-        objectId INTEGER,
-        FOREIGN KEY (protectionMeanId) REFERENCES protection_means(id) ON DELETE CASCADE
-      )
-    `);
-
-    db.run(`
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_protection_mean_assignment_unique
-      ON protection_mean_assignments (protectionMeanId, objectType, objectId)
-    `);
+    db.run(`DROP TABLE IF EXISTS protection_mean_assignments`);
+    db.run(`DROP TABLE IF EXISTS class_a_systems_protection_means`);
+    db.run(`DROP TABLE IF EXISTS service_premises_protection_means`);
+    db.run(`DROP TABLE IF EXISTS krt_protection_means`);
 
     db.run(`
       CREATE UNIQUE INDEX IF NOT EXISTS idx_protection_mean_serial_unique
@@ -199,24 +189,6 @@ function initializeDatabase() {
         docType TEXT,
         date TEXT,
         number TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
-      )
-    `);
-
-    db.run(`
-      CREATE TABLE IF NOT EXISTS class_a_systems_protection_means (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        systemId INTEGER NOT NULL,
-        categoryId INTEGER,
-        name TEXT,
-        serialNumber TEXT,
-        invertarNumber TEXT,
-        releaseYear INTEGER,
-        manufacturerExploitationTerm TEXT,
-        certificateInfo TEXT,
-        toolType TEXT,
-        notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (systemId) REFERENCES class_a_systems(id) ON DELETE CASCADE
       )
@@ -435,24 +407,6 @@ function initializeDatabase() {
     `);
 
     db.run(`
-      CREATE TABLE IF NOT EXISTS service_premises_protection_means (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        premisesId INTEGER NOT NULL,
-        categoryId INTEGER,
-        name TEXT,
-        serialNumber TEXT,
-        invertarNumber TEXT,
-        releaseYear INTEGER,
-        manufacturerExploitationTerm TEXT,
-        certificateInfo TEXT,
-        toolType TEXT,
-        notes TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (premisesId) REFERENCES service_premises(id) ON DELETE CASCADE
-      )
-    `);
-
-    db.run(`
       CREATE TABLE IF NOT EXISTS service_premises_governmental_communication_means (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         premisesId INTEGER NOT NULL,
@@ -576,24 +530,6 @@ function initializeDatabase() {
         attestationWorkStartDate TEXT,
         attestationWorkEndDate TEXT,
         atestationPermissionPerformer TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
-      )
-    `);
-
-    db.run(`
-      CREATE TABLE IF NOT EXISTS krt_protection_means (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        krtId INTEGER NOT NULL,
-        categoryId INTEGER,
-        name TEXT,
-        serialNumber TEXT,
-        invertarNumber TEXT,
-        releaseYear INTEGER,
-        manufacturerExploitationTerm TEXT,
-        certificateInfo TEXT,
-        toolType TEXT,
-        notes TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (krtId) REFERENCES krt(id) ON DELETE CASCADE
       )
@@ -821,9 +757,6 @@ function initializeDatabase() {
 
     [
       'protection_means',
-      'class_a_systems_protection_means',
-      'service_premises_protection_means',
-      'krt_protection_means',
       'iks_protection_means',
     ].forEach((tableName) => {
       db.run(
@@ -877,51 +810,6 @@ function initializeDatabase() {
         if (err && !err.message.includes('duplicate column name')) {
           console.error(
             '❌ Failed to add categoryId to protection_means_inventory:',
-            err.message,
-          );
-        }
-      },
-    );
-
-    db.run(
-      `
-      ALTER TABLE class_a_systems_protection_means
-      ADD COLUMN categoryId INTEGER
-    `,
-      (err) => {
-        if (err && !err.message.includes('duplicate column name')) {
-          console.error(
-            '❌ Failed to add categoryId to class_a_systems_protection_means:',
-            err.message,
-          );
-        }
-      },
-    );
-
-    db.run(
-      `
-      ALTER TABLE service_premises_protection_means
-      ADD COLUMN categoryId INTEGER
-    `,
-      (err) => {
-        if (err && !err.message.includes('duplicate column name')) {
-          console.error(
-            '❌ Failed to add categoryId to service_premises_protection_means:',
-            err.message,
-          );
-        }
-      },
-    );
-
-    db.run(
-      `
-      ALTER TABLE krt_protection_means
-      ADD COLUMN categoryId INTEGER
-    `,
-      (err) => {
-        if (err && !err.message.includes('duplicate column name')) {
-          console.error(
-            '❌ Failed to add categoryId to krt_protection_means:',
             err.message,
           );
         }
@@ -988,12 +876,7 @@ function initializeDatabase() {
       'Інші вироби': 9,
     };
 
-    const tables = [
-      'class_a_systems_protection_means',
-      'service_premises_protection_means',
-      'krt_protection_means',
-      'iks_protection_means',
-    ];
+    const tables = ['iks_protection_means'];
 
     tables.forEach((tableName) => {
       db.all(
@@ -1101,6 +984,15 @@ function initializeDatabase() {
       (err) => {
         if (err && !err.message.includes('duplicate column name')) {
           console.error('❌ Не вдалося додати informationCategory до krt:', err.message);
+        }
+      },
+    );
+
+    db.run(
+      `ALTER TABLE service_premises ADD COLUMN informationCategory TEXT`,
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Не вдалося додати informationCategory до service_premises:', err.message);
         }
       },
     );

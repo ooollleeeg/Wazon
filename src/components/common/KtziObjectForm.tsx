@@ -17,6 +17,14 @@ const sharedRootFields = [
   'ktziDocuments',
 ];
 
+const ktziMainFields = new Set([
+  'address',
+  'premisesNumber',
+  'subdivisionName',
+  'subdivisionType',
+  'serviceName',
+]);
+
 const removeSharedDocuments = (data: Record<string, any>) => {
   const result = { ...data };
   sharedRootFields.forEach((field) => delete result[field]);
@@ -37,11 +45,29 @@ export default function KtziObjectForm({
   onSubmit,
   ...props
 }: KtziObjectFormProps) {
+  // Основна інформація об'єкта з КТЗІ редагується на вкладці «КТЗІ»
+  const mainInfoLocked =
+    Boolean(initialData?.ktziId) &&
+    ['II', 'III'].includes(initialData?.informationCategory);
   const objectFormConfig: FormConfig = {
     ...config,
-    sections: config.sections.filter(
-      (section) => !section.title.toLocaleLowerCase('uk-UA').includes('паспорт на'),
-    ),
+    sections: config.sections
+      .filter(
+        (section) =>
+          !section.title.toLocaleLowerCase('uk-UA').includes('паспорт на'),
+      )
+      .map((section) => ({
+        ...section,
+        fields: section.fields.map((field) =>
+          mainInfoLocked && ktziMainFields.has(field.name)
+            ? {
+                ...field,
+                readOnly: true,
+                helperText: 'Редагується на вкладці «КТЗІ»',
+              }
+            : field,
+        ),
+      })),
     nestedFields: config.nestedFields?.filter(
       (field) => !sharedNestedFields.has(field.name),
     ),
