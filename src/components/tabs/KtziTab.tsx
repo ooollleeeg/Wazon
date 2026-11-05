@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import '../../styles/TabContent.css';
+import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import './KtziTab.css';
 
 type DocumentField = {
@@ -206,6 +207,11 @@ export default function KtziTab() {
   const [installForId, setInstallForId] = useState<number | null>(null);
   const [stockChoice, setStockChoice] = useState('');
   const [highlightId, setHighlightId] = useState<number | null>(null);
+  const [ktziToDelete, setKtziToDelete] = useState<Ktzi | null>(null);
+  const [meanToReturn, setMeanToReturn] = useState<{
+    ktzi: Ktzi;
+    mean: KtziMean;
+  } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -353,7 +359,7 @@ export default function KtziTab() {
   };
 
   const returnToStock = async (ktzi: Ktzi, mean: KtziMean) => {
-    if (!window.confirm(`Повернути «${mean.name}» на склад?`)) return;
+    setMeanToReturn(null);
     setError('');
     try {
       await request(`/api/protection-means/${mean.id}/assignments`, {
@@ -374,7 +380,7 @@ export default function KtziTab() {
   };
 
   const remove = async (ktzi: Ktzi) => {
-    if (!window.confirm('Видалити порожній КТЗІ?')) return;
+    setKtziToDelete(null);
     setError('');
     try {
       await request(`/api/ktzi/${ktzi.id}`, { method: 'DELETE' });
@@ -634,7 +640,7 @@ export default function KtziTab() {
                         </span>
                         <button
                           className='btn-secondary'
-                          onClick={() => void returnToStock(ktzi, mean)}
+                          onClick={() => setMeanToReturn({ ktzi, mean })}
                         >
                           На склад
                         </button>
@@ -688,7 +694,7 @@ export default function KtziTab() {
                     <div className='ktzi-actions'>
                       <button
                         className='btn-secondary'
-                        onClick={() => void remove(ktzi)}
+                        onClick={() => setKtziToDelete(ktzi)}
                       >
                         Видалити порожній КТЗІ
                       </button>
@@ -700,6 +706,34 @@ export default function KtziTab() {
           </div>
         );
       })}
+
+      {ktziToDelete && (
+        <DeleteConfirmModal
+          fullName={`КТЗІ ${ktziTitle(ktziToDelete)}`}
+          onConfirm={() => void remove(ktziToDelete)}
+          onCancel={() => setKtziToDelete(null)}
+        />
+      )}
+
+      {meanToReturn && (
+        <DeleteConfirmModal
+          fullName={meanToReturn.mean.name}
+          title='Повернення на склад'
+          message={
+            <>
+              Засіб ТЗІ <strong>{meanToReturn.mean.name}</strong> буде знято з
+              КТЗІ та повернуто на склад.
+            </>
+          }
+          subtext=''
+          confirmLabel='Так, повернути'
+          cancelLabel='Ні, залишити'
+          onConfirm={() =>
+            void returnToStock(meanToReturn.ktzi, meanToReturn.mean)
+          }
+          onCancel={() => setMeanToReturn(null)}
+        />
+      )}
     </div>
   );
 }
