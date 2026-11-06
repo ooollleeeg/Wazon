@@ -820,12 +820,6 @@ const classASCardConfig: CardConfig = {
           value: 'passportDate',
           format: 'date',
         },
-        { label: 'Номер акту КСП', value: 'kspActNumber' },
-        {
-          label: 'Дата реєстрації акту КСП',
-          value: 'kspActDate',
-          format: 'date',
-        },
       ],
     },
   ],
