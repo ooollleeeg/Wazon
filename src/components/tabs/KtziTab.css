@@ -22,6 +22,46 @@
   color: #555;
 }
 
+.ktzi-object-type-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.ktzi-filter-label {
+  margin-right: 4px;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.ktzi-filter-button {
+  padding: 6px 14px;
+  border: 1px solid #cbd2dc;
+  border-radius: 18px;
+  background: #fff;
+  color: #394867;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ktzi-filter-button:hover {
+  border-color: #5b7caa;
+}
+
+.ktzi-filter-button.active {
+  border-color: #5b7caa;
+  background: #5b7caa;
+  color: #fff;
+}
+
+.ktzi-filter-count {
+  margin-left: auto;
+  color: #687386;
+  font-size: 0.9rem;
+}
+
 .ktzi-highlight {
   outline: 2px solid #5b7caa;
 }
@@ -61,6 +101,11 @@
 .ktzi-muted {
   margin: 0;
   color: #777;
+}
+
+.ktzi-filter-count {
+  flex-basis: 100%;
+  margin-left: 0;
 }
 
 .ktzi-mean {

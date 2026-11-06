@@ -170,6 +170,14 @@ const OBJECT_TYPE_LABELS: Record<string, string> = {
   KRT: 'КРТ',
   SP: 'СП',
 };
+const OBJECT_TYPES = ['AS', 'SP', 'KRT'] as const;
+const normalizeObjectType = (type: string) => {
+  const normalized = type.toUpperCase();
+  if (normalized === 'CLASS_A_SYSTEMS') return 'AS';
+  if (normalized === 'SERVICE_PREMISES') return 'SP';
+  if (normalized === 'KRT') return 'KRT';
+  return normalized;
+};
 
 const EMPTY_DOCUMENTS: KtziDocuments = Object.fromEntries(
   DOCUMENT_SECTIONS.map(({ key, fields }) => [
@@ -197,6 +205,7 @@ export default function KtziTab() {
   const [ktzis, setKtzis] = useState<Ktzi[]>([]);
   const [stock, setStock] = useState<StockMean[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedObjectTypes, setSelectedObjectTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -254,21 +263,35 @@ export default function KtziTab() {
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    if (!term) return ktzis;
-    return ktzis.filter((ktzi) =>
-      JSON.stringify([
-        ktzi.address,
-        ktzi.premisesNumber,
-        ktzi.subdivisionName,
-        ktzi.serviceName,
-        ktzi.objects.map((object) => object.objectName),
-        ktzi.protectionMeans.map((mean) => [mean.name, mean.serialNumber]),
-        ktzi.documents,
-      ])
-        .toLowerCase()
-        .includes(term),
+    return ktzis.filter((ktzi) => {
+      const matchesType =
+        selectedObjectTypes.length === 0 ||
+        ktzi.objects.some((object) =>
+          selectedObjectTypes.includes(normalizeObjectType(object.objectType)),
+        );
+      if (!matchesType) return false;
+      if (!term) return true;
+      return JSON.stringify([
+          ktzi.address,
+          ktzi.premisesNumber,
+          ktzi.subdivisionName,
+          ktzi.serviceName,
+          ktzi.objects.map((object) => object.objectName),
+          ktzi.protectionMeans.map((mean) => [mean.name, mean.serialNumber]),
+          ktzi.documents,
+        ])
+          .toLowerCase()
+          .includes(term);
+    });
+  }, [ktzis, searchTerm, selectedObjectTypes]);
+
+  const toggleObjectType = (type: string) => {
+    setSelectedObjectTypes((current) =>
+      current.includes(type)
+        ? current.filter((item) => item !== type)
+        : [...current, type],
     );
-  }, [ktzis, searchTerm]);
+  };
 
   const stats = useMemo(
     () => ({
@@ -420,10 +443,37 @@ export default function KtziTab() {
         />
       </div>
 
+      <div className='ktzi-object-type-filter' aria-label='Фільтр за типом об’єктів'>
+        <span className='ktzi-filter-label'>Тип об’єкта у складі КТЗІ:</span>
+        <button
+          type='button'
+          className={`ktzi-filter-button ${selectedObjectTypes.length === 0 ? 'active' : ''}`}
+          aria-pressed={selectedObjectTypes.length === 0}
+          onClick={() => setSelectedObjectTypes([])}
+        >
+          Усі
+        </button>
+        {OBJECT_TYPES.map((type) => (
+          <button
+            type='button'
+            key={type}
+            className={`ktzi-filter-button ${selectedObjectTypes.includes(type) ? 'active' : ''}`}
+            aria-pressed={selectedObjectTypes.includes(type)}
+            onClick={() => toggleObjectType(type)}
+          >
+            {OBJECT_TYPE_LABELS[type]}
+          </button>
+        ))}
+        <span className='ktzi-filter-count'>
+          Показано: {filtered.length} з {ktzis.length}
+        </span>
+      </div>
+
       {!filtered.length && (
         <div className='ktzi-state'>
-          КТЗІ створюється автоматично при додаванні АС, КРТ або службового
-          приміщення з категорією інформації II чи III.
+          {ktzis.length
+            ? 'КТЗІ за вибраними критеріями не знайдено.'
+            : 'КТЗІ створюється автоматично при додаванні АС, КРТ або службового приміщення з категорією інформації II чи III.'}
         </div>
       )}
 
