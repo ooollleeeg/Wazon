@@ -1,5 +1,6 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import '../../styles/TabContent.css';
+import { highlightText } from '../../utils/searchUtils';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import './KtziTab.css';
 
@@ -487,9 +488,12 @@ export default function KtziTab() {
           >
             <div className='card-header'>
               <div className='card-title'>
-                <h3>{ktziTitle(ktzi)}</h3>
+                <h3>{highlightText(ktziTitle(ktzi), searchTerm)}</h3>
                 <p className='subtitle'>
-                  {[ktzi.address, ktzi.serviceName].filter(Boolean).join(' · ')}
+                  {highlightText(
+                    [ktzi.address, ktzi.serviceName].filter(Boolean).join(' · '),
+                    searchTerm,
+                  )}
                 </p>
               </div>
               <div className='card-actions'>
@@ -652,7 +656,7 @@ export default function KtziTab() {
                           <span className='badge' key={index}>
                             {OBJECT_TYPE_LABELS[object.objectType] ||
                               object.objectType}
-                            : {object.objectName || '—'}
+                            : {highlightText(object.objectName || '—', searchTerm)}
                           </span>
                         ))}
                       </div>
@@ -669,7 +673,12 @@ export default function KtziTab() {
                           <div className='info-item' key={field.name}>
                             <span className='label'>{field.label}:</span>
                             <span className='value'>
-                              {formatValue(ktzi.documents?.[section.key]?.[field.name])}
+                              {highlightText(
+                                formatValue(
+                                  ktzi.documents?.[section.key]?.[field.name],
+                                ),
+                                searchTerm,
+                              )}
                             </span>
                           </div>
                         ))}
@@ -684,9 +693,19 @@ export default function KtziTab() {
                     {ktzi.protectionMeans.map((mean) => (
                       <div className='ktzi-mean' key={mean.id}>
                         <span>
-                          <b>{mean.name}</b>
-                          {mean.toolType ? ` · ${mean.toolType}` : ''}
-                          {mean.serialNumber ? ` · №${mean.serialNumber}` : ''}
+                          <b>{highlightText(mean.name, searchTerm)}</b>
+                          {mean.toolType && (
+                            <>
+                              {' · '}
+                              {highlightText(mean.toolType, searchTerm)}
+                            </>
+                          )}
+                          {mean.serialNumber && (
+                            <>
+                              {' · №'}
+                              {highlightText(mean.serialNumber, searchTerm)}
+                            </>
+                          )}
                         </span>
                         <button
                           className='btn-secondary'
