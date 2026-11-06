@@ -1,6 +1,8 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import '../../styles/TabContent.css';
+import '../common/GenericList.css';
 import { highlightText } from '../../utils/searchUtils';
+import KtziCardCompact from './KtziCardCompact';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import './KtziTab.css';
 
@@ -179,6 +181,17 @@ const normalizeObjectType = (type: string) => {
   if (normalized === 'KRT') return 'KRT';
   return normalized;
 };
+const getSubdivisionOrder = (type?: string) => {
+  const normalized = (type || '').toLocaleLowerCase('uk-UA');
+  if (normalized.includes('апарат') || normalized.includes('apparatus')) return 0;
+  if (
+    normalized.includes('територ') ||
+    normalized.includes('territorial')
+  ) {
+    return 1;
+  }
+  return 2;
+};
 
 const EMPTY_DOCUMENTS: KtziDocuments = Object.fromEntries(
   DOCUMENT_SECTIONS.map(({ key, fields }) => [
@@ -194,6 +207,17 @@ const ktziTitle = (ktzi: Ktzi) =>
   ]
     .filter(Boolean)
     .join(', ');
+
+const getObjectTypeLabels = (ktzi: Ktzi) =>
+  Array.from(
+    new Set(
+      ktzi.objects.map(
+        (object) =>
+          OBJECT_TYPE_LABELS[normalizeObjectType(object.objectType)] ||
+          object.objectType,
+      ),
+    ),
+  );
 
 const formatValue = (value?: string) => {
   if (!value) return '—';
@@ -211,6 +235,7 @@ export default function KtziTab() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
   const [mainForm, setMainForm] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<KtziDocuments>(EMPTY_DOCUMENTS);
   const [saving, setSaving] = useState(false);
@@ -255,7 +280,11 @@ export default function KtziTab() {
   useEffect(() => {
     const applyHash = () => {
       const match = window.location.hash.match(/^#ktzi:(\d+)/);
-      if (match) setHighlightId(Number(match[1]));
+      if (match) {
+        const ktziId = Number(match[1]);
+        setHighlightId(ktziId);
+        setExpandedId(ktziId);
+      }
     };
     applyHash();
     window.addEventListener('hashchange', applyHash);
@@ -264,26 +293,48 @@ export default function KtziTab() {
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    return ktzis.filter((ktzi) => {
-      const matchesType =
-        selectedObjectTypes.length === 0 ||
-        ktzi.objects.some((object) =>
-          selectedObjectTypes.includes(normalizeObjectType(object.objectType)),
+    return ktzis
+      .filter((ktzi) => {
+        const matchesType =
+          selectedObjectTypes.length === 0 ||
+          ktzi.objects.some((object) =>
+            selectedObjectTypes.includes(
+              normalizeObjectType(object.objectType),
+            ),
+          );
+        if (!matchesType) return false;
+        if (!term) return true;
+        return JSON.stringify([
+            ktzi.address,
+            ktzi.premisesNumber,
+            ktzi.subdivisionName,
+            ktzi.subdivisionType,
+            ktzi.serviceName,
+            ktzi.objects.map((object) => object.objectName),
+            ktzi.protectionMeans.map((mean) => [mean.name, mean.serialNumber]),
+            ktzi.documents,
+          ])
+            .toLowerCase()
+            .includes(term);
+      })
+      .sort((a, b) => {
+        const typeOrder =
+          getSubdivisionOrder(a.subdivisionType) -
+          getSubdivisionOrder(b.subdivisionType);
+        return (
+          typeOrder ||
+          (a.subdivisionName || '').localeCompare(
+            b.subdivisionName || '',
+            'uk',
+            { sensitivity: 'base' },
+          ) ||
+          (a.premisesNumber || '').localeCompare(
+            b.premisesNumber || '',
+            'uk',
+            { numeric: true, sensitivity: 'base' },
+          )
         );
-      if (!matchesType) return false;
-      if (!term) return true;
-      return JSON.stringify([
-          ktzi.address,
-          ktzi.premisesNumber,
-          ktzi.subdivisionName,
-          ktzi.serviceName,
-          ktzi.objects.map((object) => object.objectName),
-          ktzi.protectionMeans.map((mean) => [mean.name, mean.serialNumber]),
-          ktzi.documents,
-        ])
-          .toLowerCase()
-          .includes(term);
-    });
+      });
   }, [ktzis, searchTerm, selectedObjectTypes]);
 
   const toggleObjectType = (type: string) => {
@@ -302,8 +353,11 @@ export default function KtziTab() {
     }),
     [ktzis],
   );
+  const expandedKtzis = filtered.filter((ktzi) => expandedId === ktzi.id);
+  const compactKtzis = filtered.filter((ktzi) => expandedId !== ktzi.id);
 
   const startEdit = (ktzi: Ktzi) => {
+    setExpandedId(ktzi.id);
     setEditingId(ktzi.id);
     setMainForm(
       Object.fromEntries(
@@ -478,13 +532,15 @@ export default function KtziTab() {
         </div>
       )}
 
-      {filtered.map((ktzi) => {
+      <div className='cards-container compact-mode'>
+        {expandedKtzis.map((ktzi) => {
         const isEditing = editingId === ktzi.id;
         const canDelete = !ktzi.objects.length && !ktzi.protectionMeans.length;
+
         return (
           <div
             key={ktzi.id}
-            className={`generic-card ${highlightId === ktzi.id ? 'ktzi-highlight' : ''}`}
+            className={`generic-card expanded-card-wrapper ${highlightId === ktzi.id ? 'ktzi-highlight' : ''}`}
           >
             <div className='card-header'>
               <div className='card-title'>
@@ -506,6 +562,18 @@ export default function KtziTab() {
                     ✎
                   </button>
                 )}
+                <button
+                  type='button'
+                  className='btn-icon btn-close'
+                  onClick={() => {
+                    setExpandedId(null);
+                    setEditingId(null);
+                  }}
+                  title='Згорнути'
+                  aria-label='Згорнути картку'
+                >
+                  ✕
+                </button>
               </div>
             </div>
 
@@ -775,6 +843,22 @@ export default function KtziTab() {
           </div>
         );
       })}
+      <div className='compact-cards-grid'>
+        {compactKtzis.map((ktzi) => (
+          <KtziCardCompact
+            key={ktzi.id}
+            subdivisionName={ktzi.subdivisionName}
+            objectTypes={getObjectTypeLabels(ktzi)}
+            premisesNumber={ktzi.premisesNumber}
+            searchTerm={searchTerm}
+            onClick={() => {
+              setEditingId(null);
+              setExpandedId(ktzi.id);
+            }}
+          />
+        ))}
+      </div>
+      </div>
 
       {ktziToDelete && (
         <DeleteConfirmModal
