@@ -147,9 +147,71 @@
   border-bottom: 2px solid #edf2f7;
 }
 
+.ktzi-object-details-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ktzi-object-details-header .section-title {
+  flex: 1;
+}
+
+.ktzi-object-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ktzi-object-details-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  color: #4a5568;
+}
+
+.ktzi-object-details-content {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.ktzi-object-details-content h5 {
+  margin: 0 0 0.75rem;
+  color: #394867;
+  font-size: 0.95rem;
+}
+
+.ktzi-object-mean {
+  padding: 1rem 0;
+  border-top: 1px solid #edf2f7;
+}
+
+.ktzi-object-mean:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ktzi-object-mean .info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.ktzi-object-mean .info-item .value {
+  overflow-wrap: anywhere;
+}
+
 /* ============================================================================
    INFO GRID
    ============================================================================ */
+
+.ktzi-object-details-summary {
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
 .info-grid {
   display: grid;

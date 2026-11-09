@@ -1,8 +1,106 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import { highlightText } from '../../utils/searchUtils';
+import { getCategoryName } from '../../constants/protectionMeansCategories';
 // @ts-ignore
 import './GenericCard.css';
+
+const ktziDocumentSections = [
+  {
+    key: 'technicalTask',
+    title: 'Технічне завдання на створення комплексу ТЗІ',
+    fields: [
+      { name: 'taskNumber', label: 'Реєстраційний номер' },
+      { name: 'taskDate', label: 'Дата реєстрації', date: true },
+      { name: 'taskClearance', label: 'Дата погодження', date: true },
+    ],
+  },
+  {
+    key: 'categorization',
+    title: 'Акт категоріювання',
+    fields: [
+      { name: 'categorizationType', label: 'Вид категоріювання' },
+      { name: 'categorizationActNumber', label: 'Номер акту' },
+      { name: 'categorizationActDate', label: 'Дата реєстрації акту', date: true },
+      { name: 'categorizationRank', label: 'Встановлена категорія' },
+      { name: 'categorizationValidUntil', label: 'Термін дії', date: true },
+      {
+        name: 'foreignCriticalArea',
+        label: 'Іноземні організації в критичній зоні',
+      },
+      {
+        name: 'hightInformationRank',
+        label: 'Вищий ступінь обмеження доступу до інформації',
+      },
+    ],
+  },
+  {
+    key: 'atestation',
+    title: 'Акт атестації комплексу ТЗІ',
+    fields: [
+      { name: 'attestationRegNumber', label: 'Реєстраційний номер акту' },
+      { name: 'attestationRegDate', label: 'Дата реєстрації акту', date: true },
+      {
+        name: 'attestationDsszziDate',
+        label: 'Дата реєстрації в ДССЗЗІ',
+        date: true,
+      },
+      {
+        name: 'attestationDsszziNumber',
+        label: 'Реєстраційний номер в ДССЗЗІ',
+      },
+      { name: 'attestationValidUntil', label: 'Дійсний до', date: true },
+      { name: 'atestationPerformer', label: 'Виконавець робіт з атестації' },
+      { name: 'attestationWorkStartDate', label: 'Дата початку робіт', date: true },
+      { name: 'attestationWorkEndDate', label: 'Дата закінчення робіт', date: true },
+      {
+        name: 'atestationPermissionPerformer',
+        label: 'Реквізити дозволу на проведення робіт',
+      },
+    ],
+  },
+  {
+    key: 'passport',
+    title: 'Паспорт на КТЗІ',
+    fields: [
+      { name: 'passportNumber', label: 'Реєстраційний номер' },
+      { name: 'passportDate', label: 'Дата реєстрації', date: true },
+    ],
+  },
+  {
+    key: 'ksp',
+    title: 'Акт КСП',
+    fields: [
+      { name: 'kspActNumber', label: 'Реєстраційний номер' },
+      { name: 'kspActDate', label: 'Дата реєстрації', date: true },
+    ],
+  },
+];
+
+const ktziDocumentFields = new Set(
+  ktziDocumentSections.flatMap((section) =>
+    section.fields.map((field) => field.name),
+  ),
+);
+const ktziNestedDocumentSections = new Set([
+  'technicalTask',
+  'categorization',
+  'atestation',
+]);
+const ktziMeanFields = [
+  { name: 'toolType', label: 'Категорія / тип' },
+  { name: 'name', label: 'Назва' },
+  { name: 'serialNumber', label: 'Серійний номер' },
+  { name: 'invertarNumber', label: 'Інвентарний номер' },
+  { name: 'releaseYear', label: 'Рік виготовлення' },
+  {
+    name: 'manufacturerExploitationTerm',
+    label: 'Термін експлуатації виробника',
+    date: true,
+  },
+  { name: 'certificateInfo', label: 'Інформація про сертифікат' },
+  { name: 'notes', label: 'Примітки' },
+];
 
 export interface CardSection {
   title: string;
@@ -61,12 +159,11 @@ export default function GenericCard({
   onEdit,
   onDelete,
   onClose,
-  onRefreshData,
   showCloseButton = true,
   shouldExpandAll = false,
-  objectType,
 }: GenericCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showKtziDetails, setShowKtziDetails] = useState(false);
 
   // Controls visibility of previous versions (toggle button)
   const [expandedPreviousVersions, setExpandedPreviousVersions] = useState<{
@@ -175,6 +272,22 @@ export default function GenericCard({
   const title = getFieldValue(config.title);
   const subtitle = config.subtitle ? getFieldValue(config.subtitle) : null;
   const isSuspended = data?.isProcessingSuspended || false;
+  const ktziInfo = data?.ktziInfo;
+  const formatKtziValue = (value: any, isDate = false) => {
+    if (value === null || value === undefined || value === '') return '—';
+    const stringValue = String(value);
+    const displayValue =
+      isDate && /^\d{4}-\d{2}-\d{2}$/.test(stringValue)
+        ? stringValue.split('-').reverse().join('.')
+        : stringValue;
+    return highlightText(displayValue, searchTerm);
+  };
+  const ktziDocuments = ktziInfo?.documents || {};
+  const populatedKtziDocuments = ktziDocumentSections.filter((section) =>
+    section.fields.some(
+      (field) => ktziDocuments[section.key]?.[field.name],
+    ),
+  ).length;
 
   return (
     <>
@@ -213,36 +326,174 @@ export default function GenericCard({
         {/* CONTENT */}
         <div className='card-content'>
           {/* Основні секції */}
-          {config.sections.map((section, idx) => (
-            <section key={idx} className='card-section'>
-              <h4 className='section-title'>
-                {section.icon} {section.title}
-              </h4>
-              <div className='info-grid'>
-                {section.fields.map((field, fieldIdx) => {
-                  const value = getFieldValue(field.value);
-                  if (!value) return null;
+          {config.sections.map((section, idx) => {
+            const fields = ktziInfo
+              ? section.fields.filter(
+                  (field) => !ktziDocumentFields.has(field.value),
+                )
+              : section.fields;
+            if (!fields.length) return null;
+            return (
+              <section key={idx} className='card-section'>
+                <h4 className='section-title'>
+                  {section.icon} {section.title}
+                </h4>
+                <div className='info-grid'>
+                  {fields.map((field, fieldIdx) => {
+                    const value = getFieldValue(field.value);
+                    if (!value) return null;
 
-                  return (
-                    <div
-                      key={fieldIdx}
-                      className={`info-item ${
-                        field.format === 'badge' ? 'badge-item' : ''
-                      }`}
-                    >
-                      <span className='label'>{field.label}:</span>
-                      <span className='value'>
-                        {formatValue(value, field.format)}
-                      </span>
-                    </div>
-                  );
-                })}
+                    return (
+                      <div
+                        key={fieldIdx}
+                        className={`info-item ${
+                          field.format === 'badge' ? 'badge-item' : ''
+                        }`}
+                      >
+                        <span className='label'>{field.label}:</span>
+                        <span className='value'>
+                          {formatValue(value, field.format)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+
+          {ktziInfo && (
+            <section className='card-section ktzi-object-details'>
+              <div className='ktzi-object-details-header'>
+                <h4 className='section-title'>
+                  🛡️ КТЗІ та засоби захисту
+                </h4>
+                <div className='ktzi-object-details-actions'>
+                  <button
+                    type='button'
+                    className='btn-toggle-previous'
+                    onClick={() => setShowKtziDetails((shown) => !shown)}
+                    aria-expanded={showKtziDetails}
+                  >
+                    {showKtziDetails ? '← Згорнути' : '↓ Показати деталі'}
+                  </button>
+                  <button
+                    type='button'
+                    className='btn-toggle-previous'
+                    onClick={() => {
+                      window.location.hash = `#ktzi:${ktziInfo.id}`;
+                    }}
+                  >
+                    Відкрити КТЗІ
+                  </button>
+                </div>
               </div>
+              <div className='ktzi-object-details-summary'>
+                <span>
+                  <strong>КТЗІ:</strong>{' '}
+                  {[
+                    ktziInfo.subdivisionName || 'Без підрозділу',
+                    ktziInfo.premisesNumber
+                      ? `прим. ${ktziInfo.premisesNumber}`
+                      : '',
+                    ktziInfo.address || '',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+                <span>
+                  <strong>Документи:</strong> {populatedKtziDocuments}/5
+                </span>
+                <span>
+                  <strong>Засоби ТЗІ:</strong>{' '}
+                  {ktziInfo.protectionMeans?.length || 0}
+                </span>
+              </div>
+
+              {showKtziDetails && (
+                <div className='ktzi-object-details-content'>
+                  <section>
+                    <h5>Основна інформація КТЗІ</h5>
+                    <div className='info-grid'>
+                      {[
+                        ['Адреса', ktziInfo.address],
+                        ['Номер приміщення', ktziInfo.premisesNumber],
+                        ['Підрозділ', ktziInfo.subdivisionName],
+                        ['Тип підрозділу', ktziInfo.subdivisionType],
+                        ['Служба', ktziInfo.serviceName],
+                      ].map(([label, value]) => (
+                        <div className='info-item' key={label}>
+                          <span className='label'>{label}:</span>
+                          <span className='value'>
+                            {formatKtziValue(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {ktziDocumentSections.map((section) => (
+                    <section key={section.key}>
+                      <h5>{section.title}</h5>
+                      <div className='info-grid'>
+                        {section.fields.map((field) => (
+                          <div className='info-item' key={field.name}>
+                            <span className='label'>{field.label}:</span>
+                            <span className='value'>
+                              {formatKtziValue(
+                                ktziDocuments[section.key]?.[field.name],
+                                field.date,
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+
+                  <section>
+                    <h5>
+                      Засоби ТЗІ ({ktziInfo.protectionMeans?.length || 0})
+                    </h5>
+                    {ktziInfo.protectionMeans?.length ? (
+                      ktziInfo.protectionMeans.map((mean: any) => (
+                        <div className='ktzi-object-mean' key={mean.id}>
+                          <div className='info-grid'>
+                            {ktziMeanFields.map((field) => (
+                              <div
+                                className={`info-item ${field.name === 'notes' || field.name === 'certificateInfo' ? 'full-width' : ''}`}
+                                key={field.name}
+                              >
+                                <span className='label'>{field.label}:</span>
+                                <span className='value'>
+                                  {formatKtziValue(
+                                    field.name === 'toolType'
+                                      ? mean.toolType ||
+                                          getCategoryName(mean.categoryId) ||
+                                          mean.categoryId
+                                      : mean[field.name],
+                                    field.date,
+                                  )}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p>На КТЗІ не встановлено засобів ТЗІ.</p>
+                    )}
+                  </section>
+                </div>
+              )}
             </section>
-          ))}
+          )}
 
           {/* Вложённые секции */}
           {config.nestedSections?.map((nested, idx) => {
+            if (ktziInfo && ktziNestedDocumentSections.has(nested.name)) {
+              return null;
+            }
             const nestedItems = data[nested.name] || [];
             const sharedProtectionMeans =
               nested.name === 'protectionMeans'

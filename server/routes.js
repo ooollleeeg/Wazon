@@ -48,11 +48,31 @@ const queryOne = (query, params = []) =>
     });
   });
 
-const addKtziDocumentsToObject = async (object) => {
+const addKtziInformationToObject = async (object, cache = new Map()) => {
   if (!object?.ktziId) return object;
-  const { documents } = await getKtziDocumentData(object.ktziId);
+  const ktziId = String(object.ktziId);
+  if (!cache.has(ktziId)) {
+    cache.set(
+      ktziId,
+      Promise.all([
+        queryOne('SELECT * FROM ktzi WHERE id = ?', [object.ktziId]),
+        getKtziDocumentData(object.ktziId),
+        getKtziProtectionMeans(object.ktziId),
+      ]),
+    );
+  }
+  const [ktzi, documentData, protectionMeans] = await cache.get(ktziId);
+  const { documents } = documentData;
   return {
     ...object,
+    ktziInfo: ktzi
+      ? {
+          ...ktzi,
+          documents,
+          migrationConflicts: documentData.migrationConflicts,
+          protectionMeans,
+        }
+      : null,
     ktziDocuments: documents,
     technicalTask: documents.technicalTask
       ? [documents.technicalTask]
@@ -589,8 +609,13 @@ router.get('/objects/:type', validateObjectType, async (req, res) => {
       const withNested = await Promise.all(
         rows.map((row) => getObjectWithNested(req.objectConfig, row.id)),
       );
+      const ktziCache = new Map();
       return res.json(
-        await Promise.all(withNested.map(addKtziDocumentsToObject)),
+        await Promise.all(
+          withNested.map((object) =>
+            addKtziInformationToObject(object, ktziCache),
+          ),
+        ),
       );
     }
 
@@ -618,7 +643,7 @@ router.get('/objects/:type/:id', validateObjectType, async (req, res) => {
     if (!row) {
       return res.status(404).json({ error: "Об'єкт не знайдено" });
     }
-    res.json(await addKtziDocumentsToObject(row));
+    res.json(await addKtziInformationToObject(row));
   } catch (err) {
     console.error(`❌ Error in GET /objects/:id:`, err);
     res.status(500).json({ error: err.message });
