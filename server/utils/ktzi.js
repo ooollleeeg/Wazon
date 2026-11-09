@@ -251,7 +251,8 @@ const legacyNestedDocumentCandidates = async (ktziId, documentType) => {
     objectType,
   ] of sources) {
     const rows = await all(
-      `SELECT nested.*, object.id AS ktziObjectId,
+      `SELECT nested.*, nested.id AS legacyId,
+              object.id AS ktziObjectId,
               object.${nameField} AS ktziObjectName
        FROM ${nestedTable} nested
        JOIN ${objectTable} object ON object.id = nested.${foreignKey}
@@ -259,9 +260,7 @@ const legacyNestedDocumentCandidates = async (ktziId, documentType) => {
        ORDER BY nested.${dateField} DESC, nested.id DESC`,
       [ktziId],
     );
-    const seenObjects = new Set();
     for (const row of rows) {
-      if (seenObjects.has(row.ktziObjectId)) continue;
       const data = Object.fromEntries(
         KTZI_DOCUMENT_FIELDS[documentType].map((field) => [
           field,
@@ -269,11 +268,12 @@ const legacyNestedDocumentCandidates = async (ktziId, documentType) => {
         ]),
       );
       if (!Object.values(data).some((value) => value.trim())) continue;
-      seenObjects.add(row.ktziObjectId);
       candidates.push({
         objectType,
         objectName: row.ktziObjectName || `Об’єкт ${row.ktziObjectId}`,
         data,
+        sourceTable: nestedTable,
+        sourceId: row.legacyId,
       });
     }
   }
@@ -293,7 +293,7 @@ const legacyScalarDocumentCandidates = async (ktziId, documentType) => {
   for (const [table, numberField, dateField, nameField, objectType] of sources) {
     const rows = await all(
       `SELECT ${numberField}, ${dateField}, id AS ktziObjectId,
-              ${nameField} AS ktziObjectName
+              id AS legacyId, ${nameField} AS ktziObjectName
        FROM ${table}
        WHERE ktziId = ?
          AND (COALESCE(${numberField}, '') != '' OR COALESCE(${dateField}, '') != '')
@@ -304,6 +304,8 @@ const legacyScalarDocumentCandidates = async (ktziId, documentType) => {
       ...rows.map((row) => ({
         objectType,
         objectName: row.ktziObjectName || `Об’єкт ${row.ktziObjectId}`,
+        sourceTable: table,
+        sourceId: row.legacyId,
         data:
           documentType === 'ksp'
             ? {
@@ -321,31 +323,6 @@ const legacyScalarDocumentCandidates = async (ktziId, documentType) => {
     );
   }
   return candidates;
-};
-
-const resolveLegacyDocumentCandidates = (documentType, candidates) => {
-  const fields = KTZI_DOCUMENT_FIELDS[documentType];
-  const conflictingFields = fields.filter((field) => {
-    const values = new Set(
-      candidates
-        .map((candidate) => candidate.data[field])
-        .filter((value) => value),
-    );
-    return values.size > 1;
-  });
-  if (conflictingFields.length) {
-    return { data: null, conflict: { documentType, candidates } };
-  }
-
-  const data = Object.fromEntries(fields.map((field) => [field, '']));
-  candidates.forEach((candidate) => {
-    fields.forEach((field) => {
-      if (!data[field] && candidate.data[field]) {
-        data[field] = candidate.data[field];
-      }
-    });
-  });
-  return { data, conflict: null };
 };
 
 const documentSummary = (documentType, data) => {
@@ -374,25 +351,13 @@ const documentSummary = (documentType, data) => {
   };
 };
 
-const saveKtziDocument = async (ktziId, documentType, data) => {
+const insertKtziDocumentVersion = async (ktziId, documentType, data) => {
   const fields = KTZI_DOCUMENT_FIELDS[documentType];
   const documentData = Object.fromEntries(
     fields.map((field) => [field, String(data[field] || '')]),
   );
-  if (!Object.values(documentData).some((value) => value.trim())) {
-    await run('DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?', [
-      ktziId,
-      documentType,
-    ]);
-    return;
-  }
-
   const summary = documentSummary(documentType, documentData);
-  await run('DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?', [
-    ktziId,
-    documentType,
-  ]);
-  await run(
+  const result = await run(
     `INSERT INTO ktzi_documents
       (ktziId, documentType, documentNumber, documentDate, validUntil, documentData)
      VALUES (?, ?, ?, ?, ?, ?)`,
@@ -405,6 +370,12 @@ const saveKtziDocument = async (ktziId, documentType, data) => {
       JSON.stringify(documentData),
     ],
   );
+  return {
+    id: result.id,
+    documentType,
+    documentDate: summary.date,
+    documentData: JSON.stringify(documentData),
+  };
 };
 
 const hydrateKtziDocument = (row) => {
@@ -456,50 +427,233 @@ const hydrateKtziDocument = (row) => {
   return legacyFieldMap[row.documentType] || {};
 };
 
-export const getKtziDocumentData = async (ktziId) => {
-  const rows = await all(
-    'SELECT * FROM ktzi_documents WHERE ktziId = ? ORDER BY id',
-    [ktziId],
-  );
-  const documents = {};
-  const migrationConflicts = [];
-  rows.forEach((row) => {
-    if (KTZI_DOCUMENT_FIELDS[row.documentType]) {
-      documents[row.documentType] = hydrateKtziDocument(row);
-    }
-  });
+const documentDateFields = {
+  technicalTask: 'taskDate',
+  categorization: 'categorizationActDate',
+  atestation: 'attestationRegDate',
+  passport: 'passportDate',
+  ksp: 'checkDate',
+};
 
-  for (const documentType of Object.keys(KTZI_DOCUMENT_FIELDS)) {
-    const storedRow = rows.find((row) => row.documentType === documentType);
-    if (storedRow?.documentData) continue;
-    const candidates =
-      documentType === 'passport'
-        ? await legacyScalarDocumentCandidates(ktziId, documentType)
-        : documentType === 'ksp'
-          ? [
-              ...(await legacyNestedDocumentCandidates(ktziId, documentType)),
-              ...(await legacyScalarDocumentCandidates(ktziId, documentType)),
-            ]
-          : await legacyNestedDocumentCandidates(ktziId, documentType);
-    const resolution = resolveLegacyDocumentCandidates(
-      documentType,
-      candidates,
+const getDocumentVersionKey = (documentType, data) =>
+  JSON.stringify(
+    KTZI_DOCUMENT_FIELDS[documentType].map((field) => data[field] || ''),
+  );
+
+const getDocumentIdentityKey = (documentType, data) => {
+  const numberFields = {
+    technicalTask: 'taskNumber',
+    categorization: 'categorizationActNumber',
+    atestation: 'attestationRegNumber',
+    passport: 'passportNumber',
+    ksp: 'checkNumber',
+  };
+  const identity = [
+    data[numberFields[documentType]] || '',
+    data[documentDateFields[documentType]] || '',
+  ];
+  return identity.some(Boolean)
+    ? JSON.stringify(identity)
+    : getDocumentVersionKey(documentType, data);
+};
+
+const parseDocumentDate = (value) => {
+  if (!value) return 0;
+  const date = String(value).trim();
+  const isoDate = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoDate) {
+    return Date.UTC(
+      Number(isoDate[1]),
+      Number(isoDate[2]) - 1,
+      Number(isoDate[3]),
     );
-    if (resolution.conflict && !storedRow) {
-      migrationConflicts.push(resolution.conflict);
-      continue;
+  }
+  const localizedDate = date.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if (localizedDate) {
+    return Date.UTC(
+      Number(localizedDate[3]),
+      Number(localizedDate[2]) - 1,
+      Number(localizedDate[1]),
+    );
+  }
+  const parsedDate = new Date(date).getTime();
+  return Number.isNaN(parsedDate) ? 0 : parsedDate;
+};
+
+const sortDocumentVersions = (documentType, versions) => {
+  const dateField = documentDateFields[documentType];
+  return versions.sort((first, second) => {
+    const firstDate = parseDocumentDate(first[dateField]);
+    const secondDate = parseDocumentDate(second[dateField]);
+    return secondDate - firstDate || (second.id || 0) - (first.id || 0);
+  });
+};
+
+const getLegacyDocumentCandidates = async (ktziId, documentType) => {
+  const nested = await legacyNestedDocumentCandidates(ktziId, documentType);
+  if (documentType === 'passport' || documentType === 'ksp') {
+    return [
+      ...nested,
+      ...(await legacyScalarDocumentCandidates(ktziId, documentType)),
+    ];
+  }
+  return nested;
+};
+
+const legacyDocumentImportLocks = new Map();
+
+const performLegacyDocumentImport = async (
+  ktziId,
+  documentType,
+  storedRows,
+) => {
+  const migrationComplete = await get(
+    `SELECT 1 FROM ktzi_document_legacy_imports
+     WHERE ktziId = ? AND documentType = ?
+       AND sourceTable = '__complete__' AND sourceId = 0`,
+    [ktziId, documentType],
+  );
+  if (migrationComplete) return storedRows;
+
+  const candidates = await getLegacyDocumentCandidates(ktziId, documentType);
+  const importedRows = await all(
+    `SELECT sourceTable, sourceId FROM ktzi_document_legacy_imports
+     WHERE ktziId = ? AND documentType = ? AND sourceTable != '__complete__'`,
+    [ktziId, documentType],
+  );
+  const importedSources = new Set(
+    importedRows.map(({ sourceTable, sourceId }) => `${sourceTable}:${sourceId}`),
+  );
+  const existingVersions = storedRows.map((row) => ({
+    id: row.id,
+    ...hydrateKtziDocument(row),
+  }));
+  const existingByIdentity = new Map(
+    existingVersions.map((data, index) => [
+      getDocumentIdentityKey(documentType, data),
+      storedRows[index],
+    ]),
+  );
+
+  for (const candidate of candidates) {
+    const sourceKey = `${candidate.sourceTable}:${candidate.sourceId}`;
+    if (importedSources.has(sourceKey)) continue;
+
+    const data = Object.fromEntries(
+      KTZI_DOCUMENT_FIELDS[documentType].map((field) => [
+        field,
+        String(candidate.data[field] || ''),
+      ]),
+    );
+    const identityKey = getDocumentIdentityKey(documentType, data);
+    const existingRow = existingByIdentity.get(identityKey);
+    if (existingRow) {
+      const existingData = hydrateKtziDocument(existingRow);
+      const mergedData = Object.fromEntries(
+        KTZI_DOCUMENT_FIELDS[documentType].map((field) => [
+          field,
+          existingData[field] || data[field] || '',
+        ]),
+      );
+      if (
+        KTZI_DOCUMENT_FIELDS[documentType].some(
+          (field) => existingData[field] !== mergedData[field],
+        )
+      ) {
+        const summary = documentSummary(documentType, mergedData);
+        const serializedData = JSON.stringify(mergedData);
+        await run(
+          `UPDATE ktzi_documents
+           SET documentNumber = ?, documentDate = ?, validUntil = ?, documentData = ?
+           WHERE id = ?`,
+          [
+            summary.number,
+            summary.date,
+            summary.validUntil,
+            serializedData,
+            existingRow.id,
+          ],
+        );
+        existingRow.documentData = serializedData;
+        existingRow.documentDate = summary.date;
+      }
+    } else {
+      const row = await insertKtziDocumentVersion(ktziId, documentType, data);
+      storedRows.push(row);
+      existingByIdentity.set(identityKey, row);
     }
-    if (!candidates.length && !storedRow) continue;
-    const data = {
-      ...(resolution.data || {}),
-      ...(documents[documentType] || {}),
-    };
-    if (!Object.values(data).some((value) => value.trim())) continue;
-    await saveKtziDocument(ktziId, documentType, data);
-    documents[documentType] = data;
+
+    await run(
+      `INSERT OR IGNORE INTO ktzi_document_legacy_imports
+         (ktziId, documentType, sourceTable, sourceId)
+       VALUES (?, ?, ?, ?)`,
+      [ktziId, documentType, candidate.sourceTable, candidate.sourceId],
+    );
+  }
+  await run(
+    `INSERT OR IGNORE INTO ktzi_document_legacy_imports
+       (ktziId, documentType, sourceTable, sourceId)
+     VALUES (?, ?, '__complete__', 0)`,
+    [ktziId, documentType],
+  );
+  return storedRows;
+};
+
+const importLegacyDocumentVersions = async (
+  ktziId,
+  documentType,
+  storedRows,
+) => {
+  const key = `${ktziId}:${documentType}`;
+  const pendingImport = legacyDocumentImportLocks.get(key);
+  if (pendingImport) {
+    await pendingImport;
+    return all(
+      `SELECT * FROM ktzi_documents
+       WHERE ktziId = ? AND documentType = ? ORDER BY id DESC`,
+      [ktziId, documentType],
+    );
   }
 
-  return { documents, migrationConflicts };
+  const importPromise = performLegacyDocumentImport(
+    ktziId,
+    documentType,
+    storedRows,
+  );
+  legacyDocumentImportLocks.set(key, importPromise);
+  try {
+    return await importPromise;
+  } finally {
+    legacyDocumentImportLocks.delete(key);
+  }
+};
+
+export const getKtziDocumentData = async (ktziId) => {
+  const documents = {};
+  const documentVersions = {};
+  for (const documentType of Object.keys(KTZI_DOCUMENT_FIELDS)) {
+    let rows = await all(
+      `SELECT * FROM ktzi_documents
+       WHERE ktziId = ? AND documentType = ? ORDER BY id DESC`,
+      [ktziId, documentType],
+    );
+    rows = await importLegacyDocumentVersions(ktziId, documentType, rows);
+    let versions = sortDocumentVersions(
+      documentType,
+      rows.map((row) => ({ id: row.id, ...hydrateKtziDocument(row) })),
+    );
+    if (documentType === 'passport') versions = versions.slice(0, 1);
+    versions = versions.map((data, index) => ({
+      ...data,
+      isCurrent: documentType !== 'passport' && index === 0,
+    }));
+    if (!versions.length) continue;
+    documentVersions[documentType] = versions;
+    const { id, isCurrent, ...current } = versions[0];
+    documents[documentType] = current;
+  }
+
+  return { documents, documentVersions, migrationConflicts: [] };
 };
 
 export const saveKtziDocumentData = async (ktziId, documents) => {
@@ -515,16 +669,40 @@ export const saveKtziDocumentData = async (ktziId, documents) => {
     if (!KTZI_DOCUMENT_FIELDS[documentType]) {
       throw invalidInput(`Невідомий тип документа КТЗІ: ${documentType}`);
     }
-    if (!documents[documentType] || typeof documents[documentType] !== 'object') {
+    const versions = Array.isArray(documents[documentType])
+      ? documents[documentType]
+      : [documents[documentType]];
+    if (
+      !documents[documentType] ||
+      typeof documents[documentType] !== 'object' ||
+      versions.some(
+        (version) =>
+          !version || typeof version !== 'object' || Array.isArray(version),
+      )
+    ) {
       throw invalidInput(`Некоректні дані документа КТЗІ: ${documentType}`);
     }
     const allowedFields = new Set(KTZI_DOCUMENT_FIELDS[documentType]);
-    if (Object.keys(documents[documentType]).some((field) => !allowedFields.has(field))) {
+    if (
+      versions.some((version) =>
+        Object.keys(version).some(
+          (field) =>
+            !allowedFields.has(field) &&
+            !(field === 'isCurrent' && typeof version[field] === 'boolean') &&
+            !(field === 'id' && Number.isInteger(version[field])),
+        ),
+      )
+    ) {
       throw invalidInput(`Документ ${documentType} містить невідомі поля`);
     }
     if (
-      Object.values(documents[documentType]).some(
-        (value) => value !== null && value !== undefined && typeof value !== 'string',
+      versions.some((version) =>
+        KTZI_DOCUMENT_FIELDS[documentType].some(
+          (field) =>
+            version[field] !== null &&
+            version[field] !== undefined &&
+            typeof version[field] !== 'string',
+        ),
       )
     ) {
       throw invalidInput(`Поля документа ${documentType} мають бути текстовими`);
@@ -534,7 +712,26 @@ export const saveKtziDocumentData = async (ktziId, documents) => {
   await run('BEGIN TRANSACTION');
   try {
     for (const documentType of Object.keys(KTZI_DOCUMENT_FIELDS)) {
-      await saveKtziDocument(ktziId, documentType, documents[documentType] || {});
+      await run(
+        'DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
+        [ktziId, documentType],
+      );
+      let versions = Array.isArray(documents[documentType])
+        ? documents[documentType]
+        : documents[documentType]
+          ? [documents[documentType]]
+          : [];
+      if (documentType === 'passport') versions = versions.slice(-1);
+      for (const version of versions) {
+        const data = Object.fromEntries(
+          KTZI_DOCUMENT_FIELDS[documentType].map((field) => [
+            field,
+            String(version[field] || ''),
+          ]),
+        );
+        if (!Object.values(data).some((value) => value.trim())) continue;
+        await insertKtziDocumentVersion(ktziId, documentType, data);
+      }
     }
     await run('COMMIT');
   } catch (error) {

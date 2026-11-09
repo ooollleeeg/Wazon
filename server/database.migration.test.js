@@ -186,6 +186,7 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
         [tableName],
       ),
     );
+  assert.equal(await tableExists('ktzi_document_legacy_imports'), true);
   assert.equal(await tableExists('class_a_systems_protection_means'), false);
   assert.equal(await tableExists('protection_mean_assignments'), false);
   const sharedMean = await get(

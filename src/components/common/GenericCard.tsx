@@ -293,10 +293,12 @@ export default function GenericCard({
     return highlightText(displayValue, searchTerm);
   };
   const ktziDocuments = ktziInfo?.documents || {};
+  const ktziDocumentVersions = ktziInfo?.documentVersions || {};
+  const getKtziDocumentVersions = (documentType: string) =>
+    ktziDocumentVersions[documentType] ||
+    (ktziDocuments[documentType] ? [ktziDocuments[documentType]] : []);
   const populatedKtziDocuments = ktziDocumentSections.filter((section) =>
-    section.fields.some(
-      (field) => ktziDocuments[section.key]?.[field.name],
-    ),
+    getKtziDocumentVersions(section.key).length > 0,
   ).length;
 
   return (
@@ -445,19 +447,67 @@ export default function GenericCard({
                   {ktziDocumentSections.map((section) => (
                     <section key={section.key}>
                       <h5>{section.title}</h5>
-                      <div className='info-grid'>
-                        {section.fields.map((field) => (
-                          <div className='info-item' key={field.name}>
-                            <span className='label'>{field.label}:</span>
-                            <span className='value'>
-                              {formatKtziValue(
-                                ktziDocuments[section.key]?.[field.name],
-                                field.date,
-                              )}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      {(() => {
+                        const isPassport = section.key === 'passport';
+                        const versions = isPassport
+                          ? getKtziDocumentVersions(section.key).slice(0, 1)
+                          : getKtziDocumentVersions(section.key);
+                        const sectionStateKey = `ktzi:${section.key}`;
+                        const showPrevious =
+                          expandedPreviousVersions[sectionStateKey];
+                        const visibleVersions = showPrevious
+                          ? versions
+                          : versions.slice(0, 1);
+                        return (
+                          <>
+                            {versions.length > 1 && (
+                              <button
+                                type='button'
+                                className='btn-toggle-previous'
+                                onClick={() =>
+                                  toggleExpandSection(sectionStateKey)
+                                }
+                              >
+                                {showPrevious
+                                  ? '← Приховати попередні'
+                                  : `↓ Переглянути попередні (${versions.length - 1})`}
+                              </button>
+                            )}
+                            {visibleVersions.map(
+                              (version: any, versionIndex: number) => (
+                                <div
+                                  className='ktzi-object-document'
+                                  key={version.id || versionIndex}
+                                >
+                                  {!isPassport && versionIndex === 0 && (
+                                    <span className='badge-current'>
+                                      Поточний
+                                    </span>
+                                  )}
+                                  <div className='info-grid'>
+                                    {section.fields.map((field) => (
+                                      <div
+                                        className='info-item'
+                                        key={field.name}
+                                      >
+                                        <span className='label'>
+                                          {field.label}:
+                                        </span>
+                                        <span className='value'>
+                                          {formatKtziValue(
+                                            version[field.name],
+                                            field.date,
+                                          )}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </>
+                        );
+                      })()}
                     </section>
                   ))}
 

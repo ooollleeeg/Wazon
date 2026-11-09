@@ -258,11 +258,18 @@ describe('KTZI grouping and shared documents', () => {
         checkEventDate: '2026-03-03',
         checkPermissionPerformer: 'Дозвіл',
       },
-      technicalTask: {
-        taskNumber: 'ТЗ-1',
-        taskDate: '2026-03-03',
-        taskClearance: '2026-03-04',
-      },
+      technicalTask: [
+        {
+          taskNumber: 'ТЗ-старе',
+          taskDate: '2024-03-03',
+          taskClearance: '2024-03-04',
+        },
+        {
+          taskNumber: 'ТЗ-1',
+          taskDate: '2026-03-03',
+          taskClearance: '2026-03-04',
+        },
+      ],
       categorization: {
         categorizationActNumber: 'КАТ-1',
         categorizationActDate: '2026-03-05',
@@ -290,6 +297,15 @@ describe('KTZI grouping and shared documents', () => {
       checkPermissionPerformer: 'Дозвіл',
     });
     assert.equal(documents.technicalTask.taskDate, '2026-03-03');
+    assert.deepEqual(
+      (await getKtziDocumentData(ktzi.id)).documentVersions.technicalTask.map(
+        ({ taskNumber, isCurrent }) => ({ taskNumber, isCurrent }),
+      ),
+      [
+        { taskNumber: 'ТЗ-1', isCurrent: true },
+        { taskNumber: 'ТЗ-старе', isCurrent: false },
+      ],
+    );
     assert.equal(documents.categorization.categorizationRank, 'II');
     assert.equal(documents.atestation.attestationDsszziNumber, 'ДС-1');
   });
@@ -310,6 +326,12 @@ describe('KTZI grouping and shared documents', () => {
       passportDate: '2026-04-01',
       kspActNumber: 'КСП-legacy',
       kspActDate: '2026-04-02',
+    });
+    await seedObject('class_a_systems_technical_task', {
+      systemId,
+      taskNumber: 'ТЗ-старе',
+      taskDate: '2023-04-03',
+      taskClearance: '2023-04-04',
     });
     await seedObject('class_a_systems_technical_task', {
       systemId,
@@ -337,6 +359,15 @@ describe('KTZI grouping and shared documents', () => {
       'Дозвіл legacy',
     );
     assert.equal(imported.technicalTask.taskDate, '2026-04-03');
+    assert.deepEqual(
+      (await getKtziDocumentData(ktzi.id)).documentVersions.technicalTask.map(
+        ({ taskNumber, isCurrent }) => ({ taskNumber, isCurrent }),
+      ),
+      [
+        { taskNumber: 'ТЗ-legacy', isCurrent: true },
+        { taskNumber: 'ТЗ-старе', isCurrent: false },
+      ],
+    );
 
     await run(
       'UPDATE class_a_systems_technical_task SET taskNumber = ? WHERE systemId = ?',
@@ -377,7 +408,7 @@ describe('KTZI grouping and shared documents', () => {
     });
   });
 
-  it('does not choose between conflicting legacy documents automatically', async () => {
+  it('preserves every legacy task as a version and marks the newest current', async () => {
     const ktzi = await ensureKtzi({
       address: 'Спільна 4',
       premisesNumber: '204',
@@ -403,23 +434,55 @@ describe('KTZI grouping and shared documents', () => {
     });
 
     const result = await getKtziDocumentData(ktzi.id);
-    assert.equal(result.documents.technicalTask, undefined);
-    assert.equal(
-      result.migrationConflicts.some(
-        (conflict) => conflict.documentType === 'technicalTask',
+    assert.equal(result.documents.technicalTask.taskNumber, 'ТЗ-Б');
+    assert.deepEqual(
+      result.documentVersions.technicalTask.map(
+        ({ taskNumber, isCurrent }) => ({ taskNumber, isCurrent }),
       ),
-      true,
+      [
+        { taskNumber: 'ТЗ-Б', isCurrent: true },
+        { taskNumber: 'ТЗ-А', isCurrent: false },
+      ],
     );
-    assert.equal(
-      await get(
-        'SELECT id FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
-        [ktzi.id, 'technicalTask'],
+    assert.deepEqual(result.migrationConflicts, []);
+  });
+
+  it('uses the newest registration date for a newly saved task version', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Спільна 8',
+      premisesNumber: '208',
+      subdivisionName: 'Відділ И',
+    });
+
+    await saveKtziDocumentData(ktzi.id, {
+      technicalTask: [
+        {
+          taskNumber: 'ТЗ-чинне',
+          taskDate: '15.10.2026',
+          taskClearance: '16.10.2026',
+        },
+        {
+          taskNumber: 'ТЗ-попереднє',
+          taskDate: '10.05.2024',
+          taskClearance: '11.05.2024',
+        },
+      ],
+    });
+
+    const result = await getKtziDocumentData(ktzi.id);
+    assert.equal(result.documents.technicalTask.taskNumber, 'ТЗ-чинне');
+    assert.deepEqual(
+      result.documentVersions.technicalTask.map(
+        ({ taskNumber, isCurrent }) => ({ taskNumber, isCurrent }),
       ),
-      null,
+      [
+        { taskNumber: 'ТЗ-чинне', isCurrent: true },
+        { taskNumber: 'ТЗ-попереднє', isCurrent: false },
+      ],
     );
   });
 
-  it('surfaces conflicting legacy special checks from objects in one KTZI', async () => {
+  it('preserves differing legacy special checks as document versions', async () => {
     const ktzi = await ensureKtzi({
       address: 'Спільна 5',
       premisesNumber: '205',
@@ -436,26 +499,99 @@ describe('KTZI grouping and shared documents', () => {
     await seedObject('class_a_systems_special_check', {
       systemId: firstSystemId,
       checkNumber: 'КСП-А',
+      checkDate: '2024-01-01',
     });
     await seedObject('class_a_systems_special_check', {
       systemId: secondSystemId,
       checkNumber: 'КСП-Б',
+      checkDate: '2026-01-01',
     });
 
     const result = await getKtziDocumentData(ktzi.id);
-    assert.equal(result.documents.ksp, undefined);
-    const conflict = result.migrationConflicts.find(
-      ({ documentType }) => documentType === 'ksp',
-    );
-    assert.ok(conflict);
-    assert.equal(conflict.candidates.length, 2);
-    assert.equal(
-      await get(
-        'SELECT id FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
-        [ktzi.id, 'ksp'],
+    assert.equal(result.documents.ksp.checkNumber, 'КСП-Б');
+    assert.deepEqual(
+      result.documentVersions.ksp.map(
+        ({ checkNumber, isCurrent }) => ({ checkNumber, isCurrent }),
       ),
-      null,
+      [
+        { checkNumber: 'КСП-Б', isCurrent: true },
+        { checkNumber: 'КСП-А', isCurrent: false },
+      ],
     );
+    assert.deepEqual(result.migrationConflicts, []);
+  });
+
+  it('saves and deletes historical document versions without reimporting them', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Спільна 7',
+      premisesNumber: '207',
+      subdivisionName: 'Відділ З',
+    });
+    const systemId = await seedObject('class_a_systems', {
+      systemName: 'АС документів',
+      ktziId: ktzi.id,
+    });
+    await seedObject('class_a_systems_categorization', {
+      systemId,
+      categorizationActNumber: 'Категорія стара',
+      categorizationActDate: '2021-01-01',
+    });
+    await seedObject('class_a_systems_categorization', {
+      systemId,
+      categorizationActNumber: 'Категорія чинна',
+      categorizationActDate: '2026-01-01',
+    });
+    await seedObject('class_a_systems_atestation', {
+      systemId,
+      attestationRegNumber: 'Атестація стара',
+      attestationRegDate: '2021-01-01',
+    });
+    await seedObject('class_a_systems_atestation', {
+      systemId,
+      attestationRegNumber: 'Атестація чинна',
+      attestationRegDate: '2026-01-01',
+    });
+
+    const imported = await getKtziDocumentData(ktzi.id);
+    assert.deepEqual(
+      imported.documentVersions.categorization.map(
+        ({ categorizationActNumber, isCurrent }) => ({
+          categorizationActNumber,
+          isCurrent,
+        }),
+      ),
+      [
+        { categorizationActNumber: 'Категорія чинна', isCurrent: true },
+        { categorizationActNumber: 'Категорія стара', isCurrent: false },
+      ],
+    );
+    assert.deepEqual(
+      imported.documentVersions.atestation.map(
+        ({ attestationRegNumber, isCurrent }) => ({
+          attestationRegNumber,
+          isCurrent,
+        }),
+      ),
+      [
+        { attestationRegNumber: 'Атестація чинна', isCurrent: true },
+        { attestationRegNumber: 'Атестація стара', isCurrent: false },
+      ],
+    );
+
+    await saveKtziDocumentData(ktzi.id, {
+      categorization: [
+        {
+          categorizationActNumber: 'Категорія оновлена',
+          categorizationActDate: '2026-06-01',
+        },
+      ],
+    });
+    const saved = await getKtziDocumentData(ktzi.id);
+    assert.equal(
+      saved.documents.categorization.categorizationActNumber,
+      'Категорія оновлена',
+    );
+    assert.equal(saved.documentVersions.categorization.length, 1);
   });
 });
 

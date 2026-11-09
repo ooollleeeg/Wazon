@@ -61,6 +61,17 @@ function initializeDatabase() {
     );
 
     db.run(`
+      CREATE TABLE IF NOT EXISTS ktzi_document_legacy_imports (
+        ktziId INTEGER NOT NULL,
+        documentType TEXT NOT NULL,
+        sourceTable TEXT NOT NULL,
+        sourceId INTEGER NOT NULL,
+        PRIMARY KEY (ktziId, documentType, sourceTable, sourceId),
+        FOREIGN KEY (ktziId) REFERENCES ktzi(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.run(`
       CREATE TABLE IF NOT EXISTS protection_means (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         ktziId INTEGER NOT NULL,

@@ -72,6 +72,32 @@
   gap: 12px;
 }
 
+.ktzi-document-version {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #e1e5eb;
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.ktzi-document-version-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ktzi-document-version-status {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.ktzi-document-version-status .badge-current {
+  margin-left: 0;
+}
+
 .ktzi-fields label {
   display: grid;
   gap: 5px;

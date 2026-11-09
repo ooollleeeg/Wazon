@@ -69,6 +69,7 @@ const addKtziInformationToObject = async (object, cache = new Map()) => {
       ? {
           ...ktzi,
           documents,
+          documentVersions: documentData.documentVersions,
           migrationConflicts: documentData.migrationConflicts,
           protectionMeans,
         }
@@ -881,6 +882,17 @@ router.get('/types', (req, res) => {
 
 router.get('/ktzi/documents', async (req, res) => {
   try {
+    const ktzis = await queryAll('SELECT id FROM ktzi');
+    const currentDocumentIds = new Set();
+    for (const { id: ktziId } of ktzis) {
+      const { documentVersions } = await getKtziDocumentData(ktziId);
+      ['categorization', 'atestation'].forEach((documentType) => {
+        documentVersions[documentType]
+          ?.filter(({ isCurrent }) => isCurrent)
+          .forEach(({ id }) => currentDocumentIds.add(id));
+      });
+    }
+
     const documents = await new Promise((resolve, reject) => {
       db.all(
         `SELECT d.*, k.address, k.premisesNumber, k.subdivisionName
@@ -897,6 +909,12 @@ router.get('/ktzi/documents', async (req, res) => {
 
     const result = [];
     for (const document of documents) {
+      if (
+        ['categorization', 'atestation'].includes(document.documentType) &&
+        !currentDocumentIds.has(document.id)
+      ) {
+        continue;
+      }
       const objects = await getKtziObjects(document.ktziId);
       const object = objects[0];
       if (!object) continue;

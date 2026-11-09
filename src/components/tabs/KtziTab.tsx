@@ -13,7 +13,13 @@ type DocumentField = {
   options?: string[];
 };
 
-type KtziDocuments = Record<string, Record<string, string>>;
+type DocumentVersion = {
+  [key: string]: string | number | boolean | undefined;
+  id?: number;
+  isCurrent?: boolean;
+};
+type KtziDocuments = Record<string, DocumentVersion>;
+type KtziDocumentVersions = Record<string, DocumentVersion[]>;
 type MigrationConflict = {
   documentType: string;
   candidates: {
@@ -46,6 +52,7 @@ type Ktzi = {
   serviceName?: string;
   objects: { objectType: string; objectName?: string }[];
   documents: KtziDocuments;
+  documentVersions?: KtziDocumentVersions;
   migrationConflicts: MigrationConflict[];
   protectionMeans: KtziMean[];
 };
@@ -199,11 +206,8 @@ const getSubdivisionOrder = (type?: string) => {
   return 2;
 };
 
-const EMPTY_DOCUMENTS: KtziDocuments = Object.fromEntries(
-  DOCUMENT_SECTIONS.map(({ key, fields }) => [
-    key,
-    Object.fromEntries(fields.map(({ name }) => [name, ''])),
-  ]),
+const EMPTY_DOCUMENTS: KtziDocumentVersions = Object.fromEntries(
+  DOCUMENT_SECTIONS.map(({ key }) => [key, []]),
 );
 
 const ktziTitle = (ktzi: Ktzi) =>
@@ -225,11 +229,62 @@ const getObjectTypeLabels = (ktzi: Ktzi) =>
     ),
   );
 
-const formatValue = (value?: string) => {
+const formatValue = (value?: string | number | boolean) => {
   if (!value) return '—';
-  return /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? value.split('-').reverse().join('.')
-    : value;
+  const stringValue = String(value);
+  return /^\d{4}-\d{2}-\d{2}$/.test(stringValue)
+    ? stringValue.split('-').reverse().join('.')
+    : stringValue;
+};
+
+const DOCUMENT_DATE_FIELDS: Record<string, string> = {
+  technicalTask: 'taskDate',
+  categorization: 'categorizationActDate',
+  atestation: 'attestationRegDate',
+  passport: 'passportDate',
+  ksp: 'checkDate',
+};
+
+const parseDocumentDate = (value: string | number | boolean | undefined) => {
+  if (!value) return 0;
+  const date = String(value).trim();
+  const isoDate = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoDate) {
+    return Date.UTC(
+      Number(isoDate[1]),
+      Number(isoDate[2]) - 1,
+      Number(isoDate[3]),
+    );
+  }
+  const localizedDate = date.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  if (localizedDate) {
+    return Date.UTC(
+      Number(localizedDate[3]),
+      Number(localizedDate[2]) - 1,
+      Number(localizedDate[1]),
+    );
+  }
+  const parsedDate = new Date(date).getTime();
+  return Number.isNaN(parsedDate) ? 0 : parsedDate;
+};
+
+const sortDocumentVersions = (
+  documentType: string,
+  versions: DocumentVersion[],
+) => {
+  const dateField = DOCUMENT_DATE_FIELDS[documentType];
+  return versions
+    .map((version, index) => ({ version, index }))
+    .sort((first, second) => {
+      const dateOrder =
+        parseDocumentDate(second.version[dateField]) -
+        parseDocumentDate(first.version[dateField]);
+      return (
+        dateOrder ||
+        (second.version.id || second.index) -
+          (first.version.id || first.index)
+      );
+    });
 };
 
 export default function KtziTab() {
@@ -243,12 +298,21 @@ export default function KtziTab() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [mainForm, setMainForm] = useState<Record<string, string>>({});
-  const [documents, setDocuments] = useState<KtziDocuments>(EMPTY_DOCUMENTS);
+  const [documents, setDocuments] =
+    useState<KtziDocumentVersions>(EMPTY_DOCUMENTS);
   const [saving, setSaving] = useState(false);
   const [installForId, setInstallForId] = useState<number | null>(null);
   const [stockChoice, setStockChoice] = useState('');
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const [ktziToDelete, setKtziToDelete] = useState<Ktzi | null>(null);
+  const [expandedPrevious, setExpandedPrevious] = useState<
+    Record<string, boolean>
+  >({});
+  const [documentVersionToDelete, setDocumentVersionToDelete] = useState<{
+    documentType: string;
+    versionIndex: number;
+    title: string;
+  } | null>(null);
   const [meanToReturn, setMeanToReturn] = useState<{
     ktzi: Ktzi;
     mean: KtziMean;
@@ -370,19 +434,57 @@ export default function KtziTab() {
         MAIN_FIELDS.map(({ name }) => [name, String(ktzi[name] ?? '')]),
       ),
     );
-    setDocuments({ ...EMPTY_DOCUMENTS, ...ktzi.documents });
+    setDocuments(
+      Object.fromEntries(
+        DOCUMENT_SECTIONS.map(({ key, fields }) => {
+          const versions =
+            ktzi.documentVersions?.[key] ||
+            (ktzi.documents?.[key] ? [ktzi.documents[key]] : []);
+          return [
+            key,
+            key === 'passport' && !versions.length
+              ? [Object.fromEntries(fields.map(({ name }) => [name, '']))]
+              : versions,
+          ];
+        }),
+      ),
+    );
     setError('');
     setSuccess('');
   };
 
   const updateDocumentField = (
     documentType: string,
+    versionIndex: number,
     fieldName: string,
     value: string,
-  ) =>
+  ) => {
     setDocuments((current) => ({
       ...current,
-      [documentType]: { ...(current[documentType] || {}), [fieldName]: value },
+      [documentType]: current[documentType].map((version, index) =>
+        index === versionIndex ? { ...version, [fieldName]: value } : version,
+      ),
+    }));
+  };
+
+  const addDocumentVersion = (documentType: string) => {
+    const section = DOCUMENT_SECTIONS.find(({ key }) => key === documentType);
+    if (!section) return;
+    setDocuments((current) => ({
+      ...current,
+      [documentType]: [
+        ...(current[documentType] || []),
+        Object.fromEntries(section.fields.map(({ name }) => [name, ''])),
+      ],
+    }));
+  };
+
+  const removeDocumentVersion = (documentType: string, versionIndex: number) =>
+    setDocuments((current) => ({
+      ...current,
+      [documentType]: current[documentType].filter(
+        (_version, index) => index !== versionIndex,
+      ),
     }));
 
   const request = async (url: string, init: RequestInit) => {
@@ -666,44 +768,89 @@ export default function KtziTab() {
                   {DOCUMENT_SECTIONS.map((section) => (
                     <section className='card-section' key={section.key}>
                       <h4 className='section-title'>{section.title}</h4>
-                      <div className='ktzi-fields'>
-                        {section.fields.map((field) => (
-                          <label key={field.name}>
-                            <span>{field.label}</span>
-                            {field.type === 'select' ? (
-                              <select
-                                value={documents[section.key]?.[field.name] || ''}
-                                onChange={(event) =>
-                                  updateDocumentField(
-                                    section.key,
-                                    field.name,
-                                    event.target.value,
-                                  )
+                      {sortDocumentVersions(
+                        section.key,
+                        documents[section.key] || [],
+                      ).map(({ version, index }, versionIndex) => (
+                        <div className='ktzi-document-version' key={version.id || index}>
+                          {section.key !== 'passport' && (
+                            <div className='ktzi-document-version-header'>
+                              {versionIndex === 0 ? (
+                                <strong className='badge-current'>Поточний</strong>
+                              ) : (
+                                <span />
+                              )}
+                              <button
+                                className='btn-secondary'
+                                type='button'
+                                onClick={() =>
+                                  setDocumentVersionToDelete({
+                                    documentType: section.key,
+                                    versionIndex: index,
+                                    title:
+                                      String(
+                                        version[
+                                          section.fields[0]?.name || ''
+                                        ] || '',
+                                      ) || section.title,
+                                  })
                                 }
                               >
-                                <option value=''>— Не обрано —</option>
-                                {field.options?.map((option) => (
-                                  <option key={option} value={option}>
-                                    {option}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type={field.type || 'text'}
-                                value={documents[section.key]?.[field.name] || ''}
-                                onChange={(event) =>
-                                  updateDocumentField(
-                                    section.key,
-                                    field.name,
-                                    event.target.value,
-                                  )
-                                }
-                              />
-                            )}
-                          </label>
-                        ))}
-                      </div>
+                                Видалити запис
+                              </button>
+                            </div>
+                          )}
+                          <div className='ktzi-fields'>
+                            {section.fields.map((field) => (
+                              <label key={field.name}>
+                                <span>{field.label}</span>
+                                {field.type === 'select' ? (
+                                  <select
+                                    value={String(version[field.name] || '')}
+                                    onChange={(event) =>
+                                      updateDocumentField(
+                                        section.key,
+                                        index,
+                                        field.name,
+                                        event.target.value,
+                                      )
+                                    }
+                                  >
+                                    <option value=''>— Не обрано —</option>
+                                    {field.options?.map((option) => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type={field.type || 'text'}
+                                    value={String(version[field.name] || '')}
+                                    onChange={(event) =>
+                                      updateDocumentField(
+                                        section.key,
+                                        index,
+                                        field.name,
+                                        event.target.value,
+                                      )
+                                    }
+                                  />
+                                )}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      {section.key !== 'passport' && (
+                        <button
+                          className='btn-secondary'
+                          type='button'
+                          onClick={() => addDocumentVersion(section.key)}
+                        >
+                          + Додати запис
+                        </button>
+                      )}
                     </section>
                   ))}
 
@@ -742,21 +889,73 @@ export default function KtziTab() {
                   {DOCUMENT_SECTIONS.map((section) => (
                     <section className='card-section' key={section.key}>
                       <h4 className='section-title'>{section.title}</h4>
-                      <div className='info-grid'>
-                        {section.fields.map((field) => (
-                          <div className='info-item' key={field.name}>
-                            <span className='label'>{field.label}:</span>
-                            <span className='value'>
-                              {highlightText(
-                                formatValue(
-                                  ktzi.documents?.[section.key]?.[field.name],
-                                ),
-                                searchTerm,
-                              )}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      {(() => {
+                        const allVersions =
+                          ktzi.documentVersions?.[section.key] ||
+                          (ktzi.documents?.[section.key]
+                            ? [ktzi.documents[section.key]]
+                            : []);
+                        const isPassport = section.key === 'passport';
+                        const previousKey = `${ktzi.id}:${section.key}`;
+                        const showPrevious = !!expandedPrevious[previousKey];
+                        const visible = isPassport
+                          ? allVersions.slice(0, 1)
+                          : showPrevious
+                            ? allVersions
+                            : allVersions.slice(0, 1);
+                        const previousCount = isPassport
+                          ? 0
+                          : allVersions.length - 1;
+                        return (
+                          <>
+                            {visible.map((version, index) => (
+                              <div
+                                className='ktzi-document-version'
+                                key={version.id || index}
+                              >
+                                {!isPassport && index === 0 && (
+                                  <div className='ktzi-document-version-status'>
+                                    <strong className='badge-current'>
+                                      Поточний
+                                    </strong>
+                                  </div>
+                                )}
+                                <div className='info-grid'>
+                                  {section.fields.map((field) => (
+                                    <div className='info-item' key={field.name}>
+                                      <span className='label'>
+                                        {field.label}:
+                                      </span>
+                                      <span className='value'>
+                                        {highlightText(
+                                          formatValue(version[field.name]),
+                                          searchTerm,
+                                        )}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                            {previousCount > 0 && (
+                              <button
+                                type='button'
+                                className='btn-toggle-previous'
+                                onClick={() =>
+                                  setExpandedPrevious((current) => ({
+                                    ...current,
+                                    [previousKey]: !current[previousKey],
+                                  }))
+                                }
+                              >
+                                {showPrevious
+                                  ? '← Приховати попередні'
+                                  : `↓ Переглянути попередні (${previousCount})`}
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
                     </section>
                   ))}
 
@@ -871,6 +1070,26 @@ export default function KtziTab() {
           fullName={`КТЗІ ${ktziTitle(ktziToDelete)}`}
           onConfirm={() => void remove(ktziToDelete)}
           onCancel={() => setKtziToDelete(null)}
+        />
+      )}
+
+      {documentVersionToDelete && (
+        <DeleteConfirmModal
+          title='Видалення версії документа'
+          fullName={documentVersionToDelete.title}
+          message={
+            <>
+              Запис документа буде видалено з КТЗІ.
+            </>
+          }
+          onConfirm={() => {
+            removeDocumentVersion(
+              documentVersionToDelete.documentType,
+              documentVersionToDelete.versionIndex,
+            );
+            setDocumentVersionToDelete(null);
+          }}
+          onCancel={() => setDocumentVersionToDelete(null)}
         />
       )}
 
