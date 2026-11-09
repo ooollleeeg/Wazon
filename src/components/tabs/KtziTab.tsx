@@ -75,10 +75,16 @@ const DOCUMENT_SECTIONS: {
   },
   {
     key: 'ksp',
-    title: 'Акт КСП',
+    title: 'Акт комплексної спеціальної перевірки',
     fields: [
-      { name: 'kspActNumber', label: 'Реєстраційний номер' },
-      { name: 'kspActDate', label: 'Дата реєстрації', type: 'date' },
+      { name: 'checkNumber', label: 'Реєстраційний номер акту' },
+      { name: 'checkDate', label: 'Дата реєстрації акту', type: 'date' },
+      { name: 'checkPerformer', label: 'Виконавець робіт з ТЗІ' },
+      { name: 'checkEventDate', label: 'Дата проведення заходу', type: 'date' },
+      {
+        name: 'checkPermissionPerformer',
+        label: 'Реквізити дозволу на проведення робіт',
+      },
     ],
   },
   {

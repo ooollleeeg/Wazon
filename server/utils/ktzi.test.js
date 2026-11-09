@@ -92,6 +92,39 @@ const createRequiredTables = async () => {
     )
   `);
   await run(`
+    CREATE TABLE IF NOT EXISTS class_a_systems_special_check (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      systemId INTEGER,
+      checkNumber TEXT,
+      checkDate TEXT,
+      checkPerformer TEXT,
+      checkEventDate TEXT,
+      checkPermissionPerformer TEXT
+    )
+  `);
+  await run(`
+    CREATE TABLE IF NOT EXISTS krt_special_check (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      krtId INTEGER,
+      checkNumber TEXT,
+      checkDate TEXT,
+      checkPerformer TEXT,
+      checkEventDate TEXT,
+      checkPermissionPerformer TEXT
+    )
+  `);
+  await run(`
+    CREATE TABLE IF NOT EXISTS service_premises_special_check (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      premisesId INTEGER,
+      checkNumber TEXT,
+      checkDate TEXT,
+      checkPerformer TEXT,
+      checkEventDate TEXT,
+      checkPermissionPerformer TEXT
+    )
+  `);
+  await run(`
     CREATE TABLE IF NOT EXISTS krt (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       systemName TEXT,
@@ -218,7 +251,13 @@ describe('KTZI grouping and shared documents', () => {
     });
     const input = {
       passport: { passportNumber: 'П-1', passportDate: '2026-03-01' },
-      ksp: { kspActNumber: 'КСП-1', kspActDate: '2026-03-02' },
+      ksp: {
+        checkNumber: 'КСП-1',
+        checkDate: '2026-03-02',
+        checkPerformer: 'Виконавець',
+        checkEventDate: '2026-03-03',
+        checkPermissionPerformer: 'Дозвіл',
+      },
       technicalTask: {
         taskNumber: 'ТЗ-1',
         taskDate: '2026-03-03',
@@ -244,8 +283,11 @@ describe('KTZI grouping and shared documents', () => {
       passportDate: '2026-03-01',
     });
     assert.deepEqual(documents.ksp, {
-      kspActNumber: 'КСП-1',
-      kspActDate: '2026-03-02',
+      checkNumber: 'КСП-1',
+      checkDate: '2026-03-02',
+      checkPerformer: 'Виконавець',
+      checkEventDate: '2026-03-03',
+      checkPermissionPerformer: 'Дозвіл',
     });
     assert.equal(documents.technicalTask.taskDate, '2026-03-03');
     assert.equal(documents.categorization.categorizationRank, 'II');
@@ -275,10 +317,25 @@ describe('KTZI grouping and shared documents', () => {
       taskDate: '2026-04-03',
       taskClearance: '2026-04-04',
     });
+    await seedObject('class_a_systems_special_check', {
+      systemId,
+      checkNumber: 'КСП-legacy',
+      checkDate: '2026-04-02',
+      checkPerformer: 'Виконавець legacy',
+      checkEventDate: '2026-04-05',
+      checkPermissionPerformer: 'Дозвіл legacy',
+    });
 
     const { documents: imported } = await getKtziDocumentData(ktzi.id);
     assert.equal(imported.passport.passportNumber, 'ПАСП-legacy');
-    assert.equal(imported.ksp.kspActNumber, 'КСП-legacy');
+    assert.equal(imported.ksp.checkNumber, 'КСП-legacy');
+    assert.equal(imported.ksp.checkDate, '2026-04-02');
+    assert.equal(imported.ksp.checkPerformer, 'Виконавець legacy');
+    assert.equal(imported.ksp.checkEventDate, '2026-04-05');
+    assert.equal(
+      imported.ksp.checkPermissionPerformer,
+      'Дозвіл legacy',
+    );
     assert.equal(imported.technicalTask.taskDate, '2026-04-03');
 
     await run(
@@ -287,6 +344,37 @@ describe('KTZI grouping and shared documents', () => {
     );
     const { documents: shared } = await getKtziDocumentData(ktzi.id);
     assert.equal(shared.technicalTask.taskNumber, 'ТЗ-legacy');
+  });
+
+  it('hydrates legacy KSP document aliases to the full special-check fields', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Спільна 6',
+      premisesNumber: '206',
+      subdivisionName: 'Відділ Ж',
+    });
+    await run(
+      `INSERT INTO ktzi_documents
+         (ktziId, documentType, documentNumber, documentDate, documentData)
+       VALUES (?, 'ksp', ?, ?, ?)`,
+      [
+        ktzi.id,
+        'КСП-json-legacy',
+        '2026-06-02',
+        JSON.stringify({
+          kspActNumber: 'КСП-json-legacy',
+          kspActDate: '2026-06-02',
+        }),
+      ],
+    );
+
+    const { documents } = await getKtziDocumentData(ktzi.id);
+    assert.deepEqual(documents.ksp, {
+      checkNumber: 'КСП-json-legacy',
+      checkDate: '2026-06-02',
+      checkPerformer: '',
+      checkEventDate: '',
+      checkPermissionPerformer: '',
+    });
   });
 
   it('does not choose between conflicting legacy documents automatically', async () => {
@@ -326,6 +414,45 @@ describe('KTZI grouping and shared documents', () => {
       await get(
         'SELECT id FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
         [ktzi.id, 'technicalTask'],
+      ),
+      null,
+    );
+  });
+
+  it('surfaces conflicting legacy special checks from objects in one KTZI', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Спільна 5',
+      premisesNumber: '205',
+      subdivisionName: 'Відділ Е',
+    });
+    const firstSystemId = await seedObject('class_a_systems', {
+      systemName: 'АС перевірки перша',
+      ktziId: ktzi.id,
+    });
+    const secondSystemId = await seedObject('class_a_systems', {
+      systemName: 'АС перевірки друга',
+      ktziId: ktzi.id,
+    });
+    await seedObject('class_a_systems_special_check', {
+      systemId: firstSystemId,
+      checkNumber: 'КСП-А',
+    });
+    await seedObject('class_a_systems_special_check', {
+      systemId: secondSystemId,
+      checkNumber: 'КСП-Б',
+    });
+
+    const result = await getKtziDocumentData(ktzi.id);
+    assert.equal(result.documents.ksp, undefined);
+    const conflict = result.migrationConflicts.find(
+      ({ documentType }) => documentType === 'ksp',
+    );
+    assert.ok(conflict);
+    assert.equal(conflict.candidates.length, 2);
+    assert.equal(
+      await get(
+        'SELECT id FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
+        [ktzi.id, 'ksp'],
       ),
       null,
     );

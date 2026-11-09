@@ -205,7 +205,13 @@ export const KTZI_DOCUMENT_FIELDS = {
     'atestationPermissionPerformer',
   ],
   passport: ['passportNumber', 'passportDate'],
-  ksp: ['kspActNumber', 'kspActDate'],
+  ksp: [
+    'checkNumber',
+    'checkDate',
+    'checkPerformer',
+    'checkEventDate',
+    'checkPermissionPerformer',
+  ],
 };
 
 const ktziDocumentLegacySources = {
@@ -223,6 +229,11 @@ const ktziDocumentLegacySources = {
     ['class_a_systems_atestation', 'class_a_systems', 'systemId', 'attestationRegDate', 'systemName', 'AS'],
     ['krt_atestation', 'krt', 'krtId', 'attestationRegDate', 'systemName', 'KRT'],
     ['service_premises_atestation', 'service_premises', 'premisesId', 'attestationRegDate', 'serviceName', 'SP'],
+  ],
+  ksp: [
+    ['class_a_systems_special_check', 'class_a_systems', 'systemId', 'checkDate', 'systemName', 'AS'],
+    ['krt_special_check', 'krt', 'krtId', 'checkDate', 'systemName', 'KRT'],
+    ['service_premises_special_check', 'service_premises', 'premisesId', 'checkDate', 'serviceName', 'SP'],
   ],
 };
 
@@ -293,10 +304,19 @@ const legacyScalarDocumentCandidates = async (ktziId, documentType) => {
       ...rows.map((row) => ({
         objectType,
         objectName: row.ktziObjectName || `Об’єкт ${row.ktziObjectId}`,
-        data: {
-          [numberField]: row[numberField] || '',
-          [dateField]: row[dateField] || '',
-        },
+        data:
+          documentType === 'ksp'
+            ? {
+                checkNumber: row[numberField] || '',
+                checkDate: row[dateField] || '',
+                checkPerformer: '',
+                checkEventDate: '',
+                checkPermissionPerformer: '',
+              }
+            : {
+                [numberField]: row[numberField] || '',
+                [dateField]: row[dateField] || '',
+              },
       })),
     );
   }
@@ -334,14 +354,14 @@ const documentSummary = (documentType, data) => {
     categorization: 'categorizationActNumber',
     atestation: 'attestationRegNumber',
     passport: 'passportNumber',
-    ksp: 'kspActNumber',
+    ksp: 'checkNumber',
   };
   const dateFields = {
     technicalTask: 'taskClearance',
     categorization: 'categorizationActDate',
     atestation: 'attestationRegDate',
     passport: 'passportDate',
-    ksp: 'kspActDate',
+    ksp: 'checkDate',
   };
   const validUntilFields = {
     categorization: 'categorizationValidUntil',
@@ -390,7 +410,25 @@ const saveKtziDocument = async (ktziId, documentType, data) => {
 const hydrateKtziDocument = (row) => {
   if (row.documentData) {
     try {
-      return { ...JSON.parse(row.documentData) };
+      const documentData = JSON.parse(row.documentData);
+      if (row.documentType === 'ksp') {
+        const {
+          kspActNumber,
+          kspActDate,
+          ...currentDocumentData
+        } = documentData;
+        return {
+          ...currentDocumentData,
+          checkNumber:
+            documentData.checkNumber || kspActNumber || '',
+          checkDate: documentData.checkDate || kspActDate || '',
+          checkPerformer: documentData.checkPerformer || '',
+          checkEventDate: documentData.checkEventDate || '',
+          checkPermissionPerformer:
+            documentData.checkPermissionPerformer || '',
+        };
+      }
+      return { ...documentData };
     } catch (error) {
       console.error(`Некоректні дані документа КТЗІ ${row.documentType}:`, error);
     }
@@ -406,6 +444,13 @@ const hydrateKtziDocument = (row) => {
       attestationRegNumber: row.documentNumber,
       attestationRegDate: row.documentDate,
       attestationValidUntil: row.validUntil,
+    },
+    ksp: {
+      checkNumber: row.documentNumber,
+      checkDate: row.documentDate,
+      checkPerformer: '',
+      checkEventDate: '',
+      checkPermissionPerformer: '',
     },
   };
   return legacyFieldMap[row.documentType] || {};
@@ -428,9 +473,14 @@ export const getKtziDocumentData = async (ktziId) => {
     const storedRow = rows.find((row) => row.documentType === documentType);
     if (storedRow?.documentData) continue;
     const candidates =
-      documentType === 'passport' || documentType === 'ksp'
+      documentType === 'passport'
         ? await legacyScalarDocumentCandidates(ktziId, documentType)
-        : await legacyNestedDocumentCandidates(ktziId, documentType);
+        : documentType === 'ksp'
+          ? [
+              ...(await legacyNestedDocumentCandidates(ktziId, documentType)),
+              ...(await legacyScalarDocumentCandidates(ktziId, documentType)),
+            ]
+          : await legacyNestedDocumentCandidates(ktziId, documentType);
     const resolution = resolveLegacyDocumentCandidates(
       documentType,
       candidates,

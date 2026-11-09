@@ -4,12 +4,18 @@ const sharedNestedFields = new Set([
   'categorization',
   'technicalTask',
   'atestation',
+  'specialCheck',
 ]);
 const sharedRootFields = [
   'passportNumber',
   'passportDate',
   'kspActNumber',
   'kspActDate',
+  'checkNumber',
+  'checkDate',
+  'checkPerformer',
+  'checkEventDate',
+  'checkPermissionPerformer',
   'categorizationActDate',
   'categorizationActNumber',
   'attestationRegDate',

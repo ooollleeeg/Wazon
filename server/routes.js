@@ -83,11 +83,12 @@ const addKtziInformationToObject = async (object, cache = new Map()) => {
     atestation: documents.atestation
       ? [documents.atestation]
       : object.atestation,
+    specialCheck: documents.ksp ? [documents.ksp] : object.specialCheck,
     passportNumber:
       documents.passport?.passportNumber ?? object.passportNumber,
     passportDate: documents.passport?.passportDate ?? object.passportDate,
-    kspActNumber: documents.ksp?.kspActNumber ?? object.kspActNumber,
-    kspActDate: documents.ksp?.kspActDate ?? object.kspActDate,
+    kspActNumber: documents.ksp?.checkNumber ?? object.kspActNumber,
+    kspActDate: documents.ksp?.checkDate ?? object.kspActDate,
   };
 };
 
@@ -110,6 +111,7 @@ const sharedKtziObjectFields = new Set([
   'taskNumber',
   'taskClearance',
   'ktziDocuments',
+  'specialCheck',
 ]);
 
 const removeSharedKtziObjectFields = (data) =>
@@ -1802,15 +1804,18 @@ router.get('/gunp-research-report', async (req, res) => {
           },
         );
       }),
-      // 5. Class A Systems Special Check (КСП)
+      // 5. KTZI special checks
       new Promise((resolve, reject) => {
         db.all(
-          `SELECT cas.subdivisionName, casc.checkPerformer as performer,
-                    casc.checkEventDate as eventDate, COUNT(*) as count
-             FROM class_a_systems_special_check casc
-             JOIN class_a_systems cas ON casc.systemId = cas.id
-             WHERE casc.checkEventDate BETWEEN ? AND ?
-             GROUP BY casc.checkEventDate, cas.subdivisionName, casc.checkPerformer`,
+          `SELECT k.subdivisionName,
+                    json_extract(kd.documentData, '$.checkPerformer') as performer,
+                    json_extract(kd.documentData, '$.checkEventDate') as eventDate,
+                    COUNT(*) as count
+             FROM ktzi_documents kd
+             JOIN ktzi k ON kd.ktziId = k.id
+             WHERE kd.documentType = 'ksp'
+               AND json_extract(kd.documentData, '$.checkEventDate') BETWEEN ? AND ?
+             GROUP BY eventDate, k.subdivisionName, performer`,
           [dateFrom, dateTo],
           (err, rows) => {
             if (err) reject(err);

@@ -67,25 +67,35 @@ const ktziDocumentSections = [
       { name: 'passportDate', label: 'Дата реєстрації', date: true },
     ],
   },
+
   {
     key: 'ksp',
-    title: 'Акт КСП',
+    title: 'Акт комплексної спеціальної перевірки',
     fields: [
-      { name: 'kspActNumber', label: 'Реєстраційний номер' },
-      { name: 'kspActDate', label: 'Дата реєстрації', date: true },
+      { name: 'checkNumber', label: 'Реєстраційний номер акту' },
+      { name: 'checkDate', label: 'Дата реєстрації акту', date: true },
+      { name: 'checkPerformer', label: 'Виконавець робіт з ТЗІ' },
+      { name: 'checkEventDate', label: 'Дата проведення заходу', date: true },
+      {
+        name: 'checkPermissionPerformer',
+        label: 'Реквізити дозволу на проведення робіт',
+      },
     ],
   },
 ];
 
-const ktziDocumentFields = new Set(
-  ktziDocumentSections.flatMap((section) =>
+const ktziDocumentFields = new Set([
+  ...ktziDocumentSections.flatMap((section) =>
     section.fields.map((field) => field.name),
   ),
-);
+  'kspActNumber',
+  'kspActDate',
+]);
 const ktziNestedDocumentSections = new Set([
   'technicalTask',
   'categorization',
   'atestation',
+  'specialCheck',
 ]);
 const ktziMeanFields = [
   { name: 'toolType', label: 'Категорія / тип' },
