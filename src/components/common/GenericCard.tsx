@@ -480,9 +480,11 @@ export default function GenericCard({
                                   key={version.id || versionIndex}
                                 >
                                   {!isPassport && versionIndex === 0 && (
-                                    <span className='badge-current'>
-                                      Поточний
-                                    </span>
+                                    <div className='ktzi-object-document-status'>
+                                      <span className='badge-current'>
+                                        Поточний
+                                      </span>
+                                    </div>
                                   )}
                                   <div className='info-grid'>
                                     {section.fields.map((field) => (

@@ -147,6 +147,12 @@
   border-bottom: 2px solid #edf2f7;
 }
 
+.card-section.ktzi-object-details {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
 .ktzi-object-details-header {
   display: flex;
   align-items: flex-start;
@@ -191,6 +197,15 @@
   padding: 0.75rem;
   border: 1px solid #edf2f7;
   border-radius: 8px;
+}
+
+.ktzi-object-document-status {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ktzi-object-document-status .badge-current {
+  margin-left: 0;
 }
 
 .ktzi-object-document .info-grid {
@@ -439,7 +454,6 @@
 
 .btn-toggle-previous {
   display: block;
-  width: 100%;
   margin-top: 1rem;
   padding: 0.75rem 1rem;
   background: #f0f4ff;
@@ -587,6 +601,10 @@
 
   .card-section {
     margin-bottom: 1.5rem;
+  }
+
+  .card-section.ktzi-object-details {
+    padding: 1rem;
   }
 
   .nested-item-content {
