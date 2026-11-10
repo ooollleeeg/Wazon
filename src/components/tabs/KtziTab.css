@@ -216,7 +216,8 @@
   background: linear-gradient(135deg, #fff 0%, #f5f7fa 55%, #e1e6ee 100%);
 }
 
-.ktzi-document-section {
+.ktzi-document-section,
+.ktzi-protection-section {
   padding: 1.5rem;
   border-radius: 8px;
   background: #f8f9fa;
@@ -312,12 +313,36 @@
 }
 
 .ktzi-mean {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid #eef0f4;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e1e5eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.ktzi-mean:first-of-type {
+  margin-top: 0;
+}
+
+.ktzi-mean-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.ktzi-mean-content .info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.ktzi-mean-content .info-item .value {
+  overflow-wrap: anywhere;
+}
+
+.ktzi-mean-content .btn-secondary {
+  justify-self: end;
+}
+
+.ktzi-protection-section > .btn-primary {
+  margin-top: 12px;
 }
 
 .ktzi-install {
@@ -356,7 +381,8 @@
 @media (max-width: 600px) {
   .ktzi-stats-section,
   .ktzi-filters-section,
-  .ktzi-document-section {
+  .ktzi-document-section,
+  .ktzi-protection-section {
     padding: 1rem;
   }
 

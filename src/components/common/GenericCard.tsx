@@ -516,7 +516,7 @@ export default function GenericCard({
                     </section>
                   ))}
 
-                  <section>
+                  <section className='ktzi-object-protection-section'>
                     <h5>
                       Засоби ТЗІ ({ktziInfo.protectionMeans?.length || 0})
                     </h5>

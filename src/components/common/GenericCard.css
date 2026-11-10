@@ -220,13 +220,21 @@
 }
 
 .ktzi-object-mean {
-  padding: 1rem 0;
-  border-top: 1px solid #edf2f7;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e1e5eb;
+  border-radius: 8px;
+  background: #fff;
 }
 
 .ktzi-object-mean:first-of-type {
-  padding-top: 0;
-  border-top: 0;
+  margin-top: 0;
+}
+
+.ktzi-object-protection-section {
+  padding: 1rem;
+  border-radius: 8px;
+  background: #f8f9fa;
 }
 
 .ktzi-object-mean .info-item.full-width {

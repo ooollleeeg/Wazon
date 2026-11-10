@@ -39,10 +39,15 @@ type MigrationConflict = {
 };
 type KtziMean = {
   id: number;
+  categoryId?: string | number;
   toolType?: string;
   name: string;
   serialNumber?: string;
   invertarNumber?: string;
+  releaseYear?: string | number;
+  manufacturerExploitationTerm?: string;
+  certificateInfo?: string;
+  notes?: string;
 };
 type StockMean = {
   id: number | string;
@@ -72,6 +77,21 @@ const MAIN_FIELDS: { name: keyof Ktzi; label: string; type?: 'select' }[] = [
   { name: 'subdivisionName', label: 'Підрозділ' },
   { name: 'subdivisionType', label: 'Тип підрозділу', type: 'select' },
   { name: 'serviceName', label: 'Служба' },
+];
+
+const KTZI_MEAN_FIELDS: { name: keyof KtziMean; label: string; date?: boolean; fullWidth?: boolean }[] = [
+  { name: 'toolType', label: 'Категорія / тип' },
+  { name: 'name', label: 'Назва' },
+  { name: 'serialNumber', label: 'Серійний номер' },
+  { name: 'invertarNumber', label: 'Інвентарний номер' },
+  { name: 'releaseYear', label: 'Рік виготовлення' },
+  {
+    name: 'manufacturerExploitationTerm',
+    label: 'Термін експлуатації виробника',
+    date: true,
+  },
+  { name: 'certificateInfo', label: 'Інформація про сертифікат', fullWidth: true },
+  { name: 'notes', label: 'Примітки', fullWidth: true },
 ];
 
 const SUBDIVISION_TYPES = ['Апарат', 'Територіальний підрозділ'];
@@ -384,12 +404,26 @@ export default function KtziTab() {
         const ktziId = Number(match[1]);
         setHighlightId(ktziId);
         setExpandedId(ktziId);
+        setSearchTerm('');
+        setSelectedObjectTypes([]);
+        setSelectedCategories([]);
+        setSelectedSubdivisionTypes([]);
       }
     };
     applyHash();
     window.addEventListener('hashchange', applyHash);
     return () => window.removeEventListener('hashchange', applyHash);
   }, []);
+
+  useEffect(() => {
+    if (loading || highlightId === null || expandedId !== highlightId) return;
+    const card = document.getElementById(`ktzi-card-${highlightId}`);
+    if (!card) return;
+    const animationFrame = window.requestAnimationFrame(() => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [loading, highlightId, expandedId, filtered]);
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -885,6 +919,7 @@ export default function KtziTab() {
         return (
           <div
             key={ktzi.id}
+            id={`ktzi-card-${ktzi.id}`}
             className={`generic-card expanded-card-wrapper ${highlightId === ktzi.id ? 'ktzi-highlight' : ''}`}
           >
             <div className='card-header'>
@@ -1234,33 +1269,42 @@ export default function KtziTab() {
                     </section>
                   ))}
 
-                  <section className='card-section'>
+                  <section className='card-section ktzi-protection-section'>
                     <h4 className='section-title'>
                       Засоби ТЗІ ({ktzi.protectionMeans.length})
                     </h4>
                     {ktzi.protectionMeans.map((mean) => (
                       <div className='ktzi-mean' key={mean.id}>
-                        <span>
-                          <b>{highlightText(mean.name, searchTerm)}</b>
-                          {mean.toolType && (
-                            <>
-                              {' · '}
-                              {highlightText(mean.toolType, searchTerm)}
-                            </>
-                          )}
-                          {mean.serialNumber && (
-                            <>
-                              {' · №'}
-                              {highlightText(mean.serialNumber, searchTerm)}
-                            </>
-                          )}
-                        </span>
-                        <button
-                          className='btn-secondary'
-                          onClick={() => setMeanToReturn({ ktzi, mean })}
-                        >
-                          На склад
-                        </button>
+                        <div className='ktzi-mean-content'>
+                          <div className='info-grid'>
+                            {KTZI_MEAN_FIELDS.map((field) => {
+                              const value =
+                                field.name === 'toolType'
+                                  ? mean.toolType || mean.categoryId
+                                  : mean[field.name];
+                              return (
+                                <div
+                                  className={`info-item ${field.fullWidth ? 'full-width' : ''}`}
+                                  key={field.name}
+                                >
+                                  <span className='label'>{field.label}:</span>
+                                  <span className='value'>
+                                    {highlightText(
+                                      formatValue(value),
+                                      searchTerm,
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <button
+                            className='btn-secondary'
+                            onClick={() => setMeanToReturn({ ktzi, mean })}
+                          >
+                            На склад
+                          </button>
+                        </div>
                       </div>
                     ))}
                     {installForId === ktzi.id ? (
