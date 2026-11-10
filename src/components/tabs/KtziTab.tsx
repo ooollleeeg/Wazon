@@ -59,7 +59,7 @@ type Ktzi = {
   subdivisionName?: string;
   subdivisionType?: string;
   serviceName?: string;
-  objects: { objectType: string; objectName?: string }[];
+  objects: { id: number; objectType: string; objectName?: string }[];
   documents: KtziDocuments;
   documentVersions?: KtziDocumentVersions;
   migrationConflicts: MigrationConflict[];
@@ -203,6 +203,15 @@ const normalizeObjectType = (type: string) => {
   if (normalized === 'SERVICE_PREMISES') return 'SP';
   if (normalized === 'KRT') return 'KRT';
   return normalized;
+};
+const getObjectCardHash = (object: Ktzi['objects'][number]) => {
+  const hashPrefix: Record<string, string> = {
+    AS: 'class-a',
+    SP: 'service-premises',
+    KRT: 'krt',
+  };
+  const prefix = hashPrefix[normalizeObjectType(object.objectType)];
+  return prefix ? `#${prefix}:${object.id}` : null;
 };
 const getSubdivisionOrder = (type?: string) => {
   const normalized = (type || '').toLocaleLowerCase('uk-UA');
@@ -1119,11 +1128,24 @@ export default function KtziTab() {
                     {ktzi.objects.length ? (
                       <div className='ktzi-chips'>
                         {ktzi.objects.map((object, index) => (
-                          <span className='badge' key={index}>
+                          <button
+                            className='ktzi-object-link'
+                            key={`${object.objectType}-${object.id || index}`}
+                            type='button'
+                            onClick={() => {
+                              const hash = getObjectCardHash(object);
+                              if (hash) window.location.hash = hash;
+                            }}
+                            aria-label={`Відкрити картку ${OBJECT_TYPE_LABELS[object.objectType] || object.objectType}: ${object.objectName || '—'}`}
+                          >
                             {OBJECT_TYPE_LABELS[object.objectType] ||
                               object.objectType}
-                            : {highlightText(object.objectName || '—', searchTerm)}
-                          </span>
+                            :{' '}
+                            {highlightText(
+                              object.objectName || '—',
+                              searchTerm,
+                            )}
+                          </button>
                         ))}
                       </div>
                     ) : (

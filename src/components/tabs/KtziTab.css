@@ -267,6 +267,32 @@
   gap: 8px;
 }
 
+.ktzi-object-link {
+  padding: 0.4rem 0.8rem;
+  border: 0;
+  border-radius: 20px;
+  background: #edf2f7;
+  color: #394867;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.ktzi-object-link:hover,
+.ktzi-object-link:focus-visible {
+  background: #e2e8f0;
+  color: #2b4a7a;
+  text-decoration: underline;
+}
+
+.ktzi-object-link:focus-visible {
+  outline: 2px solid #5b7caa;
+  outline-offset: 2px;
+}
+
 .ktzi-muted {
   margin: 0;
   color: #777;
