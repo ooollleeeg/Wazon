@@ -209,6 +209,19 @@
   outline: 2px solid #5b7caa;
 }
 
+.ktzi-expanded-surface {
+  margin: 0 -20px;
+  min-height: 100vh;
+  padding: 1.5rem 20px;
+  background: linear-gradient(135deg, #fff 0%, #f5f7fa 55%, #e1e6ee 100%);
+}
+
+.ktzi-document-section {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
 .ktzi-fields {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -220,7 +233,7 @@
   padding: 12px;
   border: 1px solid #e1e5eb;
   border-radius: 8px;
-  background: #fafbfc;
+  background: #fff;
 }
 
 .ktzi-document-version-header {
@@ -342,7 +355,8 @@
 
 @media (max-width: 600px) {
   .ktzi-stats-section,
-  .ktzi-filters-section {
+  .ktzi-filters-section,
+  .ktzi-document-section {
     padding: 1rem;
   }
 

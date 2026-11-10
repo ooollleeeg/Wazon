@@ -192,11 +192,18 @@
   font-size: 0.95rem;
 }
 
+.ktzi-object-document-section {
+  padding: 1rem;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
 .ktzi-object-document {
   margin: 0.75rem 0;
   padding: 0.75rem;
   border: 1px solid #edf2f7;
   border-radius: 8px;
+  background: #fff;
 }
 
 .ktzi-object-document-status {

@@ -445,7 +445,10 @@ export default function GenericCard({
                   </section>
 
                   {ktziDocumentSections.map((section) => (
-                    <section key={section.key}>
+                    <section
+                      className='ktzi-object-document-section'
+                      key={section.key}
+                    >
                       <h5>{section.title}</h5>
                       {(() => {
                         const isPassport = section.key === 'passport';
@@ -460,19 +463,6 @@ export default function GenericCard({
                           : versions.slice(0, 1);
                         return (
                           <>
-                            {versions.length > 1 && (
-                              <button
-                                type='button'
-                                className='btn-toggle-previous'
-                                onClick={() =>
-                                  toggleExpandSection(sectionStateKey)
-                                }
-                              >
-                                {showPrevious
-                                  ? '← Приховати попередні'
-                                  : `↓ Переглянути попередні (${versions.length - 1})`}
-                              </button>
-                            )}
                             {visibleVersions.map(
                               (version: any, versionIndex: number) => (
                                 <div
@@ -506,6 +496,19 @@ export default function GenericCard({
                                   </div>
                                 </div>
                               ),
+                            )}
+                            {versions.length > 1 && (
+                              <button
+                                type='button'
+                                className='btn-toggle-previous'
+                                onClick={() =>
+                                  toggleExpandSection(sectionStateKey)
+                                }
+                              >
+                                {showPrevious
+                                  ? '← Приховати попередні'
+                                  : `↓ Переглянути попередні (${versions.length - 1})`}
+                              </button>
                             )}
                           </>
                         );

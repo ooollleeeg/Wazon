@@ -875,7 +875,9 @@ export default function KtziTab() {
         </div>
       )}
 
-      <div className='cards-container compact-mode'>
+      <div
+        className={`cards-container compact-mode ${expandedId !== null ? 'ktzi-expanded-surface' : ''}`}
+      >
         {expandedKtzis.map((ktzi) => {
         const isEditing = editingId === ktzi.id;
         const canDelete = !ktzi.objects.length && !ktzi.protectionMeans.length;
@@ -1001,7 +1003,10 @@ export default function KtziTab() {
                   )}
 
                   {DOCUMENT_SECTIONS.map((section) => (
-                    <section className='card-section' key={section.key}>
+                    <section
+                      className='card-section ktzi-document-section'
+                      key={section.key}
+                    >
                       <h4 className='section-title'>{section.title}</h4>
                       {sortDocumentVersions(
                         section.key,
@@ -1154,7 +1159,10 @@ export default function KtziTab() {
                   </section>
 
                   {DOCUMENT_SECTIONS.map((section) => (
-                    <section className='card-section' key={section.key}>
+                    <section
+                      className='card-section ktzi-document-section'
+                      key={section.key}
+                    >
                       <h4 className='section-title'>{section.title}</h4>
                       {(() => {
                         const allVersions =
