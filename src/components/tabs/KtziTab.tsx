@@ -1,9 +1,18 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Dispatch,
+  FormEvent,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import '../../styles/TabContent.css';
 import '../common/GenericList.css';
 import { highlightText } from '../../utils/searchUtils';
 import KtziCardCompact from './KtziCardCompact';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
+import LoadingSpinner from '../common/LoadingSpinner';
 import './KtziTab.css';
 
 type DocumentField = {
@@ -187,6 +196,7 @@ const OBJECT_TYPE_LABELS: Record<string, string> = {
   SP: 'СП',
 };
 const OBJECT_TYPES = ['AS', 'SP', 'KRT'] as const;
+const CATEGORIZATION_RANKS = ['II', 'III'] as const;
 const normalizeObjectType = (type: string) => {
   const normalized = type.toUpperCase();
   if (normalized === 'CLASS_A_SYSTEMS') return 'AS';
@@ -204,6 +214,12 @@ const getSubdivisionOrder = (type?: string) => {
     return 1;
   }
   return 2;
+};
+const getCurrentCategorizationRank = (ktzi: Ktzi) => {
+  const rank =
+    ktzi.documentVersions?.categorization?.[0]?.categorizationRank ||
+    ktzi.documents?.categorization?.categorizationRank;
+  return String(rank || '').trim().toUpperCase();
 };
 
 const EMPTY_DOCUMENTS: KtziDocumentVersions = Object.fromEntries(
@@ -292,6 +308,10 @@ export default function KtziTab() {
   const [stock, setStock] = useState<StockMean[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedObjectTypes, setSelectedObjectTypes] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubdivisionTypes, setSelectedSubdivisionTypes] = useState<
+    string[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -301,6 +321,7 @@ export default function KtziTab() {
   const [documents, setDocuments] =
     useState<KtziDocumentVersions>(EMPTY_DOCUMENTS);
   const [saving, setSaving] = useState(false);
+  const [operationLoading, setOperationLoading] = useState('');
   const [installForId, setInstallForId] = useState<number | null>(null);
   const [stockChoice, setStockChoice] = useState('');
   const [highlightId, setHighlightId] = useState<number | null>(null);
@@ -373,6 +394,20 @@ export default function KtziTab() {
             ),
           );
         if (!matchesType) return false;
+        if (
+          selectedCategories.length > 0 &&
+          !selectedCategories.includes(getCurrentCategorizationRank(ktzi))
+        ) {
+          return false;
+        }
+        if (
+          selectedSubdivisionTypes.length > 0 &&
+          !selectedSubdivisionTypes.includes(
+            String(getSubdivisionOrder(ktzi.subdivisionType)),
+          )
+        ) {
+          return false;
+        }
         if (!term) return true;
         return JSON.stringify([
             ktzi.address,
@@ -405,7 +440,13 @@ export default function KtziTab() {
           )
         );
       });
-  }, [ktzis, searchTerm, selectedObjectTypes]);
+  }, [
+    ktzis,
+    searchTerm,
+    selectedObjectTypes,
+    selectedCategories,
+    selectedSubdivisionTypes,
+  ]);
 
   const toggleObjectType = (type: string) => {
     setSelectedObjectTypes((current) =>
@@ -414,15 +455,67 @@ export default function KtziTab() {
         : [...current, type],
     );
   };
+  const toggleFilterValue = (
+    value: string,
+    setter: Dispatch<SetStateAction<string[]>>,
+  ) => {
+    setter((current) =>
+      current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value],
+    );
+  };
 
   const stats = useMemo(
-    () => ({
-      total: ktzis.length,
-      objects: ktzis.reduce((sum, ktzi) => sum + ktzi.objects.length, 0),
-      means: ktzis.reduce((sum, ktzi) => sum + ktzi.protectionMeans.length, 0),
-    }),
-    [ktzis],
+    () => {
+      const countBy = (predicate: (ktzi: Ktzi) => boolean) =>
+        filtered.filter(predicate).length;
+      return {
+        total: filtered.length,
+        objects: filtered.reduce((sum, ktzi) => sum + ktzi.objects.length, 0),
+        means: filtered.reduce(
+          (sum, ktzi) => sum + ktzi.protectionMeans.length,
+          0,
+        ),
+        byObjectType: {
+          AS: countBy((ktzi) =>
+            ktzi.objects.some(
+              (object) => normalizeObjectType(object.objectType) === 'AS',
+            ),
+          ),
+          SP: countBy((ktzi) =>
+            ktzi.objects.some(
+              (object) => normalizeObjectType(object.objectType) === 'SP',
+            ),
+          ),
+          KRT: countBy((ktzi) =>
+            ktzi.objects.some(
+              (object) => normalizeObjectType(object.objectType) === 'KRT',
+            ),
+          ),
+        },
+        byCategory: Object.fromEntries(
+          CATEGORIZATION_RANKS.map((rank) => [
+            rank,
+            countBy((ktzi) => getCurrentCategorizationRank(ktzi) === rank),
+          ]),
+        ),
+        bySubdivisionType: {
+          apparatus: countBy(
+            (ktzi) => getSubdivisionOrder(ktzi.subdivisionType) === 0,
+          ),
+          territorial: countBy(
+            (ktzi) => getSubdivisionOrder(ktzi.subdivisionType) === 1,
+          ),
+        },
+      };
+    },
+    [filtered, ktzis],
   );
+  const activeFiltersCount =
+    selectedObjectTypes.length +
+    selectedCategories.length +
+    selectedSubdivisionTypes.length;
   const expandedKtzis = filtered.filter((ktzi) => expandedId === ktzi.id);
   const compactKtzis = filtered.filter((ktzi) => expandedId !== ktzi.id);
 
@@ -525,6 +618,7 @@ export default function KtziTab() {
     const mean = stock.find((item) => String(item.id) === stockChoice);
     if (!mean) return;
     setError('');
+    setOperationLoading('Встановлення засобу ТЗІ...');
     try {
       await request('/api/protection-means/install', {
         method: 'POST',
@@ -541,12 +635,15 @@ export default function KtziTab() {
       await load();
     } catch (installError) {
       setError((installError as Error).message);
+    } finally {
+      setOperationLoading('');
     }
   };
 
   const returnToStock = async (ktzi: Ktzi, mean: KtziMean) => {
     setMeanToReturn(null);
     setError('');
+    setOperationLoading('Повернення засобу ТЗІ на склад...');
     try {
       await request(`/api/protection-means/${mean.id}/assignments`, {
         method: 'DELETE',
@@ -562,26 +659,37 @@ export default function KtziTab() {
       await load();
     } catch (returnError) {
       setError((returnError as Error).message);
+    } finally {
+      setOperationLoading('');
     }
   };
 
   const remove = async (ktzi: Ktzi) => {
     setKtziToDelete(null);
     setError('');
+    setOperationLoading('Видалення КТЗІ...');
     try {
       await request(`/api/ktzi/${ktzi.id}`, { method: 'DELETE' });
       await load();
     } catch (removeError) {
       setError((removeError as Error).message);
+    } finally {
+      setOperationLoading('');
     }
   };
 
   if (loading) {
-    return <div className='ktzi-state'>Завантаження КТЗІ...</div>;
+    return <LoadingSpinner fullScreen label='Завантаження КТЗІ...' />;
   }
 
   return (
     <div className='tab-content-wrapper'>
+      {(saving || operationLoading) && (
+        <LoadingSpinner
+          fullScreen
+          label={saving ? 'Збереження КТЗІ...' : operationLoading}
+        />
+      )}
       {error && (
         <div className='error-message'>
           <span>{error}</span>
@@ -590,11 +698,79 @@ export default function KtziTab() {
       )}
       {success && <div className='ktzi-success'>{success}</div>}
 
-      <div className='ktzi-stats'>
-        <span>КТЗІ: <b>{stats.total}</b></span>
-        <span>Об’єктів: <b>{stats.objects}</b></span>
-        <span>Засобів ТЗІ: <b>{stats.means}</b></span>
-      </div>
+      <section className='ktzi-stats-section'>
+        <h2>📊 Статистика</h2>
+        <div className='ktzi-stats-groups'>
+          <div className='ktzi-stats-group'>
+            <h3>Загальна кількість</h3>
+            <div className='ktzi-stats-row'>
+              {[
+                ['КТЗІ', stats.total, 'total'],
+                ['Об’єкти у складі КТЗІ', stats.objects, 'objects'],
+                ['Засоби ТЗІ', stats.means, 'means'],
+              ].map(([label, value, kind]) => (
+                <div
+                  className={`ktzi-stat-card ktzi-stat-${kind}`}
+                  key={String(kind)}
+                >
+                  <div className='ktzi-stat-value'>{value}</div>
+                  <div className='ktzi-stat-label'>{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className='ktzi-stats-group'>
+            <h3>Розподіл КТЗІ</h3>
+            <div className='ktzi-stats-subsection'>
+              <h4>За типом об’єктів</h4>
+              <div className='ktzi-stats-row'>
+                {OBJECT_TYPES.map((type) => (
+                  <div className='ktzi-stat-card ktzi-stat-objects' key={type}>
+                    <div className='ktzi-stat-value'>
+                      {stats.byObjectType[type]}
+                    </div>
+                    <div className='ktzi-stat-label'>
+                      {OBJECT_TYPE_LABELS[type]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className='ktzi-stats-subsection'>
+              <h4>За категорією</h4>
+              <div className='ktzi-stats-row'>
+                {CATEGORIZATION_RANKS.map((rank) => (
+                  <div className='ktzi-stat-card ktzi-stat-category' key={rank}>
+                    <div className='ktzi-stat-value'>
+                      {stats.byCategory[rank]}
+                    </div>
+                    <div className='ktzi-stat-label'>Категорія {rank}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className='ktzi-stats-subsection'>
+              <h4>За типом підрозділу</h4>
+              <div className='ktzi-stats-row'>
+                <div className='ktzi-stat-card ktzi-stat-subdivision'>
+                  <div className='ktzi-stat-value'>
+                    {stats.bySubdivisionType.apparatus}
+                  </div>
+                  <div className='ktzi-stat-label'>Підрозділ апарату</div>
+                </div>
+                <div className='ktzi-stat-card ktzi-stat-subdivision'>
+                  <div className='ktzi-stat-value'>
+                    {stats.bySubdivisionType.territorial}
+                  </div>
+                  <div className='ktzi-stat-label'>
+                    Територіальний підрозділ
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className='content-controls'>
         <input
@@ -606,31 +782,81 @@ export default function KtziTab() {
         />
       </div>
 
-      <div className='ktzi-object-type-filter' aria-label='Фільтр за типом об’єктів'>
-        <span className='ktzi-filter-label'>Тип об’єкта у складі КТЗІ:</span>
-        <button
-          type='button'
-          className={`ktzi-filter-button ${selectedObjectTypes.length === 0 ? 'active' : ''}`}
-          aria-pressed={selectedObjectTypes.length === 0}
-          onClick={() => setSelectedObjectTypes([])}
-        >
-          Усі
-        </button>
-        {OBJECT_TYPES.map((type) => (
-          <button
-            type='button'
-            key={type}
-            className={`ktzi-filter-button ${selectedObjectTypes.includes(type) ? 'active' : ''}`}
-            aria-pressed={selectedObjectTypes.includes(type)}
-            onClick={() => toggleObjectType(type)}
-          >
-            {OBJECT_TYPE_LABELS[type]}
-          </button>
-        ))}
-        <span className='ktzi-filter-count'>
-          Показано: {filtered.length} з {ktzis.length}
-        </span>
-      </div>
+      <section className='ktzi-filters-section'>
+        <div className='ktzi-filters-header'>
+          <h2>🔍 Фільтри</h2>
+          {activeFiltersCount > 0 && (
+            <button
+              type='button'
+              className='ktzi-reset-filters'
+              onClick={() => {
+                setSelectedObjectTypes([]);
+                setSelectedCategories([]);
+                setSelectedSubdivisionTypes([]);
+              }}
+            >
+              Очистити ({activeFiltersCount})
+            </button>
+          )}
+        </div>
+        <div className='ktzi-filters-container'>
+          <div className='ktzi-filter-group'>
+            <h3>Тип об’єкта у складі КТЗІ</h3>
+            <div className='ktzi-filter-options'>
+              {OBJECT_TYPES.map((type) => (
+                <label className='ktzi-filter-checkbox' key={type}>
+                  <input
+                    type='checkbox'
+                    checked={selectedObjectTypes.includes(type)}
+                    onChange={() => toggleObjectType(type)}
+                  />
+                  <span>{OBJECT_TYPE_LABELS[type]}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className='ktzi-filter-group'>
+            <h3>Категорія КТЗІ</h3>
+            <div className='ktzi-filter-options'>
+              {CATEGORIZATION_RANKS.map((rank) => (
+                <label className='ktzi-filter-checkbox' key={rank}>
+                  <input
+                    type='checkbox'
+                    checked={selectedCategories.includes(rank)}
+                    onChange={() =>
+                      toggleFilterValue(rank, setSelectedCategories)
+                    }
+                  />
+                  <span>{rank}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className='ktzi-filter-group'>
+            <h3>Тип підрозділу</h3>
+            <div className='ktzi-filter-options'>
+              {[
+                { key: '0', label: 'Підрозділ апарату' },
+                { key: '1', label: 'Територіальний підрозділ' },
+              ].map(({ key, label }) => (
+                <label className='ktzi-filter-checkbox' key={key}>
+                  <input
+                    type='checkbox'
+                    checked={selectedSubdivisionTypes.includes(key)}
+                    onChange={() =>
+                      toggleFilterValue(key, setSelectedSubdivisionTypes)
+                    }
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className='ktzi-filter-results'>
+          Показано: <b>{filtered.length}</b> з <b>{ktzis.length}</b>
+        </div>
+      </section>
 
       {!filtered.length && (
         <div className='ktzi-state'>
@@ -869,6 +1095,25 @@ export default function KtziTab() {
                 </form>
               ) : (
                 <>
+                  <section className='card-section'>
+                    <h4 className='section-title'>Основна інформація</h4>
+                    <div className='info-grid'>
+                      {[
+                        ['Адреса', ktzi.address],
+                        ['Номер приміщення', ktzi.premisesNumber],
+                        ['Підрозділ', ktzi.subdivisionName],
+                        ['Тип підрозділу', ktzi.subdivisionType],
+                        ['Служба', ktzi.serviceName],
+                      ].map(([label, value]) => (
+                        <div className='info-item' key={label}>
+                          <span className='label'>{label}:</span>
+                          <span className='value'>
+                            {highlightText(formatValue(value), searchTerm)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                   <section className='card-section'>
                     <h4 className='section-title'>Об’єкти у складі КТЗІ</h4>
                     {ktzi.objects.length ? (
