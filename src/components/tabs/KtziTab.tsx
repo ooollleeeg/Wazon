@@ -352,6 +352,7 @@ export default function KtziTab() {
   const [saving, setSaving] = useState(false);
   const [operationLoading, setOperationLoading] = useState('');
   const [installForId, setInstallForId] = useState<number | null>(null);
+  const [stockCategory, setStockCategory] = useState('');
   const [stockChoice, setStockChoice] = useState('');
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const [ktziToDelete, setKtziToDelete] = useState<Ktzi | null>(null);
@@ -414,16 +415,6 @@ export default function KtziTab() {
     window.addEventListener('hashchange', applyHash);
     return () => window.removeEventListener('hashchange', applyHash);
   }, []);
-
-  useEffect(() => {
-    if (loading || highlightId === null || expandedId !== highlightId) return;
-    const card = document.getElementById(`ktzi-card-${highlightId}`);
-    if (!card) return;
-    const animationFrame = window.requestAnimationFrame(() => {
-      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-    return () => window.cancelAnimationFrame(animationFrame);
-  }, [loading, highlightId, expandedId, filtered]);
 
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -490,6 +481,16 @@ export default function KtziTab() {
     selectedCategories,
     selectedSubdivisionTypes,
   ]);
+
+  useEffect(() => {
+    if (loading || highlightId === null || expandedId !== highlightId) return;
+    const card = document.getElementById(`ktzi-card-${highlightId}`);
+    if (!card) return;
+    const animationFrame = window.requestAnimationFrame(() => {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [loading, highlightId, expandedId, filtered]);
 
   const toggleObjectType = (type: string) => {
     setSelectedObjectTypes((current) =>
@@ -561,6 +562,12 @@ export default function KtziTab() {
     selectedSubdivisionTypes.length;
   const expandedKtzis = filtered.filter((ktzi) => expandedId === ktzi.id);
   const compactKtzis = filtered.filter((ktzi) => expandedId !== ktzi.id);
+  const eligibleStock = stock.filter(
+    (item) => item.category && item.category !== 'КЗЗ від НСД',
+  );
+  const stockCategories = Array.from(
+    new Set(eligibleStock.map((item) => item.category)),
+  ).sort((a, b) => a.localeCompare(b, 'uk'));
 
   const startEdit = (ktzi: Ktzi) => {
     setExpandedId(ktzi.id);
@@ -658,7 +665,10 @@ export default function KtziTab() {
   };
 
   const install = async (ktzi: Ktzi) => {
-    const mean = stock.find((item) => String(item.id) === stockChoice);
+    const mean = stock.find(
+      (item) =>
+        item.category === stockCategory && String(item.id) === stockChoice,
+    );
     if (!mean) return;
     setError('');
     setOperationLoading('Встановлення засобу ТЗІ...');
@@ -673,6 +683,7 @@ export default function KtziTab() {
         }),
       });
       setInstallForId(null);
+      setStockCategory('');
       setStockChoice('');
       setSuccess('Засіб ТЗІ встановлено');
       await load();
@@ -1310,20 +1321,45 @@ export default function KtziTab() {
                     {installForId === ktzi.id ? (
                       <div className='ktzi-install'>
                         <select
-                          value={stockChoice}
-                          onChange={(event) => setStockChoice(event.target.value)}
+                          aria-label='Категорія засобу ТЗІ'
+                          value={stockCategory}
+                          disabled={!stockCategories.length}
+                          onChange={(event) => {
+                            setStockCategory(event.target.value);
+                            setStockChoice('');
+                          }}
                         >
-                          <option value=''>— Оберіть засіб зі складу —</option>
-                          {stock
-                            .filter((item) => item.category !== 'КЗЗ від НСД')
-                            .map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.name}
-                                {item.serialNumber ? ` (№${item.serialNumber})` : ''}
-                                {` — ${item.category}`}
-                              </option>
-                            ))}
+                          <option value=''>— Оберіть категорію —</option>
+                          {stockCategories.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
                         </select>
+                        {!stockCategories.length && (
+                          <span>На складі немає доступних засобів для КТЗІ.</span>
+                        )}
+                        {stockCategory && (
+                          <select
+                            aria-label='Засіб ТЗІ зі складу'
+                            value={stockChoice}
+                            onChange={(event) =>
+                              setStockChoice(event.target.value)
+                            }
+                          >
+                            <option value=''>— Оберіть засіб зі складу —</option>
+                            {eligibleStock
+                              .filter((item) => item.category === stockCategory)
+                              .map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name}
+                                  {item.serialNumber
+                                    ? ` (№${item.serialNumber})`
+                                    : ''}
+                                </option>
+                              ))}
+                          </select>
+                        )}
                         <button
                           className='btn-primary'
                           disabled={!stockChoice}
@@ -1333,7 +1369,11 @@ export default function KtziTab() {
                         </button>
                         <button
                           className='btn-secondary'
-                          onClick={() => setInstallForId(null)}
+                          onClick={() => {
+                            setInstallForId(null);
+                            setStockCategory('');
+                            setStockChoice('');
+                          }}
                         >
                           Скасувати
                         </button>
@@ -1343,6 +1383,7 @@ export default function KtziTab() {
                         className='btn-primary'
                         onClick={() => {
                           setInstallForId(ktzi.id);
+                          setStockCategory('');
                           setStockChoice('');
                         }}
                       >
