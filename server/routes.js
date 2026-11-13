@@ -880,6 +880,8 @@ router.get('/types', (req, res) => {
   res.json(objectTypes);
 });
 
+const ktziObjectTypeLabels = { AS: 'АС', SP: 'СП', KRT: 'КРТ' };
+
 router.get('/ktzi/documents', async (req, res) => {
   try {
     const ktzis = await queryAll('SELECT id FROM ktzi');
@@ -919,6 +921,9 @@ router.get('/ktzi/documents', async (req, res) => {
       const object = objects[0];
       if (!object) continue;
 
+      const ktziObjectTypes = ['AS', 'SP', 'KRT']
+        .filter((type) => objects.some((item) => item.objectType === type))
+        .map((type) => ktziObjectTypeLabels[type]);
       const tabId = {
         AS: 'class-a',
         KRT: 'krt',
@@ -933,7 +938,7 @@ router.get('/ktzi/documents', async (req, res) => {
           document.premisesNumber || '—'
         }`,
         tabId,
-        tabLabel: 'КТЗІ',
+        tabLabel: `КТЗІ (${ktziObjectTypes.join(', ')})`,
         documentType: document.documentType,
         fieldName: 'validUntil',
         fieldLabel:
