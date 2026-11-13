@@ -31,6 +31,14 @@ const ktziMainFields = new Set([
   'serviceName',
 ]);
 
+const categoryIvHiddenNestedFields = new Set([
+  'instrumentalControl',
+  'specialCheck',
+  'specialResearch',
+  'governmentalCommunicationMeans',
+]);
+const categoryIvCondition = { field: 'informationCategory', values: ['IV'] };
+
 const removeSharedDocuments = (data: Record<string, any>) => {
   const result = { ...data };
   sharedRootFields.forEach((field) => delete result[field]);
@@ -64,26 +72,46 @@ export default function KtziObjectForm({
       )
       .map((section) => ({
         ...section,
-        fields: section.fields.map((field) =>
-          mainInfoLocked && ktziMainFields.has(field.name)
+        fields: section.fields.map((field) => ({
+          ...field,
+          ...(mainInfoLocked && ktziMainFields.has(field.name)
             ? {
-                ...field,
                 readOnly: true,
                 helperText: 'Редагується на вкладці «КТЗІ»',
               }
-            : field,
-        ),
+            : {}),
+          ...(!initialData && field.name === 'objectType'
+            ? { hiddenWhen: categoryIvCondition }
+            : {}),
+        })),
       })),
-    nestedFields: config.nestedFields?.filter(
-      (field) => !sharedNestedFields.has(field.name),
-    ),
+    nestedFields: config.nestedFields
+      ?.filter((field) => !sharedNestedFields.has(field.name))
+      .map((field) =>
+        !initialData && categoryIvHiddenNestedFields.has(field.name)
+          ? { ...field, hiddenWhen: categoryIvCondition }
+          : field,
+      ),
+  };
+
+  const handleSubmit = (data: Record<string, any>) => {
+    const result = removeSharedDocuments(data);
+    if (!initialData && result.informationCategory === 'IV') {
+      if (config.sections.some((section) =>
+        section.fields.some((field) => field.name === 'objectType'),
+      )) {
+        result.objectType = "об'єкт ЕОТ";
+      }
+      categoryIvHiddenNestedFields.forEach((field) => delete result[field]);
+    }
+    onSubmit(result);
   };
 
   return (
     <GenericForm
       config={objectFormConfig}
       initialData={initialData ? removeSharedDocuments(initialData) : undefined}
-      onSubmit={(data) => onSubmit(removeSharedDocuments(data))}
+      onSubmit={handleSubmit}
       {...props}
     />
   );

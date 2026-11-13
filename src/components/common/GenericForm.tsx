@@ -26,6 +26,10 @@ export interface FormField {
     field: string;
     values: string[];
   };
+  hiddenWhen?: {
+    field: string;
+    values: string[];
+  };
   helperText?: string; // Допоміжний текст під полем
   calculateFrom?: { field: string; years?: number; days?: number }; // Для автоматичного розрахунку (додавити N років/днів до дати)
 }
@@ -42,6 +46,10 @@ export interface NestedFieldConfig {
   icon?: string; // '📚'
   dateField?: string; // Field for sorting (newer first)
   hideAllByDefault?: boolean; // Hide all records by default in form view
+  hiddenWhen?: {
+    field: string;
+    values: string[];
+  };
   defaultItem: Record<string, any>;
   fields: FormField[];
 }
@@ -582,7 +590,9 @@ export default function GenericForm({
           <h3>{section.title}</h3>
           <div className='form-grid'>
             {section.fields.map((field) =>
-              renderField(field, formData[field.name]),
+              field.hiddenWhen?.values.includes(formData[field.hiddenWhen.field])
+                ? null
+                : renderField(field, formData[field.name]),
             )}
           </div>
         </section>
@@ -590,6 +600,13 @@ export default function GenericForm({
 
       {/* ВЛОЖЁННЫЕ ПОЛЯ */}
       {config.nestedFields?.map((nestedConfig, idx) => {
+        if (
+          nestedConfig.hiddenWhen?.values.includes(
+            formData[nestedConfig.hiddenWhen.field],
+          )
+        ) {
+          return null;
+        }
         const items = formData[nestedConfig.name] || [];
         const savedItems = items.filter((item: any) => !item.__isNew); // Лічимо тільки збережені
         const isExpanded = expandedNestedSections[nestedConfig.name];

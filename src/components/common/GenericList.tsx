@@ -121,7 +121,9 @@ export default function GenericList({
             ? `КТЗІ: ${item.address || 'Без адреси'}, каб. ${
                 item.premisesNumber || '—'
               } — ${item.subdivisionName || 'Без підрозділу'}`
-            : 'КТЗІ не визначено';
+            : String(item.informationCategory || '').trim() === 'IV'
+              ? 'Об’єкти IV категорії'
+              : 'КТЗІ не визначено';
 
           if (!groups[key]) {
             groups[key] = { key, label, items: [] };
