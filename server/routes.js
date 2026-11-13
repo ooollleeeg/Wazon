@@ -929,9 +929,9 @@ router.get('/ktzi/documents', async (req, res) => {
         id: `ktzi-${document.ktziId}-${document.documentType}`,
         ktziId: document.ktziId,
         parentId: object.id,
-        parentName: `${document.address || 'Без адреси'}, каб. ${
+        parentName: `${document.subdivisionName || 'Без підрозділу'}, прим. № ${
           document.premisesNumber || '—'
-        } — ${document.subdivisionName || 'Без підрозділу'}`,
+        }`,
         tabId,
         tabLabel: 'КТЗІ',
         documentType: document.documentType,

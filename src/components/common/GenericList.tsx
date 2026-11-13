@@ -112,17 +112,26 @@ export default function GenericList({
   const compactThreshold = config.compactThreshold ?? 1;
   const isSingleCard = filteredItems.length < compactThreshold;
   const useCompactMode = filteredItems.length >= compactThreshold;
-  const hasKtziGroups = filteredItems.some((item) => item.ktziId);
+  const isCategoryIV = (item: any) =>
+    String(item.informationCategory || '').trim() === 'IV';
+  const hasKtziGroups = filteredItems.some(
+    (item) => item.ktziId || isCategoryIV(item),
+  );
   const groupedItems = hasKtziGroups
     ? Object.values(
         filteredItems.reduce<Record<string, KtziGroup>>((groups, item) => {
-          const key = item.ktziId ? `ktzi-${item.ktziId}` : `object-${item.id}`;
-          const label = item.ktziId
-            ? `КТЗІ: ${item.address || 'Без адреси'}, каб. ${
-                item.premisesNumber || '—'
-              } — ${item.subdivisionName || 'Без підрозділу'}`
-            : String(item.informationCategory || '').trim() === 'IV'
-              ? 'Об’єкти IV категорії'
+          const categoryIV = isCategoryIV(item);
+          const key = categoryIV
+            ? 'category-IV'
+            : item.ktziId
+              ? `ktzi-${item.ktziId}`
+              : `object-${item.id}`;
+          const label = categoryIV
+            ? 'Об’єкти IV категорії'
+            : item.ktziId
+              ? `КТЗІ: ${item.address || 'Без адреси'}, каб. ${
+                  item.premisesNumber || '—'
+                } — ${item.subdivisionName || 'Без підрозділу'}`
               : 'КТЗІ не визначено';
 
           if (!groups[key]) {

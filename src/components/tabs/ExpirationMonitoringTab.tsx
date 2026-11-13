@@ -144,7 +144,7 @@ function ExpirationMonitoringTab() {
 
     try {
       const response = await fetch('/api/ktzi/documents', {
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(30000),
       });
       if (response.ok) {
         const ktziDocuments = await response.json();
@@ -165,7 +165,7 @@ function ExpirationMonitoringTab() {
     for (const config of TABS_CONFIG) {
       try {
         const response = await fetch(config.apiEndpoint, {
-          signal: AbortSignal.timeout(10000),
+          signal: AbortSignal.timeout(30000),
         });
         if (!response.ok) continue;
 
@@ -261,9 +261,9 @@ function ExpirationMonitoringTab() {
                         'Без назви',
                       ktziId: item.ktziId,
                       ktziName: item.ktziId
-                        ? `${item.address || 'Без адреси'}, каб. ${
+                        ? `${item.subdivisionName || 'Без підрозділу'}, прим. № ${
                             item.premisesNumber || '—'
-                          } — ${item.subdivisionName || 'Без підрозділу'}`
+                          }`
                         : undefined,
                       tabId: config.tabId,
                       tabLabel: config.label,
@@ -440,9 +440,6 @@ function ExpirationMonitoringTab() {
                   </td>
                   <td className='parent-name'>
                     {doc.ktziName || doc.parentName}
-                    {doc.ktziId && (
-                      <small className='document-scope'>КТЗІ</small>
-                    )}
                   </td>
                   <td>
                     <span className='tab-badge'>{doc.tabLabel}</span>
