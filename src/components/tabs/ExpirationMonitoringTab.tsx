@@ -178,6 +178,7 @@ function ExpirationMonitoringTab() {
               [key: string]: { [key: string]: string[] };
             } = {
               'class-a': {
+                categorization: ['categorizationValidUntil'],
                 instrumentalControl: ['controlTermin'],
                 complianceDocuments: [
                   'validUntil',
@@ -203,6 +204,14 @@ function ExpirationMonitoringTab() {
 
             // Check nested fields - only take the FIRST (current) record
             Object.entries(fieldsToCheck).forEach(([nestedName, fields]) => {
+              if (
+                config.tabId === 'class-a' &&
+                nestedName === 'categorization' &&
+                item.informationCategory !== 'IV'
+              ) {
+                return;
+              }
+
               if (
                 Array.isArray(item[nestedName]) &&
                 item[nestedName].length > 0
@@ -266,7 +275,11 @@ function ExpirationMonitoringTab() {
                           }`
                         : undefined,
                       tabId: config.tabId,
-                      tabLabel: config.label,
+                      tabLabel:
+                        config.tabId === 'class-a' &&
+                        nestedName === 'categorization'
+                          ? 'АС (IV)'
+                          : config.label,
                       documentType: nestedName,
                       fieldName: nestedField,
                       fieldLabel: fieldLabelMap[nestedField] || nestedField,
