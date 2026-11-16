@@ -219,6 +219,11 @@ router.put('/ktzi/:id/documents', async (req, res) => {
   }
 });
 
+const buildUnicodeCaseInsensitiveGlob = (value) =>
+  `*${Array.from(value, (character) =>
+    `[${character}${character.toLocaleUpperCase('uk')}]`,
+  ).join('')}*`;
+
 const countOidObjects = async ({
   table,
   subdivision,
@@ -227,11 +232,12 @@ const countOidObjects = async ({
   uniqueKtzi,
   objectCategoryField,
 }) => {
+  const subdivisionPattern = buildUnicodeCaseInsensitiveGlob(subdivision);
   const conditions = [
-    `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
+    `COALESCE(o.subdivisionType, '') GLOB ?`,
     `o.${objectCategoryField} = ?`,
   ];
-  const params = [`%${subdivision}%`, category];
+  const params = [subdivisionPattern, category];
 
   if (objectType) {
     conditions.push(`o.objectType = ?`);
@@ -264,8 +270,9 @@ const countOidAttested = async ({
 }) => {
   if (category === 'IV') return 0;
 
+  const subdivisionPattern = buildUnicodeCaseInsensitiveGlob(subdivision);
   const conditions = [
-    `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
+    `COALESCE(o.subdivisionType, '') GLOB ?`,
     `o.${objectCategoryField} = ?`,
     `o.ktziId IS NOT NULL`,
     `TRIM(COALESCE(
@@ -275,7 +282,7 @@ const countOidAttested = async ({
       ''
     )) <> ''`,
   ];
-  const params = [`%${subdivision}%`, category];
+  const params = [subdivisionPattern, category];
 
   if (objectType) {
     conditions.push(`o.objectType = ?`);
@@ -302,11 +309,12 @@ const countOidEquipped = async ({
 }) => {
   if (category === 'IV') return 0;
 
+  const subdivisionPattern = buildUnicodeCaseInsensitiveGlob(subdivision);
   const conditions = [
-    `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
+    `COALESCE(o.subdivisionType, '') GLOB ?`,
     `o.${objectCategoryField} = ?`,
   ];
-  const params = [`%${subdivision}%`, category];
+  const params = [subdivisionPattern, category];
 
   if (objectType) {
     conditions.push(`o.objectType = ?`);
@@ -339,6 +347,7 @@ const countCurrentComplianceDocuments = async ({
   documentType,
   validityField,
 }) => {
+  const subdivisionPattern = buildUnicodeCaseInsensitiveGlob(subdivision);
   const categoryExpression =
     `COALESCE(NULLIF(o.informationCategory, ''), c.categorizationRank)`;
   const row = await queryOne(
@@ -346,7 +355,7 @@ const countCurrentComplianceDocuments = async ({
      FROM class_a_systems o
      LEFT JOIN class_a_systems_categorization c ON c.systemId = o.id
      JOIN class_a_systems_compliance_documents d ON d.systemId = o.id
-     WHERE LOWER(COALESCE(o.subdivisionType, '')) LIKE ?
+     WHERE COALESCE(o.subdivisionType, '') GLOB ?
        AND ${categoryExpression} = ?
        AND d.documentType = ?
        AND TRIM(COALESCE(d.dsszzіNumber, '')) <> ''
@@ -355,7 +364,7 @@ const countCurrentComplianceDocuments = async ({
        AND d.${validityField} IS NOT NULL
        AND TRIM(d.${validityField}) <> ''
        AND date(d.${validityField}) >= date('now')`,
-    [`%${subdivision}%`, category, documentType],
+    [subdivisionPattern, category, documentType],
   );
   return Number(row?.count || 0);
 };
