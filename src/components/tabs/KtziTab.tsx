@@ -216,7 +216,7 @@ const OBJECT_TYPE_LABELS: Record<string, string> = {
   SP: 'СП',
 };
 const OBJECT_TYPES = ['AS', 'SP', 'KRT'] as const;
-const CATEGORIZATION_RANKS = ['II', 'III'] as const;
+const CATEGORIZATION_RANKS = ['I', 'II', 'III'] as const;
 const normalizeObjectType = (type: string) => {
   const normalized = type.toUpperCase();
   if (normalized === 'CLASS_A_SYSTEMS') return 'AS';
@@ -916,7 +916,7 @@ export default function KtziTab() {
         <div className='ktzi-state'>
           {ktzis.length
             ? 'КТЗІ за вибраними критеріями не знайдено.'
-            : 'КТЗІ створюється автоматично при додаванні АС, КРТ або службового приміщення з категорією інформації II чи III.'}
+            : 'КТЗІ створюється автоматично при додаванні АС, КРТ або службового приміщення з категорією інформації I, II чи III.'}
         </div>
       )}
 

@@ -60,6 +60,7 @@ const servicePremisesFormConfig: FormConfig = {
           type: 'select',
           required: true,
           options: [
+            { value: 'I', label: 'I' },
             { value: 'II', label: 'II' },
             { value: 'III', label: 'III' },
             { value: 'IV', label: 'IV' },
