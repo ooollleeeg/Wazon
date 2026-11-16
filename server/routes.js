@@ -115,9 +115,18 @@ const sharedKtziObjectFields = new Set([
   'specialCheck',
 ]);
 
-const removeSharedKtziObjectFields = (data) =>
+const removeSharedKtziObjectFields = (data, preserveCategorization = false) =>
   Object.fromEntries(
-    Object.entries(data).filter(([field]) => !sharedKtziObjectFields.has(field)),
+    Object.entries(data).filter(
+      ([field]) =>
+        !sharedKtziObjectFields.has(field) ||
+        (preserveCategorization &&
+          [
+            'categorization',
+            'categorizationActDate',
+            'categorizationActNumber',
+          ].includes(field)),
+    ),
   );
 
 // КТЗІ без об'єктів і засобів ТЗІ видаляється разом із документами
@@ -659,7 +668,10 @@ router.get('/objects/:type/:id', validateObjectType, async (req, res) => {
 router.post('/objects/:type', validateObjectType, async (req, res) => {
   try {
     const requestData = isKtziTable(req.objectConfig.table)
-      ? removeSharedKtziObjectFields(req.body)
+      ? removeSharedKtziObjectFields(
+          req.body,
+          req.body.informationCategory === 'IV',
+        )
       : req.body;
     const objectData = await attachObjectToKtzi(
       req.objectConfig.table,
@@ -699,7 +711,11 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
         : await getObjectById(req.objectConfig.table, req.params.id);
     const currentObject = loadedCurrentObject ? { ...loadedCurrentObject } : null;
     const requestData = isKtziTable(req.objectConfig.table)
-      ? removeSharedKtziObjectFields(req.body)
+      ? removeSharedKtziObjectFields(
+          req.body,
+          req.body.informationCategory === 'IV' ||
+            currentObject?.informationCategory === 'IV',
+        )
       : req.body;
     const objectData = await attachObjectToKtzi(
       req.objectConfig.table,

@@ -39,10 +39,24 @@ const categoryIvHiddenNestedFields = new Set([
 ]);
 const categoryIvCondition = { field: 'informationCategory', values: ['IV'] };
 
-const removeSharedDocuments = (data: Record<string, any>) => {
+const removeSharedDocuments = (
+  data: Record<string, any>,
+  keepCategorization = false,
+) => {
   const result = { ...data };
-  sharedRootFields.forEach((field) => delete result[field]);
-  sharedNestedFields.forEach((field) => delete result[field]);
+  sharedRootFields.forEach((field) => {
+    if (
+      !keepCategorization ||
+      !['categorizationActDate', 'categorizationActNumber'].includes(field)
+    ) {
+      delete result[field];
+    }
+  });
+  sharedNestedFields.forEach((field) => {
+    if (field !== 'categorization' || !keepCategorization) {
+      delete result[field];
+    }
+  });
   return result;
 };
 
@@ -50,6 +64,7 @@ interface KtziObjectFormProps {
   config: FormConfig;
   initialData?: Record<string, any>;
   onSubmit: (data: any) => void;
+  preserveCategorizationForCategoryIv?: boolean;
   [key: string]: any;
 }
 
@@ -57,6 +72,7 @@ export default function KtziObjectForm({
   config,
   initialData,
   onSubmit,
+  preserveCategorizationForCategoryIv = false,
   ...props
 }: KtziObjectFormProps) {
   // Основна інформація об'єкта з КТЗІ редагується на вкладці «КТЗІ»
@@ -86,16 +102,37 @@ export default function KtziObjectForm({
         })),
       })),
     nestedFields: config.nestedFields
-      ?.filter((field) => !sharedNestedFields.has(field.name))
-      .map((field) =>
-        !initialData && categoryIvHiddenNestedFields.has(field.name)
+      ?.filter(
+        (field) =>
+          !sharedNestedFields.has(field.name) ||
+          (preserveCategorizationForCategoryIv &&
+            field.name === 'categorization'),
+      )
+      .map((field) => {
+        if (
+          preserveCategorizationForCategoryIv &&
+          field.name === 'categorization'
+        ) {
+          return {
+            ...field,
+            hiddenWhen: {
+              field: 'informationCategory',
+              values: ['', 'I', 'II', 'III'],
+            },
+          };
+        }
+        return !initialData && categoryIvHiddenNestedFields.has(field.name)
           ? { ...field, hiddenWhen: categoryIvCondition }
-          : field,
-      ),
+          : field;
+      }),
   };
 
   const handleSubmit = (data: Record<string, any>) => {
-    const result = removeSharedDocuments(data);
+    const keepCategorization =
+      preserveCategorizationForCategoryIv &&
+      (data.informationCategory === 'IV' ||
+        initialData?.informationCategory === 'IV');
+    const result = removeSharedDocuments(data, keepCategorization);
     if (!initialData && result.informationCategory === 'IV') {
       if (config.sections.some((section) =>
         section.fields.some((field) => field.name === 'objectType'),
@@ -110,7 +147,15 @@ export default function KtziObjectForm({
   return (
     <GenericForm
       config={objectFormConfig}
-      initialData={initialData ? removeSharedDocuments(initialData) : undefined}
+      initialData={
+        initialData
+          ? removeSharedDocuments(
+              initialData,
+              preserveCategorizationForCategoryIv &&
+                initialData.informationCategory === 'IV',
+            )
+          : undefined
+      }
       onSubmit={handleSubmit}
       {...props}
     />

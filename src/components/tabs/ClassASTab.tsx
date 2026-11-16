@@ -1073,7 +1073,11 @@ const classASTabConfig: TabConfig = {
   searchPlaceholder: 'Пошук по назві системи, підрозділу, класу...',
   addButtonLabel: '+ Додати автоматизовану систему',
   FormComponent: (props) => (
-    <KtziObjectForm config={classASFormConfig} {...props} />
+    <KtziObjectForm
+      config={classASFormConfig}
+      preserveCategorizationForCategoryIv
+      {...props}
+    />
   ),
   ListComponent: (props) => (
     <GenericList config={classASListConfig} {...props} />
