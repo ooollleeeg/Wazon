@@ -635,7 +635,11 @@ const krtTabConfig: TabConfig = {
   searchPlaceholder: 'Пошук по назві підрозділу, номеру приміщення, адресі...',
   addButtonLabel: '+ Додати запис про КРТ',
   FormComponent: (props) => (
-    <KtziObjectForm config={krtFormConfig} {...props} />
+    <KtziObjectForm
+      config={krtFormConfig}
+      preserveCategorizationForCategoryIv
+      {...props}
+    />
   ),
   ListComponent: (props) => <GenericList config={krtListConfig} {...props} />,
 };
