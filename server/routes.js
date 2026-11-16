@@ -221,20 +221,15 @@ router.put('/ktzi/:id/documents', async (req, res) => {
 
 const countOidObjects = async ({
   table,
-  categorizationTable,
-  foreignKey,
   subdivision,
   category,
   objectType,
-  uniqueAct,
+  uniqueKtzi,
   objectCategoryField,
 }) => {
-  const categoryExpression = objectCategoryField
-    ? `COALESCE(NULLIF(o.${objectCategoryField}, ''), c.categorizationRank)`
-    : 'c.categorizationRank';
   const conditions = [
     `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
-    `${categoryExpression} = ?`,
+    `o.${objectCategoryField} = ?`,
   ];
   const params = [`%${subdivision}%`, category];
 
@@ -245,23 +240,15 @@ const countOidObjects = async ({
 
   const row = await queryOne(
     `SELECT COUNT(DISTINCT ${
-      uniqueAct
+      uniqueKtzi
         ? `CASE
-             WHEN ${
-               objectCategoryField
-                 ? `o.${objectCategoryField} = 'IV'`
-                 : '0'
-             } THEN 'object:' || o.id
+             WHEN o.${objectCategoryField} = 'IV' THEN 'object:' || o.id
              WHEN o.ktziId IS NOT NULL THEN 'ktzi:' || o.ktziId
-             ELSE 'act:' ||
-               COALESCE(c.categorizationActNumber, '') || '|' ||
-               COALESCE(c.categorizationActDate, '') || '|' ||
-               COALESCE(c.categorizationValidUntil, '')
+             ELSE 'object:' || o.id
            END`
         : 'o.id'
     }) AS count
      FROM ${table} o
-     LEFT JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
      WHERE ${conditions.join(' AND ')}`,
     params,
   );
@@ -270,23 +257,23 @@ const countOidObjects = async ({
 
 const countOidAttested = async ({
   table,
-  categorizationTable,
-  foreignKey,
-  attestationTable,
-  attestationForeignKey,
-  complianceTable,
-  complianceForeignKey,
   subdivision,
   category,
   objectType,
   objectCategoryField,
 }) => {
-  const categoryExpression = objectCategoryField
-    ? `COALESCE(NULLIF(o.${objectCategoryField}, ''), c.categorizationRank)`
-    : 'c.categorizationRank';
+  if (category === 'IV') return 0;
+
   const conditions = [
     `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
-    `${categoryExpression} = ?`,
+    `o.${objectCategoryField} = ?`,
+    `o.ktziId IS NOT NULL`,
+    `TRIM(COALESCE(
+      CASE WHEN json_valid(d.documentData)
+        THEN json_extract(d.documentData, '$.attestationDsszziNumber')
+      END,
+      ''
+    )) <> ''`,
   ];
   const params = [`%${subdivision}%`, category];
 
@@ -295,71 +282,11 @@ const countOidAttested = async ({
     params.push(objectType);
   }
 
-  if (category === 'IV') {
-    const localComplianceCondition = complianceTable
-      ? `(d.dsszzіNumber IS NOT NULL AND
-          TRIM(d.dsszzіNumber) <> '' AND
-          d.documentType IN (?, ?, ?, ?))`
-      : '0';
-    const sharedComplianceCondition = objectCategoryField
-      ? `(COALESCE(TRIM(o.${objectCategoryField}), '') = '' AND EXISTS (
-          SELECT 1
-          FROM ktzi_documents kd
-          WHERE kd.ktziId = o.ktziId
-            AND TRIM(COALESCE(kd.documentNumber, '')) <> ''
-            AND kd.documentType IN (?, ?, ?, ?)
-        ))`
-      : `EXISTS (
-          SELECT 1
-          FROM ktzi_documents kd
-          WHERE kd.ktziId = o.ktziId
-            AND TRIM(COALESCE(kd.documentNumber, '')) <> ''
-            AND kd.documentType IN (?, ?, ?, ?)
-        )`;
-    conditions.push(`(${localComplianceCondition} OR ${sharedComplianceCondition})`);
-    const documentTypes = [
-      'Атестат відповідності',
-      'Акт завершення робіт',
-      'Декларація про відповідність вимогам нормативних документів',
-      'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
-    ];
-    params.push(...(complianceTable ? [...documentTypes, ...documentTypes] : documentTypes));
-  } else {
-    conditions.push(
-      `a.attestationDsszziNumber IS NOT NULL`,
-      `TRIM(a.attestationDsszziNumber) <> ''`,
-    );
-  }
-
-  const join = category === 'IV'
-    ? complianceTable
-      ? `LEFT JOIN ${complianceTable} d ON d.${complianceForeignKey} = o.id`
-      : ''
-    : `JOIN ${attestationTable} a ON a.${attestationForeignKey} = o.id`;
-  const uniqueKey = category === 'IV'
-    ? `CASE
-         WHEN ${
-           objectCategoryField ? `o.${objectCategoryField} = 'IV'` : '0'
-         } THEN 'object:' || o.id
-         WHEN o.ktziId IS NOT NULL THEN 'ktzi:' || o.ktziId
-         ELSE ${
-           complianceTable
-             ? `'document:' || COALESCE(d.dsszzіNumber, '') || '|' ||
-                COALESCE(d.dsszzіDate, '')`
-             : `'document:' || o.id`
-         }
-       END`
-    : `CASE
-         WHEN o.ktziId IS NOT NULL THEN 'ktzi:' || o.ktziId
-         ELSE 'attestation:' || COALESCE(a.attestationDsszziNumber, '') || '|' ||
-           COALESCE(a.attestationDsszziDate, '')
-       END`;
-
   const row = await queryOne(
-    `SELECT COUNT(DISTINCT ${uniqueKey}) AS count
+    `SELECT COUNT(DISTINCT o.ktziId) AS count
      FROM ${table} o
-     LEFT JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
-     ${join}
+     JOIN ktzi_documents d
+       ON d.ktziId = o.ktziId AND d.documentType = 'atestation'
      WHERE ${conditions.join(' AND ')}`,
     params,
   );
@@ -368,19 +295,16 @@ const countOidAttested = async ({
 
 const countOidEquipped = async ({
   table,
-  categorizationTable,
-  foreignKey,
   subdivision,
   category,
   objectType,
   objectCategoryField,
 }) => {
-  const categoryExpression = objectCategoryField
-    ? `COALESCE(NULLIF(o.${objectCategoryField}, ''), c.categorizationRank)`
-    : 'c.categorizationRank';
+  if (category === 'IV') return 0;
+
   const conditions = [
     `LOWER(COALESCE(o.subdivisionType, '')) LIKE ?`,
-    `${categoryExpression} = ?`,
+    `o.${objectCategoryField} = ?`,
   ];
   const params = [`%${subdivision}%`, category];
 
@@ -389,23 +313,19 @@ const countOidEquipped = async ({
     params.push(objectType);
   }
 
-  const meansCondition = category === 'IV'
-    ? '0'
-    : `EXISTS (
-        SELECT 1
-        FROM protection_means ktziMeans
-        WHERE ktziMeans.ktziId = o.ktziId
-      )`;
-  const isNonIvCategory = category === 'IV' ? 0 : 1;
+  const meansCondition = `EXISTS (
+      SELECT 1
+      FROM protection_means ktziMeans
+      WHERE ktziMeans.ktziId = o.ktziId
+    )`;
 
   const row = await queryOne(
     `SELECT COUNT(DISTINCT CASE
-       WHEN ${isNonIvCategory} = 1 AND o.ktziId IS NOT NULL
+       WHEN o.ktziId IS NOT NULL
          THEN 'ktzi:' || o.ktziId
        ELSE 'object:' || o.id
      END) AS count
      FROM ${table} o
-     LEFT JOIN ${categorizationTable} c ON c.${foreignKey} = o.id
      WHERE ${conditions.join(' AND ')}
        AND ${meansCondition}`,
     params,
@@ -451,49 +371,47 @@ router.get('/oid-report', async (req, res) => {
       {
         key: 'servicePremises',
         table: 'service_premises',
-        categorizationTable: 'service_premises_categorization',
-        foreignKey: 'premisesId',
-        attestationTable: 'service_premises_atestation',
-        attestationForeignKey: 'premisesId',
         objectCategoryField: 'informationCategory',
       },
       {
         key: 'electronicComputers',
         table: 'class_a_systems',
-        categorizationTable: 'class_a_systems_categorization',
-        foreignKey: 'systemId',
         objectType: "об'єкт ЕОТ",
-        uniqueAct: true,
+        uniqueKtzi: true,
         objectCategoryField: 'informationCategory',
-        attestationTable: 'class_a_systems_atestation',
-        attestationForeignKey: 'systemId',
-        complianceTable: 'class_a_systems_compliance_documents',
-        complianceForeignKey: 'systemId',
       },
       {
         key: 'combined',
         table: 'class_a_systems',
-        categorizationTable: 'class_a_systems_categorization',
-        foreignKey: 'systemId',
         objectType: 'комбінований ОІД',
-        uniqueAct: true,
+        uniqueKtzi: true,
         objectCategoryField: 'informationCategory',
-        attestationTable: 'class_a_systems_atestation',
-        attestationForeignKey: 'systemId',
-        complianceTable: 'class_a_systems_compliance_documents',
-        complianceForeignKey: 'systemId',
       },
       {
         key: 'copyingEquipment',
         table: 'krt',
-        categorizationTable: 'krt_categorization',
-        foreignKey: 'krtId',
-        uniqueAct: true,
+        uniqueKtzi: true,
         objectCategoryField: 'informationCategory',
-        attestationTable: 'krt_atestation',
-        attestationForeignKey: 'krtId',
       },
     ];
+
+    const categorizedKtzi = await queryAll(
+      `SELECT DISTINCT ktziId
+       FROM (
+         SELECT ktziId FROM service_premises
+         WHERE informationCategory IN ('II', 'III')
+         UNION ALL
+         SELECT ktziId FROM class_a_systems
+         WHERE informationCategory IN ('II', 'III')
+         UNION ALL
+         SELECT ktziId FROM krt
+         WHERE informationCategory IN ('II', 'III')
+       )
+       WHERE ktziId IS NOT NULL`,
+    );
+    await Promise.all(
+      categorizedKtzi.map(({ ktziId }) => getKtziDocumentData(ktziId)),
+    );
 
     const buildRows = (counter) => Promise.all(
       sources.map(async (source) => {
