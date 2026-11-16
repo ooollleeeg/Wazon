@@ -23,49 +23,16 @@ interface StatsData {
   byClass: { [key: string]: number };
   bySubdivisionType: { [key: string]: number };
   byObjectType: { [key: string]: number };
-  // КТЗІ Статистика
-  totalKtzi: number;
-  ktziBySubdivisionType: { [key: string]: number };
-  ktziByObjectType: { [key: string]: number };
 }
 
 export default function ClassASStats({ systems }: ClassASStatsProps) {
-  // Перевіряє, чи система має валідну категоріювання (I, II, III)
-  // Об'єкти без категоріювання або з категорією IV не рахуються в КТЗІ
-  const hasValidCategorization = (system: ClassASData): boolean => {
-    // Якщо немає категоріювання взагалі
-    if (!system.categorization || !Array.isArray(system.categorization)) {
-      return false;
-    }
-
-    // Беремо останній (поточний) акт категоріювання
-    const currentCategorization =
-      system.categorization[system.categorization.length - 1];
-
-    if (!currentCategorization) {
-      return false;
-    }
-
-    const rank = currentCategorization.categorizationRank;
-
-    // Рахуємо тільки об'єкти з категоріями I, II, III
-    // Категорія IV або відсутня - не рахуємо
-    return rank && (rank === 'I' || rank === 'II' || rank === 'III');
-  };
-
   const calculateStats = (): StatsData => {
     const stats: StatsData = {
       totalSystems: systems.length,
       byClass: {},
       bySubdivisionType: {},
       byObjectType: {},
-      totalKtzi: 0,
-      ktziBySubdivisionType: {},
-      ktziByObjectType: {},
     };
-
-    // Трекуємо унікальні КТЗІ по (premisesNumber + subdivisionName)
-    const ktziMap = new Map<string, ClassASData>();
 
     systems.forEach((system) => {
       // АС Статистика
@@ -80,27 +47,7 @@ export default function ClassASStats({ systems }: ClassASStatsProps) {
       // По типам об'єктів
       stats.byObjectType[system.objectType] =
         (stats.byObjectType[system.objectType] || 0) + 1;
-
-      // КТЗІ Статистика
-      // Групуємо по (premisesNumber + subdivisionName)
-      // Рахуємо тільки об'єкти з категоріями I, II, III
-      if (hasValidCategorization(system)) {
-        const ktziKey = `${system.premisesNumber || 'unknown'}|${system.subdivisionName}`;
-        if (!ktziMap.has(ktziKey)) {
-          ktziMap.set(ktziKey, system);
-
-          // По типам підрозділів
-          stats.ktziBySubdivisionType[system.subdivisionType] =
-            (stats.ktziBySubdivisionType[system.subdivisionType] || 0) + 1;
-
-          // По типам об'єктів
-          stats.ktziByObjectType[system.objectType] =
-            (stats.ktziByObjectType[system.objectType] || 0) + 1;
-        }
-      }
     });
-
-    stats.totalKtzi = ktziMap.size;
 
     return stats;
   };
@@ -182,55 +129,6 @@ export default function ClassASStats({ systems }: ClassASStatsProps) {
                   <div className='stat-label'>{objectType}</div>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        {/* СТАТИСТИКА КТЗІ */}
-        <div className='stats-group'>
-          <h3>🛡️ Комплекси технічного захисту інформації (КТЗІ)</h3>
-
-          {/* Загальна кількість КТЗІ */}
-          <div className='stats-row'>
-            <div className='stat-card stat-total'>
-              <div className='stat-value'>{stats.totalKtzi}</div>
-              <div className='stat-label'>Всього КТЗІ</div>
-            </div>
-          </div>
-
-          {/* По типам підрозділів */}
-          <div className='stats-subsection'>
-            <h4>По типам підрозділів</h4>
-            <div className='stats-row'>
-              {Object.entries(stats.ktziBySubdivisionType).map(
-                ([subdivisionType, count]) => (
-                  <div
-                    key={`ktzi-${subdivisionType}`}
-                    className='stat-card stat-subdivision'
-                  >
-                    <div className='stat-value'>{count}</div>
-                    <div className='stat-label'>{subdivisionType}</div>
-                  </div>
-                ),
-              )}
-            </div>
-          </div>
-
-          {/* По типам об'єктів */}
-          <div className='stats-subsection'>
-            <h4>По типам об'єктів</h4>
-            <div className='stats-row'>
-              {Object.entries(stats.ktziByObjectType).map(
-                ([objectType, count]) => (
-                  <div
-                    key={`ktzi-${objectType}`}
-                    className='stat-card stat-objecttype'
-                  >
-                    <div className='stat-value'>{count}</div>
-                    <div className='stat-label'>{objectType}</div>
-                  </div>
-                ),
-              )}
             </div>
           </div>
         </div>
