@@ -146,7 +146,7 @@ const TABS: Tab[] = [
     label: 'Майстер звітів',
     icon: '🧩',
     component: ReportsTab,
-    color: '#20a779',
+    color: '#667eea',
   },
 ];
 
