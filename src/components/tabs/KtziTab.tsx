@@ -95,6 +95,37 @@ const KTZI_MEAN_FIELDS: { name: keyof KtziMean; label: string; date?: boolean; f
 ];
 
 const SUBDIVISION_TYPES = ['Апарат', 'Територіальний підрозділ'];
+const ATTESTATION_DEFAULTS = {
+  atestationPerformer: 'УРТЗІ ГУНП',
+  atestationPermissionPerformer:
+    'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
+};
+
+const addCalendarYears = (value: string, years: number) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const sourceDate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    sourceDate.getUTCFullYear() !== year ||
+    sourceDate.getUTCMonth() !== month - 1 ||
+    sourceDate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  const targetYear = year + years;
+  const targetDay = Math.min(
+    day,
+    new Date(Date.UTC(targetYear, month, 0)).getUTCDate(),
+  );
+  return `${targetYear}-${String(month).padStart(2, '0')}-${String(
+    targetDay,
+  ).padStart(2, '0')}`;
+};
 
 const DOCUMENT_SECTIONS: {
   key: string;
@@ -605,7 +636,28 @@ export default function KtziTab() {
     setDocuments((current) => ({
       ...current,
       [documentType]: current[documentType].map((version, index) =>
-        index === versionIndex ? { ...version, [fieldName]: value } : version,
+        index === versionIndex
+          ? {
+              ...version,
+              [fieldName]: value,
+              ...(documentType === 'categorization' &&
+              fieldName === 'categorizationActDate'
+                ? {
+                    categorizationValidUntil:
+                      addCalendarYears(value, 5) ??
+                      version.categorizationValidUntil,
+                  }
+                : {}),
+              ...(documentType === 'atestation' &&
+              fieldName === 'attestationDsszziDate'
+                ? {
+                    attestationValidUntil:
+                      addCalendarYears(value, 5) ??
+                      version.attestationValidUntil,
+                  }
+                : {}),
+            }
+          : version,
       ),
     }));
   };
@@ -613,11 +665,17 @@ export default function KtziTab() {
   const addDocumentVersion = (documentType: string) => {
     const section = DOCUMENT_SECTIONS.find(({ key }) => key === documentType);
     if (!section) return;
+    const newVersion = Object.fromEntries(
+      section.fields.map(({ name }) => [name, '']),
+    );
+    if (documentType === 'atestation') {
+      Object.assign(newVersion, ATTESTATION_DEFAULTS);
+    }
     setDocuments((current) => ({
       ...current,
       [documentType]: [
         ...(current[documentType] || []),
-        Object.fromEntries(section.fields.map(({ name }) => [name, ''])),
+        newVersion,
       ],
     }));
   };
