@@ -227,6 +227,7 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #ccc #f0f0f0;
   flex-wrap: wrap;
+  justify-content: space-around;
 }
 
 .tabs-list::-webkit-scrollbar {
