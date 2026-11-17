@@ -16,6 +16,7 @@ import NPUResearchTab from './components/tabs/NPUResearchTab';
 import DocumentsTab from './components/tabs/DocumentsTab';
 import ExpirationMonitoringTab from './components/tabs/ExpirationMonitoringTab';
 import OidInformationTab from './components/tabs/OidInformationTab';
+import ReportsTab from './components/tabs/ReportsTab';
 import ComputerIcon from './components/icons/ComputerIcon';
 import CopierIcon from './components/icons/CopierIcon';
 
@@ -139,6 +140,13 @@ const TABS: Tab[] = [
     icon: '📊',
     component: OidInformationTab,
     color: '#0984e3',
+  },
+  {
+    id: 'reports',
+    label: 'Майстер звітів',
+    icon: '🧩',
+    component: ReportsTab,
+    color: '#20a779',
   },
 ];
 

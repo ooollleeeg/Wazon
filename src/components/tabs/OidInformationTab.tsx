@@ -368,7 +368,9 @@ function OidInformationTab() {
         </table>
       </div>
       <div className='oid-information-futer'>
-        <h4>*В цій таблиці АС IV категорії підраховуються як окремі об'єкти</h4>
+        <h4>
+          *Увага! В цій таблиці АС, СП та КРТ IV категорії підраховуються як окремі об'єкти!
+        </h4>
       </div>
     </div>
   );
