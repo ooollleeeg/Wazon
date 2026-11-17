@@ -454,6 +454,11 @@ const servicePremisesCardConfig: CardConfig = {
         },
         { label: 'Тип підрозділу', value: 'subdivisionType' },
         { label: 'Назва служби', value: 'serviceName' },
+        {
+          label: 'Вищий гриф ІзОД',
+          value: 'informationCategory',
+          format: 'badge',
+        },
       ],
     },
     {
