@@ -742,7 +742,7 @@ export const saveKtziDocumentData = async (ktziId, documents) => {
 };
 
 export const syncKtziComplianceDocuments = async (ktziId, documents = []) => {
-  if (!Array.isArray(documents)) return;
+  if (!ktziId || !Array.isArray(documents)) return;
   for (const document of documents) {
     if (!document?.documentType) continue;
     const number = document.dsszzіNumber || '';
