@@ -15,7 +15,9 @@ const {
   attachObjectToKtzi,
   ensureKtzi,
   getKtziDocumentData,
+  getKtziObjects,
   getKtziProtectionMeans,
+  resolveKtziSubdivisionType,
   saveKtziDocumentData,
   updateKtziMainInfo,
 } = await import('./ktzi.js');
@@ -182,6 +184,37 @@ after(async () => {
 });
 
 describe('KTZI grouping and shared documents', () => {
+  it('resolves a missing KTZI subdivision type from linked objects in each tab', async () => {
+    const sources = [
+      ['class_a_systems', 'підрозділ апарату'],
+      ['service_premises', 'територіальний підрозділ'],
+      ['krt', 'підрозділ апарату'],
+    ];
+
+    for (const [table, subdivisionType] of sources) {
+      const ktzi = await ensureKtzi({
+        address: `Тип підрозділу ${table}`,
+        subdivisionName: `Підрозділ ${table}`,
+      });
+      await seedObject(table, {
+        ktziId: ktzi.id,
+        subdivisionName: `Підрозділ ${table}`,
+        subdivisionType,
+        ...(table === 'krt' ? { systemName: `Об’єкт ${table}` } : {}),
+        ...(table === 'service_premises'
+          ? { serviceName: `Приміщення ${table}` }
+          : {}),
+      });
+      const objects = await getKtziObjects(ktzi.id);
+
+      assert.equal(resolveKtziSubdivisionType('', objects), subdivisionType);
+      assert.equal(
+        resolveKtziSubdivisionType('збережене значення', objects),
+        'збережене значення',
+      );
+    }
+  });
+
   it('reuses a KTZI for objects with the same normalized identity', async () => {
     const first = await attachObjectToKtzi('class_a_systems', {
       address: ' вул. Тестова  1 ',

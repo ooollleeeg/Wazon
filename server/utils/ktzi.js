@@ -771,11 +771,14 @@ export const getKtziObjects = (ktziId) =>
   new Promise((resolve, reject) => {
     const queries = [
       `SELECT id, 'AS' AS objectType, systemName AS objectName, systemClass,
-        subdivisionName, premisesNumber, address FROM class_a_systems WHERE ktziId = ?`,
+        subdivisionName, subdivisionType, premisesNumber, address
+       FROM class_a_systems WHERE ktziId = ?`,
       `SELECT id, 'KRT' AS objectType, systemName AS objectName,
-        subdivisionName, premisesNumber, address FROM krt WHERE ktziId = ?`,
+        subdivisionName, subdivisionType, premisesNumber, address
+       FROM krt WHERE ktziId = ?`,
       `SELECT id, 'SP' AS objectType, serviceName AS objectName,
-        subdivisionName, premisesNumber, address FROM service_premises WHERE ktziId = ?`,
+        subdivisionName, subdivisionType, premisesNumber, address
+       FROM service_premises WHERE ktziId = ?`,
     ];
 
     Promise.all(
@@ -792,3 +795,8 @@ export const getKtziObjects = (ktziId) =>
       .then((rows) => resolve(rows.flat()))
       .catch(reject);
   });
+
+export const resolveKtziSubdivisionType = (ktziType, objects) =>
+  ktziType ||
+  objects.find((object) => object.subdivisionType)?.subdivisionType ||
+  '';

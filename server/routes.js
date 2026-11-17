@@ -27,6 +27,7 @@ import {
   syncKtziComplianceDocuments,
   updateKtziMainInfo,
   getKtziProtectionMeans,
+  resolveKtziSubdivisionType,
   isKtziTable,
 } from './utils/ktzi.js';
 
@@ -157,7 +158,16 @@ router.get('/ktzi', async (_req, res) => {
           getKtziDocumentData(ktzi.id),
           getKtziProtectionMeans(ktzi.id),
         ]);
-        return { ...ktzi, objects, ...documentData, protectionMeans };
+        return {
+          ...ktzi,
+          subdivisionType: resolveKtziSubdivisionType(
+            ktzi.subdivisionType,
+            objects,
+          ),
+          objects,
+          ...documentData,
+          protectionMeans,
+        };
       }),
     );
     res.json(result);
