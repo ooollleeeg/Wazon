@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
+import express from 'express';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -24,6 +25,7 @@ const {
 const { installProtectionMean, returnProtectionMeanToInventory } =
   await import('./protectionMeansAggregator.js');
 const { createObjectWithNested } = await import('./dbHelpers.js');
+const { default: router } = await import('../routes.js');
 
 const run = (query, params = []) =>
   new Promise((resolve, reject) => {
@@ -849,5 +851,176 @@ describe('Object saving', () => {
     );
 
     assert.ok(result.id);
+  });
+});
+
+describe('Documents report', () => {
+  it('counts shared documents by KTZI and uses DSSZZI attestation dates', async () => {
+    const app = express();
+    app.use(express.json());
+    app.use('/api', router);
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise((resolve, reject) => {
+      server.once('listening', resolve);
+      server.once('error', reject);
+    });
+
+    const baseUrl = `http://127.0.0.1:${server.address().port}/api`;
+    const request = async (url, init) => {
+      const response = await fetch(`${baseUrl}${url}`, init);
+      const data = await response.json();
+      assert.equal(response.ok, true, JSON.stringify(data));
+      return data;
+    };
+    const createObject = (type, data) =>
+      request(`/objects/${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    const saveDocuments = (ktziId, documents) =>
+      request(`/ktzi/${ktziId}/documents`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documents }),
+      });
+
+    try {
+      const complianceDocument = {
+        documentType: 'Атестат відповідності',
+        'dsszzіNumber': 'ДС-СПІЛЬНИЙ-01',
+        'dsszzіDate': '2099-01-15',
+      };
+      const apparatusObject = {
+        address: 'Тестова 2099, 1',
+        premisesNumber: '1',
+        subdivisionName: 'Підрозділ апарату 2099',
+        subdivisionType: 'підрозділ апарату',
+        systemClass: 'АС класу 2',
+        informationCategory: 'II',
+        complianceDocuments: [complianceDocument],
+      };
+      const firstAs = await createObject('class_a_systems', {
+        ...apparatusObject,
+        systemName: 'Тестова АС апарату 1',
+      });
+      const secondAs = await createObject('class_a_systems', {
+        ...apparatusObject,
+        systemName: 'Тестова АС апарату 2',
+      });
+      const territorialAs = await createObject('class_a_systems', {
+        address: 'Тестова 2099, 2',
+        premisesNumber: '2',
+        subdivisionName: 'Територіальний підрозділ 2099',
+        subdivisionType: 'територіальний підрозділ',
+        systemClass: 'АС класу 2',
+        systemName: 'Тестова АС територіального підрозділу',
+        informationCategory: 'II',
+        complianceDocuments: [complianceDocument],
+      });
+      const territorialPremises = await createObject('service_premises', {
+        address: 'Тестова 2099, 3',
+        premisesNumber: '3',
+        subdivisionName: 'Територіальний підрозділ 2099 СП',
+        subdivisionType: 'територіальний підрозділ',
+        serviceName: 'Тестове приміщення 2099',
+      });
+      const apparatusKrt = await createObject('krt', {
+        address: 'Тестова 2099, 4',
+        premisesNumber: '4',
+        subdivisionName: 'Підрозділ апарату 2099 КРТ',
+        subdivisionType: 'підрозділ апарату',
+        systemName: 'Тестове КРТ 2099',
+      });
+
+      const ktziIds = [
+        firstAs.ktziId,
+        secondAs.ktziId,
+        territorialAs.ktziId,
+        territorialPremises.ktziId,
+        apparatusKrt.ktziId,
+      ];
+      assert.ok(ktziIds.every(Boolean));
+      assert.equal(secondAs.ktziId, firstAs.ktziId);
+      assert.notEqual(territorialAs.ktziId, firstAs.ktziId);
+
+      for (const ktziId of new Set(ktziIds)) {
+        await run('UPDATE ktzi SET subdivisionType = ? WHERE id = ?', [
+          '',
+          ktziId,
+        ]);
+      }
+
+      const task = (taskNumber) => ({
+        taskNumber,
+        taskDate: '2098-12-01',
+        taskClearance: '2099-01-12',
+      });
+      await saveDocuments(firstAs.ktziId, {
+        technicalTask: [task('ТЗ-АПАРАТ-01')],
+        atestation: [
+          {
+            attestationRegNumber: 'АТЕСТ-НЕВІРНА-ДАТА-01',
+            attestationRegDate: '2099-01-15',
+            attestationDsszziDate: '2098-12-30',
+          },
+          {
+            attestationRegNumber: 'АТЕСТ-ПРАВИЛЬНА-ДАТА-01',
+            attestationRegDate: '2098-12-30',
+            attestationDsszziDate: '2099-01-15',
+          },
+        ],
+      });
+      await saveDocuments(territorialAs.ktziId, {
+        technicalTask: [task('ТЗ-ТЕРИТОРІЯ-01')],
+        atestation: [
+          {
+            attestationRegNumber: 'АТЕСТ-ПРАВИЛЬНА-ДАТА-02',
+            attestationRegDate: '2098-12-30',
+            attestationDsszziDate: '2099-01-16',
+          },
+        ],
+      });
+      await saveDocuments(territorialPremises.ktziId, {
+        technicalTask: [task('ТЗ-СП-01')],
+      });
+      await saveDocuments(apparatusKrt.ktziId, {
+        technicalTask: [task('ТЗ-КРТ-01')],
+      });
+
+      const report = await request(
+        '/documents-report?dateFrom=2099-01-10&dateTo=2099-01-20',
+      );
+      const taskRow = report.rows[0];
+      const attestationRow = report.rows[1];
+      const certificateRow = report.rows[5];
+
+      assert.deepEqual(
+        {
+          apparatus: taskRow.apparatus,
+          territorial: taskRow.territorial,
+          total: taskRow.total,
+        },
+        { apparatus: 2, territorial: 2, total: 4 },
+      );
+      assert.deepEqual(
+        {
+          apparatus: attestationRow.apparatus,
+          territorial: attestationRow.territorial,
+          total: attestationRow.total,
+        },
+        { apparatus: 1, territorial: 1, total: 2 },
+      );
+      assert.deepEqual(
+        {
+          apparatus: certificateRow.apparatus,
+          territorial: certificateRow.territorial,
+          total: certificateRow.total,
+        },
+        { apparatus: 1, territorial: 1, total: 2 },
+      );
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 });

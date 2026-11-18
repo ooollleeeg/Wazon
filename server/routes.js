@@ -1906,21 +1906,45 @@ router.get('/documents-report', async (req, res) => {
       });
     }
 
-    const subdivisionCase = `
+    const linkedSubdivisionType = (ktziIdExpression) => `
+      COALESCE(
+        (SELECT NULLIF(TRIM(relatedAs.subdivisionType), '')
+         FROM class_a_systems relatedAs
+         WHERE relatedAs.ktziId = ${ktziIdExpression}
+         ORDER BY relatedAs.id LIMIT 1),
+        (SELECT NULLIF(TRIM(relatedKrt.subdivisionType), '')
+         FROM krt relatedKrt
+         WHERE relatedKrt.ktziId = ${ktziIdExpression}
+         ORDER BY relatedKrt.id LIMIT 1),
+        (SELECT NULLIF(TRIM(relatedPremises.subdivisionType), '')
+         FROM service_premises relatedPremises
+         WHERE relatedPremises.ktziId = ${ktziIdExpression}
+         ORDER BY relatedPremises.id LIMIT 1)
+      )
+    `;
+    const subdivisionCase = (subdivisionType) => `
       CASE
-        WHEN lower(COALESCE(subdivisionType, '')) LIKE '%територ%'
+        WHEN lower(COALESCE(${subdivisionType}, '')) LIKE '%територ%'
           THEN 'territorial'
         ELSE 'apparatus'
       END
     `;
 
+    const ktziSubdivisionType = `
+      COALESCE(
+        NULLIF(TRIM(k.subdivisionType), ''),
+        ${linkedSubdivisionType('k.id')}
+      )
+    `;
     const [ktziDocuments, classAComplianceDocuments] = await Promise.all([
       queryAll(
-        `SELECT documentType, ${subdivisionCase} AS subdivision,
-                documentNumber, documentDate
-         FROM ktzi
-         JOIN ktzi_documents ON ktzi_documents.ktziId = ktzi.id
-         WHERE documentType IN (
+        `SELECT k.id AS ktziId, documents.id AS sourceId,
+                documents.documentType, ${subdivisionCase(ktziSubdivisionType)} AS subdivision,
+                documents.documentNumber, documents.documentDate,
+                documents.documentData
+         FROM ktzi k
+         JOIN ktzi_documents documents ON documents.ktziId = k.id
+         WHERE documents.documentType IN (
            'technicalTask',
            'atestation',
            'Акт завершення робіт',
@@ -1928,20 +1952,44 @@ router.get('/documents-report', async (req, res) => {
            'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
            'Атестат відповідності'
          )
-           AND documentDate BETWEEN ? AND ?
+           AND (
+             documents.documentType = 'atestation'
+             OR documents.documentDate BETWEEN ? AND ?
+           )
          `,
         [dateFrom, dateTo],
       ),
       queryAll(
-        `SELECT docs.documentType, ${subdivisionCase} AS subdivision,
+        `SELECT cas.ktziId, cas.id AS objectId, docs.id AS sourceId,
+                docs.documentType,
+                ${subdivisionCase(
+                  `COALESCE(
+                    NULLIF(TRIM(cas.subdivisionType), ''),
+                    ${linkedSubdivisionType('cas.ktziId')},
+                    NULLIF(TRIM(ktzi.subdivisionType), '')
+                  )`,
+                )} AS subdivision,
                 docs.dsszzіNumber AS documentNumber,
                 docs.dsszzіDate AS documentDate
          FROM class_a_systems_compliance_documents docs
          JOIN class_a_systems cas ON docs.systemId = cas.id
-         WHERE docs.dsszzіDate BETWEEN ? AND ?`,
+         LEFT JOIN ktzi ON ktzi.id = cas.ktziId
+         WHERE docs.dsszzіDate BETWEEN ? AND ?
+         `,
         [dateFrom, dateTo],
       ),
     ]);
+
+    const dateIsInRange = (date) =>
+      typeof date === 'string' && date >= dateFrom && date <= dateTo;
+    const reportKtziDocuments = ktziDocuments.flatMap((document) => {
+      if (document.documentType !== 'atestation') return [document];
+      const documentData = JSON.parse(document.documentData || '{}');
+      const registrationDate = documentData.attestationDsszziDate;
+      return dateIsInRange(registrationDate)
+        ? [{ ...document, documentDate: registrationDate }]
+        : [];
+    });
 
     const reportTypeByStoredType = {
       'Акт завершення робіт': 'completionAct',
@@ -1966,9 +2014,13 @@ router.get('/documents-report', async (req, res) => {
               : reportTypeByStoredType[row.documentType];
         if (!documentType) return;
 
+        const documentScope =
+          row.ktziId !== null && row.ktziId !== undefined
+            ? `ktzi:${row.ktziId}`
+            : `object:${row.objectId || row.sourceId}`;
         const documentKey = [
           documentType,
-          row.subdivision,
+          documentScope,
           row.documentNumber || '',
           row.documentDate || '',
         ].join('|');
@@ -1976,14 +2028,11 @@ router.get('/documents-report', async (req, res) => {
         documentKeys.add(documentKey);
 
         const countKey = `${documentType}:${row.subdivision}`;
-        counts.set(
-          countKey,
-          (counts.get(countKey) || 0) + 1,
-        );
+        counts.set(countKey, (counts.get(countKey) || 0) + 1);
       });
     };
 
-    addCounts(ktziDocuments);
+    addCounts(reportKtziDocuments);
     addCounts(classAComplianceDocuments);
 
     const getCount = (documentType, subdivision) =>
