@@ -43,12 +43,6 @@ const findExistingProtectionMeans = (
       JOIN ktzi k ON pm.ktziId = k.id
       WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
       UNION ALL
-      SELECT 'IKS' AS source, 'IKS' AS objectType, pm.iksId AS objectId,
-        i.systemName AS objectName, i.subdivisionName, NULL AS premisesNumber, NULL AS address
-      FROM iks_protection_means pm
-      JOIN iks i ON pm.iksId = i.id
-      WHERE pm.categoryId = ? AND COALESCE(pm.serialNumber, '') COLLATE NOCASE = ? COLLATE NOCASE
-      UNION ALL
       SELECT 'Inventory' AS source, NULL AS objectType, NULL AS objectId,
         'На складі' AS objectName, NULL AS subdivisionName,
         NULL AS premisesNumber, NULL AS address
@@ -58,8 +52,6 @@ const findExistingProtectionMeans = (
     `;
 
     const params = [
-      categoryId,
-      trimmedSerial,
       categoryId,
       trimmedSerial,
       categoryId,
@@ -103,12 +95,10 @@ const getProtectionMeanSource = (tableName) => {
   if (lower === 'class_a_systems') return 'AS';
   if (lower === 'service_premises') return 'SP';
   if (lower === 'krt') return 'KRT';
-  if (lower === 'iks') return 'IKS';
   // Fallback for nested table names
   if (lower.includes('class_a_systems')) return 'AS';
   if (lower.includes('service_premises')) return 'SP';
   if (lower.includes('krt')) return 'KRT';
-  if (lower.includes('iks')) return 'IKS';
   return null;
 };
 

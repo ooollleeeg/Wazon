@@ -651,23 +651,11 @@ function initializeDatabase() {
       )
     `);
 
-    db.run(`
-      CREATE TABLE IF NOT EXISTS iks_protection_means (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        iksId INTEGER NOT NULL,
-        categoryId INTEGER,
-        name TEXT,
-        serialNumber TEXT,
-        invertarNumber TEXT,
-        releaseYear INTEGER,
-        manufacturerExploitationTerm TEXT,
-        certificateInfo TEXT,
-        toolType TEXT,
-        notes TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (iksId) REFERENCES iks(id) ON DELETE CASCADE
-      )
-    `);
+    db.run('DROP TABLE IF EXISTS iks_protection_means', (err) => {
+      if (err) {
+        console.error('Не вдалося видалити застарілі локальні засоби ІКС:', err.message);
+      }
+    });
 
     db.run(
       `

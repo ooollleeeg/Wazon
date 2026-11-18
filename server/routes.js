@@ -704,46 +704,6 @@ router.delete('/objects/:type/:id', validateObjectType, async (req, res) => {
       return res.status(404).json({ error: "Об'єкт не знайдено" });
     }
 
-    const objectType = {
-      class_a_systems: 'AS',
-      krt: 'KRT',
-      service_premises: 'SP',
-      iks: 'IKS',
-    }[req.objectConfig.table];
-    const { protectionMeansAction } = req.body || {};
-
-    if (
-      objectType === 'IKS' &&
-      ['return', 'remove'].includes(protectionMeansAction)
-    ) {
-      if (protectionMeansAction === 'return') {
-        const { returnProtectionMeanToInventory } = await import(
-          './utils/protectionMeansAggregator.js'
-        );
-        const localMeans = await queryAll(
-          'SELECT id FROM iks_protection_means WHERE iksId = ?',
-          [req.params.id],
-        );
-        for (const mean of localMeans) {
-          await new Promise((resolve, reject) => {
-            returnProtectionMeanToInventory(
-              mean.id,
-              { objectType, objectId: req.params.id },
-              (error, result) => (error ? reject(error) : resolve(result)),
-            );
-          });
-        }
-      } else {
-        await new Promise((resolve, reject) => {
-          db.run(
-            'DELETE FROM iks_protection_means WHERE iksId = ?',
-            [req.params.id],
-            (error) => (error ? reject(error) : resolve()),
-          );
-        });
-      }
-    }
-
     await deleteObject(req.objectConfig.table, req.params.id);
 
     if (isKtziTable(req.objectConfig.table)) {
@@ -911,22 +871,6 @@ router.get('/ktzi/documents', async (req, res) => {
 });
 
 /**
- * DEBUG: GET /api/debug/iks-protection - Check raw IKS protection means data
- */
-router.get('/debug/iks-protection', (req, res) => {
-  db.all(
-    `SELECT pm.*, i.systemName FROM iks_protection_means pm JOIN iks i ON pm.iksId = i.id`,
-    (err, rows) => {
-      if (err) {
-        res.json({ error: err.message });
-      } else {
-        res.json({ count: rows?.length || 0, rows: rows || [] });
-      }
-    },
-  );
-});
-
-/**
  * GET /api/protection-means/all - Агреговане отримання всіх засобів ТЗІ
  * Фільтри: ?category=...&status=...&departmentType=...&search=...
  */
@@ -1063,10 +1007,9 @@ router.post('/protection-means/check-duplicate', async (req, res) => {
 });
 
 /**
- * POST /api/protection-means/install - Встановити засіб ТЗІ з складу на об'єкт
- * Очікує: { meanId: string, objectId: string, objectType: 'AS'|'SP'|'KRT'|'IKS', category?: string }
+ * POST /api/protection-means/install - Встановити засіб ТЗІ зі складу
+ * Звичайні засоби встановлюються на КТЗІ, КЗЗ від НСД — на АС або ІКС.
  * Для КЗЗ від НСД: зберігає в полі kzzName, дозволено тільки AS та IKS
- * Для інших засобів: зберігає в таблиці *_protection_means
  */
 router.post('/protection-means/install', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
@@ -1094,11 +1037,10 @@ router.post('/protection-means/install', (req, res) => {
 router.delete('/protection-means/:id/assignments', (req, res) => {
   import('./utils/protectionMeansAggregator.js').then(
     ({ returnProtectionMeanToInventory }) => {
-      const { objectType, objectId, name, serialNumber, invertarNumber } =
-        req.body || {};
+      const { objectType, objectId } = req.body || {};
       returnProtectionMeanToInventory(
         req.params.id,
-        { objectType, objectId, name, serialNumber, invertarNumber },
+        { objectType, objectId },
         (error, result) => {
         if (error) {
           console.error('❌ Error returning protection mean to inventory:', error);

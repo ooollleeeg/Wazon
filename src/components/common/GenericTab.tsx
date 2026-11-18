@@ -8,8 +8,6 @@ type ProtectionMeanDeleteOption = {
   name?: string;
   serialNumber?: string;
   invertarNumber?: string;
-  isSharedKtzi?: number;
-  assignmentCount?: number;
 };
 
 export interface TabConfig {
@@ -119,26 +117,13 @@ export default function GenericTab({
     }
   };
 
-  const performDelete = async (
-    id: number,
-    protectionMeansAction?: 'return' | 'remove',
-    removeSharedAssignments = false,
-  ) => {
+  const performDelete = async (id: number) => {
     try {
       setIsLoading(true);
       setError('');
 
       const response = await fetch(`${config.apiEndpoint}/${id}`, {
         method: 'DELETE',
-        ...(protectionMeansAction
-          ? {
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                protectionMeansAction,
-                removeSharedAssignments,
-              }),
-            }
-          : {}),
       });
 
       if (!response.ok) {
@@ -164,12 +149,9 @@ export default function GenericTab({
       return;
     }
 
-    const means = [
-      ...(Array.isArray(item.protectionMeans) ? item.protectionMeans : []),
-      ...(Array.isArray(item.sharedProtectionMeans)
-        ? item.sharedProtectionMeans
-        : []),
-    ];
+    const means = Array.isArray(item.ktziInfo?.protectionMeans)
+      ? item.ktziInfo.protectionMeans
+      : [];
     const uniqueMeans = new Map<string, ProtectionMeanDeleteOption>();
     means.forEach((mean) => {
       const key = [
@@ -179,9 +161,7 @@ export default function GenericTab({
         mean.name || '',
       ].join('|');
       const existing = uniqueMeans.get(key);
-      if (!existing || mean.isSharedKtzi) {
-        uniqueMeans.set(key, mean);
-      }
+      if (!existing) uniqueMeans.set(key, mean);
     });
 
     if (uniqueMeans.size) {
@@ -280,13 +260,7 @@ export default function GenericTab({
           means={pendingDelete.means}
           isLoading={isLoading}
           onCancel={() => setPendingDelete(null)}
-          onConfirm={(action, removeSharedAssignments) =>
-            void performDelete(
-              pendingDelete.id,
-              action,
-              removeSharedAssignments,
-            )
-          }
+          onConfirm={() => void performDelete(pendingDelete.id)}
         />
       )}
 

@@ -128,7 +128,7 @@ const ProtectionMeansTab = () => {
 
   const handleAssignmentChange = () => {
     fetchData();
-    setSuccessMessage('Прив’язку засобу ТЗІ успішно видалено');
+    setSuccessMessage('Засіб ТЗІ повернуто на склад');
     setShowSuccessModal(true);
   };
 
@@ -233,7 +233,6 @@ const ProtectionMeansTab = () => {
         meanId: mean.id,
         objectId,
         objectType,
-        category: mean.category, // Передаємо категорію для правильного обрання поля
       };
 
       // Відправляємо запит на встановлення

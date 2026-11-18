@@ -22,8 +22,11 @@ const {
   saveKtziDocumentData,
   updateKtziMainInfo,
 } = await import('./ktzi.js');
-const { installProtectionMean, returnProtectionMeanToInventory } =
-  await import('./protectionMeansAggregator.js');
+const {
+  aggregateProtectionMeans,
+  installProtectionMean,
+  returnProtectionMeanToInventory,
+} = await import('./protectionMeansAggregator.js');
 const { createObjectWithNested } = await import('./dbHelpers.js');
 const { default: router } = await import('../routes.js');
 
@@ -51,12 +54,24 @@ const install = (data) =>
     });
   });
 
-const returnToInventory = (meanId) =>
+const aggregate = (filters) =>
   new Promise((resolve, reject) => {
-    returnProtectionMeanToInventory(meanId, (error, result) => {
+    aggregateProtectionMeans(filters, (error, result) => {
       if (error) reject(error);
       else resolve(result);
     });
+  });
+
+const returnToInventory = (meanId, assignment) =>
+  new Promise((resolve, reject) => {
+    returnProtectionMeanToInventory(
+      meanId,
+      assignment || {},
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      },
+    );
   });
 
 const createRequiredTables = async () => {
@@ -702,6 +717,36 @@ describe('KTZI main info', () => {
 });
 
 describe('KTZI protection means', () => {
+  it('normalizes subdivision labels for the department filter', async () => {
+    const ktzi = await ensureKtzi({
+      address: 'Фільтр підрозділу 1',
+      premisesNumber: '400',
+      subdivisionName: 'Відділ фільтра',
+    });
+    await seedObject('class_a_systems', {
+      systemName: 'АС для типу підрозділу',
+      subdivisionType: 'підрозділ апарату',
+      ktziId: ktzi.id,
+    });
+    await run(
+      `INSERT INTO protection_means
+       (ktziId, categoryId, toolType, name, serialNumber)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        ktzi.id,
+        2,
+        'Фільтр електроживлення',
+        'Фільтр для типу підрозділу',
+        'SN-DEPT-FILTER',
+      ],
+    );
+
+    const result = await aggregate({ departmentType: 'apparatus' });
+    assert.ok(
+      result.items.some((mean) => mean.serialNumber === 'SN-DEPT-FILTER'),
+    );
+  });
+
   it('installs an inventory mean on a KTZI and returns it to inventory', async () => {
     const ktzi = await ensureKtzi({
       address: 'Засобова 1',
@@ -733,7 +778,17 @@ describe('KTZI protection means', () => {
       null,
     );
 
-    await returnToInventory(installed[0].id);
+    await assert.rejects(
+      returnToInventory(installed[0].id, {
+        objectType: 'KTZI',
+        objectId: ktzi.id + 1,
+      }),
+      (error) => error.status === 400,
+    );
+    await returnToInventory(installed[0].id, {
+      objectType: 'KTZI',
+      objectId: ktzi.id,
+    });
 
     assert.deepEqual(await getKtziProtectionMeans(ktzi.id), []);
     const inventoryMean = await get(
@@ -752,6 +807,7 @@ describe('KTZI protection means', () => {
     const objectId = await seedObject('class_a_systems', {
       systemName: 'АС без прямих засобів',
     });
+
     const inventoryId = await seedObject('protection_means_inventory', {
       categoryId: 2,
       category: 'Фільтр електроживлення',
@@ -765,6 +821,34 @@ describe('KTZI protection means', () => {
         objectId,
         objectType: 'AS',
         category: 'Фільтр електроживлення',
+      }),
+      (error) => error.status === 400,
+    );
+    assert.ok(
+      await get('SELECT id FROM protection_means_inventory WHERE id = ?', [
+        inventoryId,
+      ]),
+    );
+  });
+
+  it('rejects local IKS installation using the inventory category, not client input', async () => {
+    const iksId = await seedObject('iks', {
+      systemClass: 'ІКС класу 1',
+      systemName: 'ІКС без локальних засобів',
+    });
+    const inventoryId = await seedObject('protection_means_inventory', {
+      categoryId: 2,
+      category: 'Фільтр електроживлення',
+      name: 'Фільтр для ІКС',
+      serialNumber: 'SN-IKS-REJECT',
+    });
+
+    await assert.rejects(
+      install({
+        meanId: inventoryId,
+        objectId: iksId,
+        objectType: 'IKS',
+        category: 'КЗЗ від НСД',
       }),
       (error) => error.status === 400,
     );

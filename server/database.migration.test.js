@@ -92,6 +92,20 @@ await legacyRun(`
     objectId INTEGER
   )
 `);
+await legacyRun(`
+  CREATE TABLE iks_protection_means (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    iksId INTEGER NOT NULL,
+    categoryId INTEGER,
+    name TEXT,
+    serialNumber TEXT
+  )
+`);
+await legacyRun(
+  `INSERT INTO iks_protection_means (iksId, categoryId, name, serialNumber)
+   VALUES (?, ?, ?, ?)`,
+  [1, 2, 'Legacy local mean', 'LEGACY-IKS-SN'],
+);
 await legacyRun(
   `INSERT INTO ktzi (id, ktziKey, address, premisesNumber, subdivisionName)
    VALUES (?, ?, ?, ?, ?)`,
@@ -189,6 +203,7 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
   assert.equal(await tableExists('ktzi_document_legacy_imports'), true);
   assert.equal(await tableExists('class_a_systems_protection_means'), false);
   assert.equal(await tableExists('protection_mean_assignments'), false);
+  assert.equal(await tableExists('iks_protection_means'), false);
   const sharedMean = await get(
     `SELECT id, ktziId, name, serialNumber, notes
      FROM protection_means WHERE id = ?`,

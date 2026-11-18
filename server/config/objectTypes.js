@@ -472,18 +472,6 @@ export const objectTypes = {
           'nextAuthorizationDeadline',
         ],
       },
-      protectionMeans: {
-        table: 'iks_protection_means',
-        fields: [
-          'toolType',
-          'name',
-          'serialNumber',
-          'invertarNumber',
-          'releaseYear',
-          'manufacturerExploitationTerm',
-          'certificateInfo',
-        ],
-      },
       orders: {
         table: 'iks_orders',
         fields: ['orderType', 'number', 'date', 'publisher'],

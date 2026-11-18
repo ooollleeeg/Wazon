@@ -134,29 +134,34 @@ const ProtectionMeansTable = ({
               <td className='object-cell'>
                 {mean.objectName ? (
                   <div>
-                    {getKtziLabel(mean) && (
-                      <div className='ktzi-name'>{getKtziLabel(mean)}</div>
-                    )}
-                    {(mean.assignedObjects || [
-                      {
-                        objectName: mean.objectName,
-                        objectAddress: mean.objectAddress,
-                        objectType: mean.objectType,
-                      },
-                    ]).map((object, objectIndex) => (
-                      <div
-                        key={`${object.objectId || object.objectName}-${objectIndex}`}
-                      >
-                        {object.objectType !== 'SP' && (
-                          <div className='object-name'>{object.objectName}</div>
-                        )}
-                        {/* {object.objectAddress && (
-                          <div className='object-address'>
-                            {object.objectAddress}
-                          </div>
-                        )} */}
+                    {mean.objectType === 'KTZI' ? (
+                      <div className='ktzi-name'>
+                        {getKtziLabel(mean) || mean.objectName}
                       </div>
-                    ))}
+                    ) : (
+                      <>
+                        {getKtziLabel(mean) && (
+                          <div className='ktzi-name'>{getKtziLabel(mean)}</div>
+                        )}
+                        {(mean.assignedObjects || [
+                          {
+                            objectName: mean.objectName,
+                            objectAddress: mean.objectAddress,
+                            objectType: mean.objectType,
+                          },
+                        ]).map((object, objectIndex) => (
+                          <div
+                            key={`${object.objectId || object.objectName}-${objectIndex}`}
+                          >
+                            {object.objectType !== 'SP' && (
+                              <div className='object-name'>
+                                {object.objectName}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
                 ) : (
                   <span className='na'>На складі</span>

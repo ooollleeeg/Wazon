@@ -229,7 +229,11 @@ const ProtectionMeansModal = ({
           {mean.status === 'installed' &&
             (mean.objectName || (mean.assignedObjects?.length ?? 0) > 0) && (
               <section className='modal-section'>
-                <h3>🏢 Встановлено на об'єкті</h3>
+                <h3>
+                  {mean.objectType === 'KTZI'
+                    ? '🏢 Встановлено на КТЗІ'
+                    : "🏢 Встановлено на об'єкті"}
+                </h3>
                 <div className='info-grid'>
                   {getKtziLabel(mean) && (
                     <div className='info-item full-width'>
@@ -249,16 +253,18 @@ const ProtectionMeansModal = ({
                         .join(', ') || '—'}
                     </strong>
                   </div>
-                  <div className='info-item'>
-                    <label>Назва об'єкту:</label>
-                    <strong>
-                      {uniqueStrings(
-                        assignedObjects
-                          .filter((object) => object.objectType !== 'SP')
-                          .map((object) => object.objectName),
-                      ).join(', ') || '—'}
-                    </strong>
-                  </div>
+                  {mean.objectType !== 'KTZI' && (
+                    <div className='info-item'>
+                      <label>Назва об'єкту:</label>
+                      <strong>
+                        {uniqueStrings(
+                          assignedObjects
+                            .filter((object) => object.objectType !== 'SP')
+                            .map((object) => object.objectName),
+                        ).join(', ') || '—'}
+                      </strong>
+                    </div>
+                  )}
                   <div className='info-item'>
                     <label>Номер приміщення:</label>
                     <strong>
@@ -301,17 +307,22 @@ const ProtectionMeansModal = ({
                         >
                           <div>
                             <strong>
-                              {object.objectType === 'SP'
-                                ? `Приміщення ${object.premisesNumber || '—'}`
-                                : object.objectName || 'Без назви'}{' '}
-                              ({getObjectTypeLabel(object)})
+                              {object.objectType === 'KTZI'
+                                ? 'Засіб прив’язаний на рівні КТЗІ'
+                                : object.objectType === 'SP'
+                                  ? `Приміщення ${object.premisesNumber || '—'}`
+                                  : object.objectName || 'Без назви'}{' '}
+                              {object.objectType !== 'KTZI' &&
+                                `(${getObjectTypeLabel(object)})`}
                             </strong>
-                            {object.subdivisionName && (
-                              <span>, {object.subdivisionName}</span>
-                            )}
-                            {object.objectAddress && (
-                              <span>, {object.objectAddress}</span>
-                            )}
+                            {object.objectType !== 'KTZI' &&
+                              object.subdivisionName && (
+                                <span>, {object.subdivisionName}</span>
+                              )}
+                            {object.objectType !== 'KTZI' &&
+                              object.objectAddress && (
+                                <span>, {object.objectAddress}</span>
+                              )}
                           </div>
                           {object.objectId && object.objectType !== 'KTZI' && (
                             <button
@@ -326,7 +337,7 @@ const ProtectionMeansModal = ({
                                 : object.objectName || 'об’єкта'}
                             </button>
                           )}
-                          {mean.ktziId && object.objectType !== 'KTZI' && (
+                          {mean.ktziId && object.objectType === 'KTZI' && (
                             <button
                               className='btn-remove-assignment'
                               onClick={() => handleRemoveAssignment(object)}
@@ -338,7 +349,7 @@ const ProtectionMeansModal = ({
                               {removingAssignment ===
                               `${object.objectType}-${object.objectId}`
                                 ? 'Повернення...'
-                                : 'Відв’язати засіб'}
+                                : 'Повернути на склад'}
                             </button>
                           )}
                         </div>

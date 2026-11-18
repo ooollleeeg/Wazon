@@ -3,19 +3,41 @@ import { checkProtectionMeanDuplicate } from './dbHelpers.js';
 
 /**
  * Агреговане отримання всіх засобів ТЗІ з усіх джерел
- * Джерела: АС, СП, КРТ, ІКС, та таблиця на складі
+ * Звичайні засоби беруться з КТЗІ та складу, КЗЗ від НСД — з АС/ІКС.
  */
 export function aggregateProtectionMeans(filters = {}, callback) {
   const { category, status, departmentType, search } = filters;
   const allMeans = [];
   let completedQueries = 0;
-  const totalQueries = 4; // ІКС + КЗЗ від НСД + КТЗІ + склад
+  let queryError = null;
+  const totalQueries = 3; // КЗЗ від НСД + КТЗІ + склад
+
+  const normalizeDepartmentType = (value) => {
+    const normalized = String(value || '')
+      .trim()
+      .toLocaleLowerCase('uk-UA');
+    if (normalized === 'apparatus' || normalized.includes('апарат')) {
+      return 'apparatus';
+    }
+    if (normalized === 'territorial' || normalized.includes('територіал')) {
+      return 'territorial';
+    }
+    if (normalized === 'in_warehouse' || normalized.includes('склад')) {
+      return 'in_warehouse';
+    }
+    return value || '';
+  };
 
   // Хелпер функція для застосування фільтрів
   const applyFilters = (item) => {
     if (category && item.category !== category) return false;
     if (status && item.status !== status) return false;
-    if (departmentType && item.departmentType !== departmentType) return false;
+    if (
+      departmentType &&
+      normalizeDepartmentType(item.departmentType) !== departmentType
+    ) {
+      return false;
+    }
     if (search) {
       const searchLower = search.toLowerCase();
       return (
@@ -35,11 +57,22 @@ export function aggregateProtectionMeans(filters = {}, callback) {
   };
 
   // Функція для обробки завершення всіх запитів
-  const checkCompletion = () => {
+  const checkCompletion = (error) => {
+    if (error && !queryError) queryError = error;
     completedQueries++;
     if (completedQueries === totalQueries) {
+      if (queryError) {
+        callback(queryError);
+        return;
+      }
+
       // Сортування та фільтрація
-      const filtered = allMeans.filter(applyFilters);
+      const filtered = allMeans
+        .map((item) => ({
+          ...item,
+          departmentType: normalizeDepartmentType(item.departmentType),
+        }))
+        .filter(applyFilters);
       const installedByIdentity = new Map();
       const uniqueMeans = [];
 
@@ -115,45 +148,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
     }
   };
 
-  // 4️⃣ ІКС - protectionMeans
-  db.all(
-    `
-    SELECT 
-      i.id as objectId,
-      i.systemName as objectName,
-      null as objectAddress,
-      i.subdivisionName,
-      null as premisesNumber,
-      i.subdivisionType as departmentType,
-      'IKS' as objectType,
-      pm.id as id,
-      COALESCE(pm.toolType, 'Засоби захисту') as category,
-      pm.name,
-      pm.serialNumber,
-      pm.invertarNumber,
-      pm.releaseYear,
-      pm.manufacturerExploitationTerm,
-      pm.certificateInfo,
-      pm.notes,
-      'installed' as status,
-      pm.createdAt
-    FROM iks_protection_means pm
-    JOIN iks i ON pm.iksId = i.id
-    `,
-    (err, rows) => {
-      if (!err && rows) {
-        allMeans.push(
-          ...rows.map((row) => ({
-            ...row,
-            category: row.category || 'Інші вироби',
-          })),
-        );
-      }
-      checkCompletion();
-    },
-  );
-
-  // 5️⃣ КЗЗ від НСД (з АС та ІКС)
+  // КЗЗ від НСД (з АС та ІКС)
   db.all(
     `
     SELECT 
@@ -169,9 +164,9 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       a.kzzName as name,
       a.kzzSerial as serialNumber,
       NULL as invertarNumber,
-      NULL as releaseYear,
+      a.kzzExpertOpinionDate as releaseYear,
       a.kzzManufacturerExploitationTerm as manufacturerExploitationTerm,
-      NULL as certificateInfo,
+      a.kzzExpertOpinionNumber as certificateInfo,
       a.kzzNotes as notes,
       'installed' as status,
       a.createdAt,
@@ -194,9 +189,9 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       i.kzzName as name,
       i.kzzSerial as serialNumber,
       NULL as invertarNumber,
-      NULL as releaseYear,
+      i.kzzExpertOpinionDate as releaseYear,
       i.kzzManufacturerExploitationTerm as manufacturerExploitationTerm,
-      NULL as certificateInfo,
+      i.kzzExpertOpinionNumber as certificateInfo,
       i.kzzNotes as notes,
       'installed' as status,
       i.createdAt,
@@ -208,7 +203,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       if (!err && rows) {
         allMeans.push(...rows);
       }
-      checkCompletion();
+      checkCompletion(err);
     },
   );
 
@@ -221,7 +216,16 @@ export function aggregateProtectionMeans(filters = {}, callback) {
         COALESCE(k.premisesNumber, '—') || ' — ' ||
         COALESCE(k.subdivisionName, 'Без підрозділу')) as objectName,
       k.address as objectAddress,
-      'ktzi' as departmentType,
+      COALESCE(
+        NULLIF(k.subdivisionType, ''),
+        (SELECT NULLIF(a.subdivisionType, '')
+         FROM class_a_systems a WHERE a.ktziId = k.id LIMIT 1),
+        (SELECT NULLIF(r.subdivisionType, '')
+         FROM krt r WHERE r.ktziId = k.id LIMIT 1),
+        (SELECT NULLIF(s.subdivisionType, '')
+         FROM service_premises s WHERE s.ktziId = k.id LIMIT 1),
+        ''
+      ) as departmentType,
       pm.ktziId,
       k.address as ktziAddress,
       k.premisesNumber as ktziPremisesNumber,
@@ -250,7 +254,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
           })),
         );
       }
-      checkCompletion();
+      checkCompletion(err);
     },
   );
 
@@ -281,7 +285,7 @@ export function aggregateProtectionMeans(filters = {}, callback) {
       if (!err && rows) {
         allMeans.push(...rows);
       }
-      checkCompletion();
+      checkCompletion(err);
     },
   );
 }
@@ -464,37 +468,21 @@ export function deleteInventoryItem(id, callback) {
   );
 }
 
-/**
- * Повернути встановлений засіб ТЗІ на склад і видалити всі його прив’язки.
- */
-function returnSourceMeanToInventory(
-  sourceTable,
-  foreignKey,
-  sourceId,
-  objectId,
-  identity,
+export function returnProtectionMeanToInventory(
+  protectionMeanId,
+  assignment,
   callback,
 ) {
+  if (typeof assignment === 'function') {
+    callback = assignment;
+    assignment = null;
+  }
+
   db.get(
-    `SELECT id, categoryId, toolType, name, serialNumber, invertarNumber,
+    `SELECT ktziId, categoryId, toolType, name, serialNumber, invertarNumber,
       releaseYear, manufacturerExploitationTerm, certificateInfo, notes
-     FROM ${sourceTable}
-     WHERE ${foreignKey} = ?
-       AND (
-         id = ?
-         OR (
-           name = ?
-           AND COALESCE(serialNumber, '') = COALESCE(?, '')
-           AND COALESCE(invertarNumber, '') = COALESCE(?, '')
-         )
-       )`,
-    [
-      objectId,
-      sourceId,
-      identity?.name,
-      identity?.serialNumber,
-      identity?.invertarNumber,
-    ],
+     FROM protection_means WHERE id = ?`,
+    [protectionMeanId],
     (selectError, mean) => {
       if (selectError) return callback(selectError);
       if (!mean) {
@@ -503,79 +491,13 @@ function returnSourceMeanToInventory(
         return callback(error);
       }
 
-      db.run(
-        `INSERT INTO protection_means_inventory
-          (categoryId, category, name, serialNumber, invertarNumber,
-           releaseYear, manufacturerExploitationTerm, certificateInfo,
-           status, inStockDate, notes, createdAt, updatedAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'in_stock', date('now'),
-           ?, datetime('now'), datetime('now'))`,
-        [
-          mean.categoryId,
-          mean.toolType || 'Інші вироби',
-          mean.name,
-          mean.serialNumber,
-          mean.invertarNumber,
-          mean.releaseYear,
-          mean.manufacturerExploitationTerm,
-          mean.certificateInfo,
-          mean.notes
-            ? `${mean.notes}\nПовернуто зі встановлення на склад`
-            : 'Повернуто зі встановлення на склад',
-        ],
-        (insertError) => {
-          if (insertError) return callback(insertError);
-
-          db.run(
-            `DELETE FROM ${sourceTable} WHERE id = ? AND ${foreignKey} = ?`,
-            [mean.id, objectId],
-            (deleteError) => {
-              if (deleteError) return callback(deleteError);
-              callback(null, {
-                success: true,
-                protectionMeanId: sourceId,
-                message: 'Засіб ТЗІ повернуто на склад',
-              });
-            },
-          );
-        },
-      );
-    },
-  );
-}
-
-export function returnProtectionMeanToInventory(
-  protectionMeanId,
-  assignment,
-  callback,
-) {
-  if (typeof assignment === 'function') {
-    callback = assignment;
-    assignment = {};
-  }
-
-  db.get(
-    `SELECT categoryId, toolType, name, serialNumber, invertarNumber,
-      releaseYear, manufacturerExploitationTerm, certificateInfo, notes
-     FROM protection_means WHERE id = ?`,
-    [protectionMeanId],
-    (selectError, mean) => {
-      if (selectError) return callback(selectError);
-      if (!mean) {
-        if (assignment?.objectType !== 'IKS' || !assignment?.objectId) {
-          const error = new Error('Засіб ТЗІ не знайдений');
-          error.status = 404;
-          return callback(error);
-        }
-
-        return returnSourceMeanToInventory(
-          'iks_protection_means',
-          'iksId',
-          protectionMeanId,
-          assignment.objectId,
-          assignment,
-          callback,
-        );
+      if (
+        assignment?.objectType !== 'KTZI' ||
+        String(assignment.objectId) !== String(mean.ktziId)
+      ) {
+        const error = new Error('Вкажіть КТЗІ, до якого прив’язаний засіб');
+        error.status = 400;
+        return callback(error);
       }
 
       db.run(
@@ -641,10 +563,10 @@ function getCategoryIdFromCategory(categoryName) {
 }
 
 /**
- * Встановити засіб ТЗІ з складу на КТЗІ (або КЗЗ від НСД / засіб ІКС на об'єкт)
+ * Встановити звичайний засіб ТЗІ на КТЗІ або КЗЗ від НСД на АС/ІКС
  */
 export function installProtectionMean(data, callback) {
-  const { meanId, objectId, objectType, category } = data;
+  const { meanId, objectId, objectType } = data;
 
   // Перевірити вхідні дані
   if (!meanId || !objectId || !objectType) {
@@ -668,11 +590,23 @@ export function installProtectionMean(data, callback) {
         return callback(error);
       }
 
-      // Визначити категорію засобу (використовуємо з параметру або з запису)
-      const meanCategory = category || mean.category;
+      // The inventory record is authoritative; never let the client change a mean's type.
+      const meanCategory =
+        Number(mean.categoryId) === 8 ||
+        (mean.categoryId == null && mean.category === 'КЗЗ від НСД')
+          ? 'КЗЗ від НСД'
+          : mean.category;
 
       // Спеціальна обробка для КЗЗ від НСД - перевіримо, чи вже встановлено
       if (meanCategory === 'КЗЗ від НСД') {
+        if (!['AS', 'IKS'].includes(objectType)) {
+          const error = new Error(
+            'КЗЗ від НСД може бути встановлена лише на AS або IKS',
+          );
+          error.status = 400;
+          return callback(error);
+        }
+
         let checkQuery;
         if (objectType === 'AS') {
           checkQuery = 'SELECT kzzName FROM class_a_systems WHERE id = ?';
@@ -688,6 +622,11 @@ export function installProtectionMean(data, callback) {
                   `Помилка при перевірці наявності КЗЗ: ${err.message}`,
                 ),
               );
+            }
+            if (!existingObj) {
+              const error = new Error("Об'єкт для встановлення КЗЗ не знайдено");
+              error.status = 404;
+              return callback(error);
             }
 
             // Якщо вже встановлено КЗЗ від НСД, не дозволяємо встановлення нового
@@ -712,6 +651,12 @@ export function installProtectionMean(data, callback) {
 
       if (meanCategory === 'КЗЗ від НСД') {
         proceedWithInstall();
+      } else if (objectType !== 'KTZI') {
+        const error = new Error(
+          'Звичайні засоби ТЗІ встановлюються лише на рівні КТЗІ',
+        );
+        error.status = 400;
+        callback(error);
       } else {
         checkProtectionMeanDuplicate(
           mean.categoryId,
@@ -813,26 +758,6 @@ export function installProtectionMean(data, callback) {
                 objectId,
               ];
               break;
-            case 'IKS': // ІКС
-              insertQuery = `
-                INSERT INTO iks_protection_means 
-                (iksId, categoryId, toolType, name, serialNumber, invertarNumber, releaseYear, manufacturerExploitationTerm, certificateInfo, notes, createdAt)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-              `;
-              insertParams = [
-                objectId,
-                mean.categoryId,
-                mean.category,
-                mean.name,
-                mean.serialNumber,
-                mean.invertarNumber,
-                mean.releaseYear,
-                mean.manufacturerExploitationTerm,
-                mean.certificateInfo,
-                mean.notes,
-              ];
-              break;
-
             default: {
               const error = new Error(
                 objectType === 'AS' || objectType === 'SP' || objectType === 'KRT'
@@ -845,40 +770,53 @@ export function installProtectionMean(data, callback) {
           }
         }
 
-        // 3. Вставити або оновити засіб у об'єкті
-        db.run(insertQuery, insertParams, function (err) {
-          if (err) {
-            return callback(
-              new Error(`Помилка при встановленні засобу: ${err.message}`),
-            );
-          }
+        db.run('BEGIN IMMEDIATE', (beginError) => {
+          if (beginError) return callback(beginError);
 
-          // 4. Видалити засіб зі складу (або позначити як встановлено)
-          // Видаляємо записи зі складу після встановлення
-          db.run(
-            'DELETE FROM protection_means_inventory WHERE id = ?',
-            [meanId],
-            (deleteErr) => {
-              if (deleteErr) {
-                console.warn(
-                  `⚠️ Засіб встановлено але не видалено зі складу: ${deleteErr.message}`,
-                );
+          const rollback = (error) => {
+            db.run('ROLLBACK', (rollbackError) => {
+              if (rollbackError) {
+                console.error('Failed to rollback protection mean install:', rollbackError);
               }
+              callback(error);
+            });
+          };
 
-              const finishInstall = () => {
-                callback(null, {
-                  success: true,
-                  meanId,
-                  objectId,
-                  objectType,
-                  mean,
-                  message: `Засіб "${mean.name}" успішно встановлено`,
+          db.run(insertQuery, insertParams, function (err) {
+            if (err) {
+              return rollback(
+                new Error(`Помилка при встановленні засобу: ${err.message}`),
+              );
+            }
+            if (this.changes !== 1) {
+              const error = new Error("Об'єкт для встановлення засобу не знайдено");
+              error.status = 404;
+              return rollback(error);
+            }
+
+            db.run(
+              'DELETE FROM protection_means_inventory WHERE id = ?',
+              [meanId],
+              function (deleteError) {
+                if (deleteError) return rollback(deleteError);
+                if (this.changes !== 1) {
+                  return rollback(new Error('Засіб більше не перебуває на складі'));
+                }
+
+                db.run('COMMIT', (commitError) => {
+                  if (commitError) return rollback(commitError);
+                  callback(null, {
+                    success: true,
+                    meanId,
+                    objectId,
+                    objectType,
+                    mean,
+                    message: `Засіб "${mean.name}" успішно встановлено`,
+                  });
                 });
-              };
-
-              finishInstall();
-            },
-          );
+              },
+            );
+          });
         });
       }
     },
