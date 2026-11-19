@@ -140,6 +140,17 @@ await new Promise((resolve, reject) =>
 );
 
 process.env.VAZON_DB_PATH = databasePath;
+const initializationErrors = [];
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+console.error = (...args) => {
+  initializationErrors.push(args.join(' '));
+  originalConsoleError(...args);
+};
+console.warn = (...args) => {
+  initializationErrors.push(args.join(' '));
+  originalConsoleWarn(...args);
+};
 const { db } = await import('./database.js');
 
 const get = (query, params = []) =>
@@ -164,6 +175,8 @@ before(async () => {
 
 after(async () => {
   await new Promise((resolve) => db.close(resolve));
+  console.error = originalConsoleError;
+  console.warn = originalConsoleWarn;
   await fs.rm(databaseDirectory, { recursive: true, force: true });
 });
 
@@ -216,4 +229,9 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
     serialNumber: 'LEGACY-SN',
     notes: 'Legacy notes',
   });
+});
+
+it('does not access the removed IKS protection means table during initialization', async () => {
+  await get("SELECT name FROM sqlite_master WHERE name = 'npu_research'");
+  assert.doesNotMatch(initializationErrors.join('\n'), /iks_protection_means/);
 });

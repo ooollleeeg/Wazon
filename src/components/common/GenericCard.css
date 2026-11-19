@@ -528,6 +528,43 @@
   transform: translateY(0);
 }
 
+.btn-suspension-toggle {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-suspension-toggle.pause {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-color: #dc2626;
+}
+
+.btn-suspension-toggle.pause:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-suspension-toggle.resume {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #059669;
+}
+
+.btn-suspension-toggle.resume:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: translateY(-2px);
+}
+
+.btn-suspension-toggle:active {
+  transform: translateY(0);
+}
+
 /* ============================================================================
    SUSPENDED STATE
    ============================================================================ */
@@ -679,7 +716,8 @@
     padding: 1rem;
   }
 
-  .btn-delete-record {
+  .btn-delete-record,
+  .btn-suspension-toggle {
     padding: 0.65rem 1.25rem;
     font-size: 0.9rem;
   }

@@ -51,6 +51,14 @@ export default function GenericTab({
     fetchItems();
   }, [config.apiEndpoint]);
 
+  const onDataChangedRef = useRef(onDataChanged);
+  onDataChangedRef.current = onDataChanged;
+
+  // Notify parent wrappers (filters/statistics) whenever items are reloaded
+  useEffect(() => {
+    onDataChangedRef.current?.();
+  }, [items]);
+
   const fetchItems = async () => {
     try {
       setIsLoading(true);

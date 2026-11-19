@@ -130,6 +130,13 @@ const removeSharedKtziObjectFields = (data, preserveCategorization = false) =>
     ),
   );
 
+const removeKtziResponseFields = (data) => {
+  const result = { ...data };
+  delete result.ktziInfo;
+  delete result.ktziDocuments;
+  return result;
+};
+
 // КТЗІ без об'єктів і засобів ТЗІ видаляється разом із документами
 const removeEmptyKtzi = (ktziId) =>
   new Promise((resolve, reject) => {
@@ -649,7 +656,7 @@ router.put('/objects/:type/:id', validateObjectType, async (req, res) => {
     const currentObject = loadedCurrentObject ? { ...loadedCurrentObject } : null;
     const requestData = isKtziTable(req.objectConfig.table)
       ? removeSharedKtziObjectFields(
-          req.body,
+          removeKtziResponseFields(req.body),
           req.body.informationCategory === 'IV' ||
             currentObject?.informationCategory === 'IV',
         )
@@ -728,7 +735,12 @@ router.patch('/objects/:type/:id', validateObjectType, async (req, res) => {
     );
     const objectData = await attachObjectToKtzi(
       req.objectConfig.table,
-      { ...currentObject, ...req.body },
+      {
+        ...currentObject,
+        ...(isKtziTable(req.objectConfig.table)
+          ? removeKtziResponseFields(req.body)
+          : req.body),
+      },
     );
     let result;
 

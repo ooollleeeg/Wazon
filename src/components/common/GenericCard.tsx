@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DeleteConfirmModal from '../modals/DeleteConfirmModal';
 import { highlightText } from '../../utils/searchUtils';
 import { getCategoryName } from '../../constants/protectionMeansCategories';
@@ -21,7 +21,11 @@ const ktziDocumentSections = [
     fields: [
       { name: 'categorizationType', label: 'Вид категоріювання' },
       { name: 'categorizationActNumber', label: 'Номер акту' },
-      { name: 'categorizationActDate', label: 'Дата реєстрації акту', date: true },
+      {
+        name: 'categorizationActDate',
+        label: 'Дата реєстрації акту',
+        date: true,
+      },
       { name: 'categorizationRank', label: 'Встановлена категорія' },
       { name: 'categorizationValidUntil', label: 'Термін дії', date: true },
       {
@@ -51,8 +55,16 @@ const ktziDocumentSections = [
       },
       { name: 'attestationValidUntil', label: 'Дійсний до', date: true },
       { name: 'atestationPerformer', label: 'Виконавець робіт з атестації' },
-      { name: 'attestationWorkStartDate', label: 'Дата початку робіт', date: true },
-      { name: 'attestationWorkEndDate', label: 'Дата закінчення робіт', date: true },
+      {
+        name: 'attestationWorkStartDate',
+        label: 'Дата початку робіт',
+        date: true,
+      },
+      {
+        name: 'attestationWorkEndDate',
+        label: 'Дата закінчення робіт',
+        date: true,
+      },
       {
         name: 'atestationPermissionPerformer',
         label: 'Реквізити дозволу на проведення робіт',
@@ -169,6 +181,8 @@ export default function GenericCard({
   onEdit,
   onDelete,
   onClose,
+  onRefreshData,
+  objectType,
   showCloseButton = true,
   shouldExpandAll = false,
 }: GenericCardProps) {
@@ -281,7 +295,35 @@ export default function GenericCard({
 
   const title = getFieldValue(config.title);
   const subtitle = config.subtitle ? getFieldValue(config.subtitle) : null;
-  const isSuspended = data?.isProcessingSuspended || false;
+  const [isSuspended, setIsSuspended] = useState<boolean>(
+    !!data?.isProcessingSuspended,
+  );
+
+  useEffect(() => {
+    setIsSuspended(!!data?.isProcessingSuspended);
+  }, [data?.isProcessingSuspended]);
+
+  const handleSuspensionChange = async (newState: boolean) => {
+    const previousState = isSuspended;
+    setIsSuspended(newState);
+    try {
+      const response = await fetch(`/api/objects/${objectType}/${data.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isProcessingSuspended: newState ? 1 : 0 }),
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (error) {
+      console.error('Помилка зміни стану призупинення:', error);
+      setIsSuspended(previousState);
+      alert('Не вдалося змінити стан обробки. Спробуйте ще раз.');
+    }
+  };
   const ktziInfo = data?.ktziInfo;
   const formatKtziValue = (value: any, isDate = false) => {
     if (value === null || value === undefined || value === '') return '—';
@@ -297,8 +339,8 @@ export default function GenericCard({
   const getKtziDocumentVersions = (documentType: string) =>
     ktziDocumentVersions[documentType] ||
     (ktziDocuments[documentType] ? [ktziDocuments[documentType]] : []);
-  const populatedKtziDocuments = ktziDocumentSections.filter((section) =>
-    getKtziDocumentVersions(section.key).length > 0,
+  const populatedKtziDocuments = ktziDocumentSections.filter(
+    (section) => getKtziDocumentVersions(section.key).length > 0,
   ).length;
 
   return (
@@ -377,9 +419,7 @@ export default function GenericCard({
           {ktziInfo && (
             <section className='card-section ktzi-object-details'>
               <div className='ktzi-object-details-header'>
-                <h4 className='section-title'>
-                  🛡️ КТЗІ та засоби захисту
-                </h4>
+                <h4 className='section-title'>🛡️ КТЗІ та засоби захисту</h4>
                 <div className='ktzi-object-details-actions'>
                   <button
                     type='button'
@@ -705,6 +745,17 @@ export default function GenericCard({
 
         {/* FOOTER */}
         <div className='card-footer'>
+          {objectType && (
+            <button
+              type='button'
+              className={`btn-suspension-toggle ${isSuspended ? 'resume' : 'pause'}`}
+              onClick={() => handleSuspensionChange(!isSuspended)}
+            >
+              {isSuspended
+                ? 'Відновити обробку ІзОД'
+                : 'Призупинити обробку ІзОД'}
+            </button>
+          )}
           <button className='btn-delete-record' onClick={handleDeleteClick}>
             🗑️ {config.deleteLabel}
           </button>

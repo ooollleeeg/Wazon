@@ -85,16 +85,6 @@ const servicePremisesFormConfig: FormConfig = {
         },
       ],
     },
-    {
-      title: '',
-      fields: [
-        {
-          name: 'isProcessingSuspended',
-          label: '',
-          type: 'checkbox',
-        },
-      ],
-    },
   ],
   nestedFields: [
     {
