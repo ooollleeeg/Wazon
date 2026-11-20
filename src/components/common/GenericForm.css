@@ -194,6 +194,27 @@ mark {
   padding-right: 2.5rem;
 }
 
+.form-group-read-only label {
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.form-group.form-group-read-only input:disabled,
+.form-group.form-group-read-only textarea:disabled,
+.form-group.form-group-read-only select:disabled {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.form-group-read-only .helper-text {
+  margin-top: 0.35rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
 /* ============================================================================
    NESTED FIELDS SECTION
    ============================================================================ */

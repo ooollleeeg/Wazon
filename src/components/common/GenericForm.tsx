@@ -448,7 +448,12 @@ export default function GenericForm({
 
     if (field.type === 'select') {
       return (
-        <div key={field.name} className={`form-group ${fieldClass}`}>
+        <div
+          key={field.name}
+          className={`form-group ${fieldClass} ${
+            field.readOnly ? 'form-group-read-only' : ''
+          }`}
+        >
           <label>
             {field.label}
             {field.required && <span className='required-mark'> *</span>}
@@ -467,12 +472,20 @@ export default function GenericForm({
               </option>
             ))}
           </select>
+          {field.helperText && (
+            <small className='helper-text'>{field.helperText}</small>
+          )}
         </div>
       );
     }
 
     return (
-      <div key={field.name} className={`form-group ${fieldClass}`}>
+      <div
+        key={field.name}
+        className={`form-group ${fieldClass} ${
+          field.readOnly ? 'form-group-read-only' : ''
+        }`}
+      >
         <label>
           {field.label}
           {field.required && <span className='required-mark'> *</span>}
@@ -483,11 +496,14 @@ export default function GenericForm({
           value={value || ''}
           onChange={handleInputChange}
           required={field.required}
-          readOnly={field.readOnly}
+          disabled={field.readOnly}
           placeholder={field.placeholder}
           min={field.min}
           max={field.max}
         />
+        {field.helperText && (
+          <small className='helper-text'>{field.helperText}</small>
+        )}
       </div>
     );
   };
