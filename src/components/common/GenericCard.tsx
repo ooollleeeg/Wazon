@@ -433,7 +433,12 @@ export default function GenericCard({
                     type='button'
                     className='btn-toggle-previous'
                     onClick={() => {
-                      window.location.hash = `#ktzi:${ktziInfo.id}`;
+                      const hash = `#ktzi:${ktziInfo.id}`;
+                      if (window.location.hash === hash) {
+                        window.dispatchEvent(new Event('app:navigate'));
+                      } else {
+                        window.location.hash = hash;
+                      }
                     }}
                   >
                     Відкрити КТЗІ

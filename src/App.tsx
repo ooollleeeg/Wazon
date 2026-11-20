@@ -195,10 +195,14 @@ function App() {
     };
 
     window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('app:navigate', handleHashChange);
     // Handle initial hash on page load
     handleHashChange();
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('app:navigate', handleHashChange);
+    };
   }, []);
 
   useEffect(() => {
