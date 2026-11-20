@@ -1374,7 +1374,7 @@ export default function KtziTab() {
                             className='btn-secondary'
                             onClick={() => setMeanToReturn({ ktzi, mean })}
                           >
-                            На склад
+                            Повернути на склад
                           </button>
                         </div>
                       </div>

@@ -27,6 +27,8 @@ const ProtectionMeansModal = ({
   const [removingAssignment, setRemovingAssignment] = useState<string | null>(
     null,
   );
+  const [assignmentToReturn, setAssignmentToReturn] =
+    useState<AssignedProtectionObject | null>(null);
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
   };
@@ -133,6 +135,7 @@ const ProtectionMeansModal = ({
       );
     } finally {
       setRemovingAssignment(null);
+      setAssignmentToReturn(null);
     }
   };
 
@@ -340,7 +343,7 @@ const ProtectionMeansModal = ({
                           {mean.ktziId && object.objectType === 'KTZI' && (
                             <button
                               className='btn-remove-assignment'
-                              onClick={() => handleRemoveAssignment(object)}
+                              onClick={() => setAssignmentToReturn(object)}
                               disabled={
                                 removingAssignment ===
                                 `${object.objectType}-${object.objectId}`
@@ -390,6 +393,25 @@ const ProtectionMeansModal = ({
             onConfirm={handleConfirmDelete}
             onCancel={() => setShowDeleteConfirm(false)}
             isLoading={deleting}
+          />
+        )}
+
+        {assignmentToReturn && (
+          <DeleteConfirmModal
+            fullName={mean.name}
+            title='Повернення на склад'
+            message={
+              <>
+                Засіб ТЗІ <strong>{mean.name}</strong> буде знято з КТЗІ та
+                повернуто на склад.
+              </>
+            }
+            subtext=''
+            confirmLabel='Так, повернути'
+            cancelLabel='Ні, залишити'
+            onConfirm={() => void handleRemoveAssignment(assignmentToReturn)}
+            onCancel={() => setAssignmentToReturn(null)}
+            isLoading={removingAssignment !== null}
           />
         )}
       </div>
