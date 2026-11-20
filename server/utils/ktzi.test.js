@@ -936,6 +936,73 @@ describe('Object saving', () => {
 
     assert.ok(result.id);
   });
+
+  it('updates an AS returned with KTZI information and its nested records', async () => {
+    const app = express();
+    app.use(express.json());
+    app.use('/api', router);
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise((resolve, reject) => {
+      server.once('listening', resolve);
+      server.once('error', reject);
+    });
+
+    const baseUrl = `http://127.0.0.1:${server.address().port}/api`;
+    const request = async (url, method = 'GET', body) => {
+      const response = await fetch(`${baseUrl}${url}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      });
+      const data = await response.json();
+      assert.equal(response.ok, true, JSON.stringify(data));
+      return data;
+    };
+
+    try {
+      const created = await request('/objects/class_a_systems', 'POST', {
+        address: 'Тестова адреса редагування',
+        premisesNumber: '101',
+        subdivisionName: 'Тестовий підрозділ редагування',
+        systemClass: 'АС класу 1',
+        systemName: 'АС до редагування',
+        software: [{ name: 'ПЗ до редагування', version: '1' }],
+      });
+      const url = `/objects/class_a_systems/${created.id}`;
+      const objects = await request('/objects/class_a_systems');
+      const loaded = objects.find((object) => object.id === created.id);
+      assert.ok(loaded);
+      assert.ok(loaded.ktziInfo);
+      assert.ok(loaded.ktziDocuments);
+
+      await request(url, 'PUT', {
+        ...loaded,
+        systemName: 'АС після редагування',
+        software: [
+          { name: 'ПЗ після редагування', version: '2' },
+          { name: 'Додаткове ПЗ', version: '1' },
+        ],
+      });
+      const updated = await request(url);
+      assert.equal(updated.systemName, 'АС після редагування');
+      assert.deepEqual(updated.software.map((item) => item.name), [
+        'ПЗ після редагування',
+        'Додаткове ПЗ',
+      ]);
+      assert.equal(updated.ktziInfo.id, loaded.ktziInfo.id);
+
+      await request(url, 'PATCH', {
+        ...updated,
+        systemName: 'АС після часткового редагування',
+      });
+      const patched = await request(url);
+      assert.equal(patched.systemName, 'АС після часткового редагування');
+      assert.equal(patched.software.length, 2);
+      assert.equal(patched.ktziInfo.id, loaded.ktziInfo.id);
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
 });
 
 describe('Documents report', () => {

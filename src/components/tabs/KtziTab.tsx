@@ -103,6 +103,11 @@ const ATTESTATION_DEFAULTS = {
   atestationPermissionPerformer:
     'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
 };
+const KSP_DEFAULTS = {
+  checkPerformer: 'УРТЗІ ГУНП',
+  checkPermissionPerformer:
+    'Дозвіл на проведення робіт з ТЗІ для власних потреб, від 16.09.2024 № Д-14/123',
+};
 
 const addCalendarYears = (value: string, years: number) => {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -673,6 +678,9 @@ export default function KtziTab() {
     );
     if (documentType === 'atestation') {
       Object.assign(newVersion, ATTESTATION_DEFAULTS);
+    }
+    if (documentType === 'ksp') {
+      Object.assign(newVersion, KSP_DEFAULTS);
     }
     setDocuments((current) => ({
       ...current,

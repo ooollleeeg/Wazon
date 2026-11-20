@@ -225,6 +225,7 @@ const servicePremisesFormConfig: FormConfig = {
           name: 'controlTermin',
           label: 'Термін дії протоколу',
           type: 'date',
+          calculateFrom: { field: 'controlDate', months: 20 },
         },
         {
           name: 'controlPerformer',

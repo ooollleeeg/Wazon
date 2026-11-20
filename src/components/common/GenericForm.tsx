@@ -31,7 +31,12 @@ export interface FormField {
     values: string[];
   };
   helperText?: string; // Допоміжний текст під полем
-  calculateFrom?: { field: string; years?: number; days?: number }; // Для автоматичного розрахунку (додавити N років/днів до дати)
+  calculateFrom?: {
+    field: string;
+    years?: number;
+    months?: number;
+    days?: number;
+  }; // Для автоматичного розрахунку строку від іншої дати
 }
 
 export interface FormSection {
@@ -68,6 +73,43 @@ interface GenericFormProps {
   isLoading?: boolean;
   onClose?: () => void;
 }
+
+const addCalendarOffset = (
+  value: string,
+  offset: { years?: number; months?: number; days?: number },
+) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const sourceDate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    sourceDate.getUTCFullYear() !== year ||
+    sourceDate.getUTCMonth() !== month - 1 ||
+    sourceDate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  const targetMonthIndex =
+    year * 12 + month - 1 + (offset.years || 0) * 12 + (offset.months || 0);
+  const targetYear = Math.floor(targetMonthIndex / 12);
+  const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
+  const targetDay = Math.min(
+    day,
+    new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate(),
+  );
+  const resultDate = new Date(Date.UTC(targetYear, targetMonth, targetDay));
+  resultDate.setUTCDate(resultDate.getUTCDate() + (offset.days || 0));
+
+  return [
+    String(resultDate.getUTCFullYear()).padStart(4, '0'),
+    String(resultDate.getUTCMonth() + 1).padStart(2, '0'),
+    String(resultDate.getUTCDate()).padStart(2, '0'),
+  ].join('-');
+};
 
 export default function GenericForm({
   config,
@@ -175,41 +217,22 @@ export default function GenericForm({
         return null;
       };
 
-      // Перевіряємо чи це поле дати з розрахунком
-      const fieldConfig = findFieldConfig(name);
-      if (
-        fieldConfig &&
-        'calculateFrom' in fieldConfig &&
-        fieldConfig.calculateFrom
-      ) {
-        // Знаходимо поле, від якого робити розрахунок
-        const sourceFieldName = fieldConfig.calculateFrom.field;
-        const years = fieldConfig.calculateFrom.years;
-
-        // Якщо ми змінюємо вихідне поле (наприклад, categorizationActDate)
-        if (name === sourceFieldName && value) {
-          try {
-            const sourceDate = new Date(value);
-            const resultDate = new Date(sourceDate);
-            resultDate.setFullYear(resultDate.getFullYear() + years);
-
-            // Форматуємо дату як YYYY-MM-DD
-            const resultDateStr = resultDate.toISOString().split('T')[0];
-
-            // Знаходимо поле, яке потребує розрахунку
-            const targetFieldName = Object.keys(updated).find((key) => {
-              const cf = findFieldConfig(key);
-              return (
-                cf && 'calculateFrom' in cf && cf.calculateFrom?.field === name
-              );
-            });
-
-            if (targetFieldName) {
-              updated[targetFieldName] = resultDateStr;
-            }
-          } catch (err) {
-            console.error('Error calculating date:', err);
-          }
+      const targetFieldName = Object.keys(updated).find((key) => {
+        const targetField = findFieldConfig(key);
+        return targetField?.calculateFrom?.field === name;
+      });
+      const targetField = targetFieldName
+        ? findFieldConfig(targetFieldName)
+        : null;
+      if (value && targetField?.calculateFrom && targetFieldName) {
+        try {
+          const calculatedDate = addCalendarOffset(
+            value,
+            targetField.calculateFrom,
+          );
+          if (calculatedDate) updated[targetFieldName] = calculatedDate;
+        } catch (err) {
+          console.error('Error calculating date:', err);
         }
       }
 
@@ -302,30 +325,16 @@ export default function GenericForm({
             targetField.calculateFrom
           ) {
             try {
-              const sourceDate = new Date(value);
-              const resultDate = new Date(sourceDate);
-
-              // Додаємо роки, якщо вказано
-              if (targetField.calculateFrom.years) {
-                resultDate.setFullYear(
-                  resultDate.getFullYear() + targetField.calculateFrom.years,
-                );
+              const calculatedDate = addCalendarOffset(
+                value,
+                targetField.calculateFrom,
+              );
+              if (calculatedDate) {
+                newItems[index] = {
+                  ...newItems[index],
+                  [targetField.name]: calculatedDate,
+                };
               }
-
-              // Додаємо дні, якщо вказано
-              if (targetField.calculateFrom.days) {
-                resultDate.setDate(
-                  resultDate.getDate() + targetField.calculateFrom.days,
-                );
-              }
-
-              // Форматуємо дату як YYYY-MM-DD
-              const resultDateStr = resultDate.toISOString().split('T')[0];
-
-              newItems[index] = {
-                ...newItems[index],
-                [targetField.name]: resultDateStr,
-              };
             } catch (err) {
               console.error('Error calculating date:', err);
             }
