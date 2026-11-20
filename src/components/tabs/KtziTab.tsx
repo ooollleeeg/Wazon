@@ -94,7 +94,10 @@ const KTZI_MEAN_FIELDS: { name: keyof KtziMean; label: string; date?: boolean; f
   { name: 'notes', label: 'Примітки', fullWidth: true },
 ];
 
-const SUBDIVISION_TYPES = ['Апарат', 'Територіальний підрозділ'];
+const SUBDIVISION_TYPES = [
+  'підрозділ апарату',
+  'територіальний підрозділ',
+];
 const ATTESTATION_DEFAULTS = {
   atestationPerformer: 'УРТЗІ ГУНП',
   atestationPermissionPerformer:
