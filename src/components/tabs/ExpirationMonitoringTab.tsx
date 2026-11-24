@@ -249,7 +249,16 @@ function ExpirationMonitoringTab() {
                 // Take only the first record (idx = 0) which is now the "current" (newest) version
                 const nested = nestedItems[0];
 
-                fields.forEach((nestedField) => {
+                const fieldsToAdd =
+                  nestedName === 'complianceDocuments'
+                    ? [
+                        nested.validUntil
+                          ? 'validUntil'
+                          : 'nextAuthorizationDeadline',
+                      ]
+                    : fields;
+
+                fieldsToAdd.forEach((nestedField) => {
                   if (nested[nestedField]) {
                     const { status, days } = getStatus(nested[nestedField]);
 
