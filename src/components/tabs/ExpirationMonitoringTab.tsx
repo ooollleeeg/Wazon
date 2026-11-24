@@ -33,6 +33,20 @@ const TABS_CONFIG = [
   { apiEndpoint: '/api/objects/iks', label: 'ІКС', tabId: 'iks' },
 ];
 
+const COMPLIANCE_DOCUMENT_TYPES = new Set([
+  'Атестат відповідності',
+  'Декларація про відповідність вимогам нормативних документів',
+  'Акт завершення робіт',
+  'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+]);
+
+const OBJECT_TAB_LABELS: { [key: string]: string } = {
+  'class-a': 'АС',
+  'service-premises': 'Службові приміщення',
+  krt: 'КРТ',
+  iks: 'ІКС',
+};
+
 const getStatus = (
   expirationDate: string,
 ): { status: 'expired' | 'critical' | 'warning' | 'ok'; days: number } => {
@@ -150,11 +164,24 @@ function ExpirationMonitoringTab() {
         const ktziDocuments = await response.json();
         if (Array.isArray(ktziDocuments)) {
           allDocs.push(
-            ...ktziDocuments.map((document: ExpirationDocument) => ({
-              ...document,
-              status: getStatus(document.expirationDate).status,
-              daysUntilExpiration: getStatus(document.expirationDate).days,
-            })),
+            ...ktziDocuments.map((document: ExpirationDocument) => {
+              const isComplianceDocument = COMPLIANCE_DOCUMENT_TYPES.has(
+                document.documentType,
+              );
+              const { status, days } = getStatus(document.expirationDate);
+
+              return {
+                ...document,
+                documentType: isComplianceDocument
+                  ? 'complianceDocuments'
+                  : document.documentType,
+                tabLabel: isComplianceDocument
+                  ? OBJECT_TAB_LABELS[document.tabId] || document.tabLabel
+                  : document.tabLabel,
+                status,
+                daysUntilExpiration: days,
+              };
+            }),
           );
         }
       }
@@ -313,7 +340,11 @@ function ExpirationMonitoringTab() {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    const sharedDocumentTypes = new Set(['categorization', 'atestation']);
+    const sharedDocumentTypes = new Set([
+      'categorization',
+      'atestation',
+      'complianceDocuments',
+    ]);
     const uniqueDocuments = allDocs.filter((document, index) => {
       if (!document.ktziId || !sharedDocumentTypes.has(document.documentType)) {
         return true;
