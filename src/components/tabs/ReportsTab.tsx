@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createReportWorkbook, getFieldValue, ROW_NUMBER_PATH } from '../../utils/reportExport';
 import './ReportsTab.css';
 
 interface ReportField {
@@ -22,6 +23,7 @@ interface ReportColumn {
 type DataRecord = Record<string, unknown>;
 
 const field = (path: string, label: string): ReportField => ({ path, label });
+const rowNumberField = field(ROW_NUMBER_PATH, '№ з/п');
 
 const datasets: ReportDataset[] = [
   {
@@ -230,51 +232,26 @@ const datasets: ReportDataset[] = [
   },
 ];
 
-const getValues = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value.flatMap(getValues);
-  if (value === null || value === undefined || value === '') return [];
-  if (typeof value === 'object') return [];
-  return [String(value)];
-};
-
-const getValuesAtPath = (value: unknown, segments: string[]): string[] => {
-  if (segments.length === 0) return getValues(value);
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => getValuesAtPath(item, segments));
-  }
-  if (value && typeof value === 'object') {
-    return getValuesAtPath(
-      (value as DataRecord)[segments[0]],
-      segments.slice(1),
-    );
-  }
-  return [];
-};
-
-const getFieldValue = (record: DataRecord, path: string): string =>
-  getValuesAtPath(record, path.split('.')).join('; ');
-
-const csvCell = (value: string): string => {
-  const safeValue = /^[\t\r ]*[=+\-@]/.test(value) ? `'${value}` : value;
-  return `"${safeValue.replace(/"/g, '""')}"`;
-};
+const getDefaultColumns = (dataset: ReportDataset): ReportColumn[] => [
+  { ...rowNumberField, header: rowNumberField.label },
+  ...dataset.defaults.map((path) => {
+    const selectedField = dataset.fields.find((item) => item.path === path)!;
+    return { ...selectedField, header: selectedField.label };
+  }),
+];
 
 function ReportsTab() {
   const [datasetId, setDatasetId] = useState(datasets[0].id);
   const dataset = datasets.find((item) => item.id === datasetId) ?? datasets[0];
-  const [columns, setColumns] = useState<ReportColumn[]>(
-    dataset.defaults.map((path) => {
-      const selectedField = dataset.fields.find((item) => item.path === path)!;
-      return { ...selectedField, header: selectedField.label };
-    }),
-  );
+  const [columns, setColumns] = useState<ReportColumn[]>(() => getDefaultColumns(dataset));
   const [reportTitle, setReportTitle] = useState('Звіт');
   const [records, setRecords] = useState<DataRecord[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
 
   const availableFields = useMemo(
-    () => dataset.fields.filter((item) => !columns.some((column) => column.path === item.path)),
+    () => [rowNumberField, ...dataset.fields].filter((item) => !columns.some((column) => column.path === item.path)),
     [columns, dataset],
   );
 
@@ -282,18 +259,13 @@ function ReportsTab() {
     const nextDataset = datasets.find((item) => item.id === nextDatasetId);
     if (!nextDataset) return;
     setDatasetId(nextDatasetId);
-    setColumns(
-      nextDataset.defaults.map((path) => {
-        const selectedField = nextDataset.fields.find((item) => item.path === path)!;
-        return { ...selectedField, header: selectedField.label };
-      }),
-    );
+    setColumns(getDefaultColumns(nextDataset));
     setRecords(null);
     setError('');
   };
 
   const addField = (path: string) => {
-    const selectedField = dataset.fields.find((item) => item.path === path);
+    const selectedField = [rowNumberField, ...dataset.fields].find((item) => item.path === path);
     if (!selectedField) return;
     setColumns((current) => [...current, { ...selectedField, header: selectedField.label }]);
   };
@@ -339,25 +311,27 @@ function ReportsTab() {
     }
   };
 
-  const exportCsv = () => {
+  const exportExcel = async () => {
     if (!records || columns.length === 0) return;
-    const rows = [
-      columns.map((column) => csvCell(column.header)),
-      ...records.map((record) =>
-        columns.map((column) => csvCell(getFieldValue(record, column.path))),
-      ),
-    ];
-    const content = `\uFEFF${rows.map((row) => row.join(';')).join('\r\n')}`;
-    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    const safeTitle = reportTitle.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-');
-    link.href = url;
-    link.download = `${safeTitle || 'Звіт'}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setExporting(true);
+    setError('');
+    try {
+      const blob = await createReportWorkbook(columns, records);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const safeTitle = reportTitle.trim().replace(/[<>:"/\\|?*\u0000-\u001f]/g, '-');
+      link.href = url;
+      link.download = `${safeTitle || 'Звіт'}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (exportError) {
+      console.error('Помилка експорту звіту:', exportError);
+      setError('Не вдалося створити файл Excel. Спробуйте ще раз.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -438,8 +412,8 @@ function ReportsTab() {
               <h3>{reportTitle || 'Звіт'}</h3>
               <p>Записів: {records.length}</p>
             </div>
-            <button type='button' className='reports-export-button' onClick={exportCsv} disabled={records.length === 0}>
-              Завантажити для Excel
+            <button type='button' className='reports-export-button' onClick={exportExcel} disabled={records.length === 0 || exporting}>
+              {exporting ? 'Створюємо файл…' : 'Завантажити для Excel'}
             </button>
           </div>
           {records.length === 0 ? (
@@ -453,14 +427,14 @@ function ReportsTab() {
                 <tbody>
                   {records.map((record, rowIndex) => (
                     <tr key={String(record.id ?? rowIndex)}>
-                      {columns.map((column) => <td key={column.path}>{getFieldValue(record, column.path) || '—'}</td>)}
+                      {columns.map((column) => <td key={column.path}>{getFieldValue(record, column.path, rowIndex) || '—'}</td>)}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-          <p className='reports-export-note'>Файл CSV у кодуванні UTF-8 сумісний з Excel і відкривається як таблиця.</p>
+          <p className='reports-export-note'>Звіт завантажується у форматі XLSX, сумісному з Excel 2007 та новішими версіями.</p>
         </section>
       )}
     </div>
