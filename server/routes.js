@@ -790,7 +790,36 @@ router.delete(
         return res.status(400).json({ error: 'Невідомий тип вкладених даних' });
       }
 
-      await deleteNestedItem(nestedConfig.table, nestedId);
+      const object = await getObjectWithNested(
+        req.objectConfig,
+        req.params.id,
+      );
+      if (!object) {
+        return res.status(404).json({ error: "Об'єкт не знайдено" });
+      }
+
+      const foreignKeyName =
+        req.objectConfig.foreignKeyName ||
+        `${req.objectConfig.table.slice(0, -1)}Id`;
+      await deleteNestedItem(
+        nestedConfig.table,
+        nestedId,
+        foreignKeyName,
+        req.params.id,
+      );
+      if (
+        isKtziTable(req.objectConfig.table) &&
+        nestedType === 'complianceDocuments'
+      ) {
+        const updatedObject = await getObjectWithNested(
+          req.objectConfig,
+          req.params.id,
+        );
+        await syncKtziComplianceDocuments(
+          object.ktziId,
+          updatedObject.complianceDocuments || [],
+        );
+      }
       res.json({ success: true, id: nestedId });
     } catch (err) {
       res.status(500).json({ error: err.message });

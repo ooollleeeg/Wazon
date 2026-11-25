@@ -243,7 +243,7 @@ function App() {
 
         {/* Center content */}
         <div className='header-content'>
-          <h1>📋 Інформаційно-пошукова система "ВАЗОН"</h1>
+          <h1>📋 Інформаційно-пошукова система "ГОРЩИК"</h1>
           <p className='subtitle'>Технічний захист інформації</p>
         </div>
 
@@ -251,7 +251,7 @@ function App() {
         <div className='header-emblem header-emblem-right'>
           <img
             src='/vazon.png'
-            alt='Вазончик із рослиною'
+            alt='Горщик із рослиною Юкка'
             className='emblem-image'
           />
         </div>

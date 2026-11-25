@@ -967,13 +967,28 @@ describe('Object saving', () => {
         systemClass: 'АС класу 1',
         systemName: 'АС до редагування',
         software: [{ name: 'ПЗ до редагування', version: '1' }],
+        complianceDocuments: [
+          {
+            documentType: 'Атестат відповідності',
+            'dsszzіNumber': 'ДСЗЗІ-РЕДАГУВАННЯ-1',
+            'dsszzіDate': '2025-01-01',
+            validUntil: '2099-01-01',
+          },
+        ],
       });
       const url = `/objects/class_a_systems/${created.id}`;
+      const monitoringUrl = '/ktzi/documents';
       const objects = await request('/objects/class_a_systems');
       const loaded = objects.find((object) => object.id === created.id);
       assert.ok(loaded);
       assert.ok(loaded.ktziInfo);
       assert.ok(loaded.ktziDocuments);
+      assert.equal(
+        (await request(monitoringUrl)).find(
+          (document) => document.ktziId === created.ktziId,
+        )?.expirationDate,
+        '2099-01-01',
+      );
 
       await request(url, 'PUT', {
         ...loaded,
@@ -982,17 +997,64 @@ describe('Object saving', () => {
           { name: 'ПЗ після редагування', version: '2' },
           { name: 'Додаткове ПЗ', version: '1' },
         ],
+        complianceDocuments: [
+          {
+            ...loaded.complianceDocuments[0],
+            validUntil: '2099-02-01',
+          },
+        ],
       });
       const updated = await request(url);
       assert.equal(updated.systemName, 'АС після редагування');
-      assert.deepEqual(updated.software.map((item) => item.name), [
-        'ПЗ після редагування',
-        'Додаткове ПЗ',
-      ]);
+      assert.deepEqual(
+        updated.software.map((item) => item.name).sort(),
+        ['Додаткове ПЗ', 'ПЗ після редагування'].sort(),
+      );
       assert.equal(updated.ktziInfo.id, loaded.ktziInfo.id);
+      assert.equal(
+        (await request(monitoringUrl)).find(
+          (document) => document.ktziId === created.ktziId,
+        )?.expirationDate,
+        '2099-02-01',
+      );
+
+      await request(url, 'PUT', {
+        ...updated,
+        complianceDocuments: [],
+      });
+      assert.equal(
+        (await request(monitoringUrl)).some(
+          (document) => document.ktziId === created.ktziId,
+        ),
+        false,
+      );
+
+      const withoutComplianceDocument = await request(url);
+      await request(url, 'PUT', {
+        ...withoutComplianceDocument,
+        complianceDocuments: [
+          {
+            documentType: 'Атестат відповідності',
+            'dsszzіNumber': 'ДСЗЗІ-РЕДАГУВАННЯ-2',
+            'dsszzіDate': '2025-01-01',
+            validUntil: '2099-03-01',
+          },
+        ],
+      });
+      const withComplianceDocument = await request(url);
+      await request(
+        `${url}/nested/complianceDocuments/${withComplianceDocument.complianceDocuments[0].id}`,
+        'DELETE',
+      );
+      assert.equal(
+        (await request(monitoringUrl)).some(
+          (document) => document.ktziId === created.ktziId,
+        ),
+        false,
+      );
 
       await request(url, 'PATCH', {
-        ...updated,
+        ...withoutComplianceDocument,
         systemName: 'АС після часткового редагування',
       });
       const patched = await request(url);

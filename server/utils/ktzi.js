@@ -1,6 +1,12 @@
 import { db } from '../database.js';
 
 const KTZI_TABLES = new Set(['class_a_systems', 'krt', 'service_premises']);
+const COMPLIANCE_DOCUMENT_TYPES = [
+  'Атестат відповідності',
+  'Декларація про відповідність вимогам нормативних документів',
+  'Акт завершення робіт',
+  'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+];
 
 const normalizePart = (value) =>
   String(value || '')
@@ -743,15 +749,17 @@ export const saveKtziDocumentData = async (ktziId, documents) => {
 
 export const syncKtziComplianceDocuments = async (ktziId, documents = []) => {
   if (!ktziId || !Array.isArray(documents)) return;
+  await run(
+    `DELETE FROM ktzi_documents
+     WHERE ktziId = ? AND documentType IN (${COMPLIANCE_DOCUMENT_TYPES.map(() => '?').join(', ')})`,
+    [ktziId, ...COMPLIANCE_DOCUMENT_TYPES],
+  );
+
   for (const document of documents) {
     if (!document?.documentType) continue;
     const number = document.dsszzіNumber || '';
     const date = document.dsszzіDate || '';
     if (!number && !date && !document.validUntil) continue;
-    await run(
-      'DELETE FROM ktzi_documents WHERE ktziId = ? AND documentType = ?',
-      [ktziId, document.documentType],
-    );
     await run(
       `INSERT INTO ktzi_documents
         (ktziId, documentType, documentNumber, documentDate, validUntil)
