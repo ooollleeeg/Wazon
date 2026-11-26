@@ -33,19 +33,15 @@ const TABS_CONFIG = [
   { apiEndpoint: '/api/objects/iks', label: 'ІКС', tabId: 'iks' },
 ];
 
+const AUTHORIZATION_NOTICE =
+  'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки';
+
 const COMPLIANCE_DOCUMENT_TYPES = new Set([
   'Атестат відповідності',
   'Декларація про відповідність вимогам нормативних документів',
   'Акт завершення робіт',
-  'Повідомлення про включення автоматизованої системи до переліку авторизованих систем з безпеки',
+  AUTHORIZATION_NOTICE,
 ]);
-
-const OBJECT_TAB_LABELS: { [key: string]: string } = {
-  'class-a': 'АС',
-  'service-premises': 'Службові приміщення',
-  krt: 'КРТ',
-  iks: 'ІКС',
-};
 
 const getStatus = (
   expirationDate: string,
@@ -168,24 +164,15 @@ function ExpirationMonitoringTab() {
         const ktziDocuments = await response.json();
         if (Array.isArray(ktziDocuments)) {
           allDocs.push(
-            ...ktziDocuments.map((document: ExpirationDocument) => {
-              const isComplianceDocument = COMPLIANCE_DOCUMENT_TYPES.has(
-                document.documentType,
-              );
-              const { status, days } = getStatus(document.expirationDate);
-
-              return {
-                ...document,
-                documentType: isComplianceDocument
-                  ? 'complianceDocuments'
-                  : document.documentType,
-                tabLabel: isComplianceDocument
-                  ? OBJECT_TAB_LABELS[document.tabId] || document.tabLabel
-                  : document.tabLabel,
-                status,
-                daysUntilExpiration: days,
-              };
-            }),
+            ...ktziDocuments
+              .filter(
+                (document: ExpirationDocument) =>
+                  !COMPLIANCE_DOCUMENT_TYPES.has(document.documentType),
+              )
+              .map((document: ExpirationDocument) => {
+                const { status, days } = getStatus(document.expirationDate);
+                return { ...document, status, daysUntilExpiration: days };
+              }),
           );
         }
       }
@@ -283,9 +270,9 @@ function ExpirationMonitoringTab() {
                 const fieldsToAdd =
                   nestedName === 'complianceDocuments'
                     ? [
-                        nested.validUntil
-                          ? 'validUntil'
-                          : 'nextAuthorizationDeadline',
+                        nested.documentType === AUTHORIZATION_NOTICE
+                          ? 'nextAuthorizationDeadline'
+                          : 'validUntil',
                       ]
                     : fields;
 
@@ -310,7 +297,7 @@ function ExpirationMonitoringTab() {
                         item.name ||
                         'Без назви',
                       ktziId: item.ktziId,
-                      ktziName: item.ktziId
+                      ktziName: item.ktziId && nestedName !== 'complianceDocuments'
                         ? `${item.subdivisionName || 'Без підрозділу'}, прим. № ${
                             item.premisesNumber || '—'
                           }`
@@ -344,11 +331,7 @@ function ExpirationMonitoringTab() {
       await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    const sharedDocumentTypes = new Set([
-      'categorization',
-      'atestation',
-      'complianceDocuments',
-    ]);
+    const sharedDocumentTypes = new Set(['categorization', 'atestation']);
     const uniqueDocuments = allDocs.filter((document, index) => {
       if (!document.ktziId || !sharedDocumentTypes.has(document.documentType)) {
         return true;
