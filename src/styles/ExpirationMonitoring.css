@@ -156,7 +156,7 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .monitoring-table {
@@ -251,10 +251,12 @@
 .parent-name {
   color: #2c3e50;
   font-weight: 500;
+  min-width: 120px;
   max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+  text-align: center;
 }
 
 .tab-badge {
@@ -370,7 +372,7 @@
   }
 
   .parent-name {
-    max-width: 100px;
+    max-width: 160px;
   }
 
   .doc-field {

@@ -279,6 +279,23 @@ function ExpirationMonitoringTab() {
                 fieldsToAdd.forEach((nestedField) => {
                   if (nested[nestedField]) {
                     const { status, days } = getStatus(nested[nestedField]);
+                    const isObjectCard = [
+                      'class-a',
+                      'service-premises',
+                      'krt',
+                    ].includes(config.tabId);
+                    const objectName = isObjectCard
+                      ? [
+                          item.subdivisionName || 'Без підрозділу',
+                          `прим. № ${item.premisesNumber || '—'}`,
+                          ...(config.tabId === 'service-premises'
+                            ? []
+                            : [item.systemName || 'Без назви']),
+                        ].join(', ')
+                      : item.systemName ||
+                        item.subdivisionName ||
+                        item.name ||
+                        'Без назви';
 
                     // Map nested field names to display labels
                     const fieldLabelMap: { [key: string]: string } = {
@@ -291,17 +308,16 @@ function ExpirationMonitoringTab() {
                     allDocs.push({
                       id: `${item.id}-${nestedName}-0`,
                       parentId: item.id,
-                      parentName:
-                        item.systemName ||
-                        item.subdivisionName ||
-                        item.name ||
-                        'Без назви',
+                      parentName: objectName,
                       ktziId: item.ktziId,
-                      ktziName: item.ktziId && nestedName !== 'complianceDocuments'
-                        ? `${item.subdivisionName || 'Без підрозділу'}, прим. № ${
-                            item.premisesNumber || '—'
-                          }`
-                        : undefined,
+                      ktziName:
+                        !isObjectCard &&
+                        item.ktziId &&
+                        nestedName !== 'complianceDocuments'
+                          ? `${item.subdivisionName || 'Без підрозділу'}, прим. № ${
+                              item.premisesNumber || '—'
+                            }`
+                          : undefined,
                       tabId: config.tabId,
                       tabLabel:
                         nestedName === 'categorization' &&
