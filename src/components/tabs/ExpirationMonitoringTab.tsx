@@ -18,6 +18,10 @@ interface ExpirationDocument {
   daysUntilExpiration: number;
 }
 
+interface KtziExpirationDocument extends ExpirationDocument {
+  ktziId: number;
+}
+
 const TABS_CONFIG = [
   {
     apiEndpoint: '/api/objects/class_a_systems',
@@ -169,9 +173,15 @@ function ExpirationMonitoringTab() {
                 (document: ExpirationDocument) =>
                   !COMPLIANCE_DOCUMENT_TYPES.has(document.documentType),
               )
-              .map((document: ExpirationDocument) => {
+              .map((document: KtziExpirationDocument) => {
                 const { status, days } = getStatus(document.expirationDate);
-                return { ...document, status, daysUntilExpiration: days };
+                return {
+                  ...document,
+                  tabId: 'ktzi',
+                  parentId: document.ktziId,
+                  status,
+                  daysUntilExpiration: days,
+                };
               }),
           );
         }
