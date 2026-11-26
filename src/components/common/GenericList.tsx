@@ -59,6 +59,7 @@ export default function GenericList({
     if (
       expandedId &&
       !isLoading &&
+      !isSaving &&
       filteredItems.some((item) => item.id === expandedId)
     ) {
       expandedCardRef.current?.scrollIntoView({
@@ -66,7 +67,7 @@ export default function GenericList({
         block: 'start',
       });
     }
-  }, [expandedId, filteredItems, isLoading]);
+  }, [expandedId, filteredItems, isLoading, isSaving]);
 
   useEffect(() => {
 
@@ -161,15 +162,20 @@ export default function GenericList({
             <div className='ktzi-group' key={group.key}>
               {renderGroupHeader(group.label)}
               {group.items.map((item) => (
-                <config.CardComponent
+                <div
                   key={item.id}
-                  {...item}
-                  searchTerm={searchTerm}
-                  onEdit={() => onEdit(item)}
-                  onDelete={() => onDelete(item.id)}
-                  onRefreshData={onRefreshData}
-                  showCloseButton={false}
-                />
+                  className='card-scroll-target'
+                  ref={item.id === expandedId ? expandedCardRef : undefined}
+                >
+                  <config.CardComponent
+                    {...item}
+                    searchTerm={searchTerm}
+                    onEdit={() => onEdit(item)}
+                    onDelete={() => onDelete(item.id)}
+                    onRefreshData={onRefreshData}
+                    showCloseButton={false}
+                  />
+                </div>
               ))}
             </div>
           ))}

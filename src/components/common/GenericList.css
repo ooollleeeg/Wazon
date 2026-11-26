@@ -124,9 +124,15 @@
   gap: 1.5rem;
 }
 
+.expanded-card-wrapper,
+.card-scroll-target {
+  scroll-margin-top: 16px;
+}
+
 .expanded-card-wrapper {
   grid-column: 1 / -1;
   animation: expandCard 0.3s ease-out;
+  transform-origin: top;
 }
 
 @keyframes expandCard {
