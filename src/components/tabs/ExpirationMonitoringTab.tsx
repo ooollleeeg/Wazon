@@ -139,8 +139,12 @@ function ExpirationMonitoringTab() {
   >('all');
 
   const handleNavigateToCard = (tabId: string, parentId: number) => {
-    // Set hash to trigger navigation in App.tsx
-    window.location.hash = `${tabId}:${parentId}`;
+    const hash = `#${tabId}:${parentId}`;
+    if (window.location.hash === hash) {
+      window.dispatchEvent(new Event('app:navigate'));
+    } else {
+      window.location.hash = hash;
+    }
   };
 
   useEffect(() => {
