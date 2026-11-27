@@ -34,7 +34,8 @@ const categories: Category[] = ['II', 'III', 'IV'];
 const sourceLabels: Record<SourceKey, string> = {
   servicePremises:
     '- службових приміщень, призначених для оброблення мовної ІзОД',
-  electronicComputers: "- об'єктів ЕОТ*, призначених для оброблення ІзОД",
+  electronicComputers:
+    "- об'єктів ЕОТ (АС IV категорії)*, призначених для оброблення ІзОД",
   combined:
     '- комбінованих ОІД, де інформація обробляється в АС та озвучується',
   copyingEquipment: "- об'єктів КРТ, призначених для оброблення ІзОД",

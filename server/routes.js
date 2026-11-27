@@ -254,6 +254,7 @@ const countOidObjects = async ({
   category,
   objectType,
   uniqueKtzi,
+  countAllCategoryIVAsEot,
   objectCategoryField,
 }) => {
   const subdivisionPattern = buildUnicodeCaseInsensitiveGlob(subdivision);
@@ -263,7 +264,7 @@ const countOidObjects = async ({
   ];
   const params = [subdivisionPattern, category];
 
-  if (objectType) {
+  if (objectType && !(countAllCategoryIVAsEot && category === 'IV')) {
     conditions.push(`o.objectType = ?`);
     params.push(objectType);
   }
@@ -411,6 +412,7 @@ router.get('/oid-report', async (req, res) => {
         table: 'class_a_systems',
         objectType: "об'єкт ЕОТ",
         uniqueKtzi: true,
+        countAllCategoryIVAsEot: true,
         objectCategoryField: 'informationCategory',
       },
       {

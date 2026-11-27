@@ -1277,3 +1277,71 @@ describe('Documents report', () => {
     }
   });
 });
+
+describe('OID report', () => {
+  it('counts category IV AS cards as EOT objects without an object type', async () => {
+    const app = express();
+    app.use(express.json());
+    app.use('/api', router);
+    const server = app.listen(0, '127.0.0.1');
+    await new Promise((resolve, reject) => {
+      server.once('listening', resolve);
+      server.once('error', reject);
+    });
+
+    const baseUrl = `http://127.0.0.1:${server.address().port}/api`;
+    const request = async (url, init) => {
+      const response = await fetch(`${baseUrl}${url}`, {
+        headers: { 'Content-Type': 'application/json' },
+        ...init,
+      });
+      const data = await response.json();
+      assert.equal(response.ok, true, JSON.stringify(data));
+      return data;
+    };
+
+    try {
+      const reportBefore = await request('/oid-report');
+      const eotBefore = reportBefore.rows.find(
+        (row) => row.key === 'electronicComputers',
+      );
+      const combinedBefore = reportBefore.rows.find(
+        (row) => row.key === 'combined',
+      );
+
+      const created = await request('/objects/class_a_systems', {
+        method: 'POST',
+        body: JSON.stringify({
+          address: 'OID IV report test',
+          premisesNumber: 'IV',
+          subdivisionName: 'OID IV report test',
+          subdivisionType: 'підрозділ апарату',
+          systemClass: 'АС класу 1',
+          systemName: 'OID IV report test',
+          informationCategory: 'IV',
+        }),
+      });
+      assert.equal(created.objectType, undefined);
+      assert.equal(created.ktziId, null);
+
+      const reportAfter = await request('/oid-report');
+      const eotAfter = reportAfter.rows.find(
+        (row) => row.key === 'electronicComputers',
+      );
+      const combinedAfter = reportAfter.rows.find(
+        (row) => row.key === 'combined',
+      );
+
+      assert.equal(
+        eotAfter.values.apparatus.IV,
+        eotBefore.values.apparatus.IV + 1,
+      );
+      assert.equal(
+        combinedAfter.values.apparatus.IV,
+        combinedBefore.values.apparatus.IV,
+      );
+    } finally {
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+});
