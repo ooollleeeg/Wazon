@@ -73,6 +73,13 @@ interface GenericFormProps {
   initialData?: any;
   isLoading?: boolean;
   onClose?: () => void;
+  deriveLinkedFields?: (data: any) => LinkedFieldsState | null;
+}
+
+export interface LinkedFieldsState {
+  patch: Record<string, any>;
+  lockedFields: string[];
+  notice?: string;
 }
 
 const addCalendarOffset = (
@@ -118,6 +125,7 @@ export default function GenericForm({
   initialData,
   isLoading,
   onClose,
+  deriveLinkedFields,
 }: GenericFormProps) {
   // State для отслеживания удаляемого элемента
   const [deletingItem, setDeletingItem] = useState<{
@@ -163,6 +171,20 @@ export default function GenericForm({
 
     return emptyForm;
   });
+
+  const linkedState = deriveLinkedFields?.(formData) ?? null;
+  const linkedPatchKey = linkedState ? JSON.stringify(linkedState.patch) : '';
+
+  // Підставляє значення пов'язаного запису (наприклад, КТЗІ) у заблоковані поля
+  useEffect(() => {
+    if (!linkedState) return;
+    setFormData((prev: any) =>
+      Object.entries(linkedState.patch).some(([k, v]) => prev[k] !== v)
+        ? { ...prev, ...linkedState.patch }
+        : prev,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedPatchKey]);
 
   // Функція для сортування nested items за датою (новіші першими)
   const sortByDate = (items: any[], dateField?: string) => {
@@ -395,7 +417,12 @@ export default function GenericForm({
     onSubmit(cleanedData);
   };
 
-  const renderField = (field: FormField, value: any) => {
+  const renderField = (sourceField: FormField, value: any) => {
+    const field: FormField = linkedState?.lockedFields.includes(
+      sourceField.name,
+    )
+      ? { ...sourceField, readOnly: true }
+      : sourceField;
     const fieldClass = field.fullWidth ? 'full-width' : '';
 
     if (field.type === 'checkbox') {
@@ -610,6 +637,12 @@ export default function GenericForm({
           ✕
         </button>
       </div>
+
+      {linkedState?.notice && (
+        <div className='form-linked-notice' role='status'>
+          {linkedState.notice}
+        </div>
+      )}
 
       {/* ОСНОВНІ СЕКЦІЇ */}
       {config.sections.map((section, sectionIdx) => (

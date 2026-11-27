@@ -1,4 +1,16 @@
+import { useEffect, useState } from 'react';
 import GenericForm, { FormConfig } from './GenericForm';
+
+const normalizeKtziPart = (value: unknown) =>
+  String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('uk-UA');
+
+const buildKtziKey = (data: Record<string, any>) =>
+  [data.address, data.premisesNumber, data.subdivisionName]
+    .map(normalizeKtziPart)
+    .join('|');
 
 const sharedNestedFields = new Set([
   'categorization',
@@ -92,12 +104,20 @@ export default function KtziObjectForm({
         (section) =>
           !section.title.toLocaleLowerCase('uk-UA').includes('паспорт на'),
       )
-      .map((section) => ({
+      .map((section, sectionIndex) => ({
         ...section,
-        fields: section.fields.map((field) => ({
+        fields: [...section.fields]
+          // У формі створення вищий гриф ІзОД заповнюється першим
+          .sort((a, b) =>
+            initialData || sectionIndex !== 0
+              ? 0
+              : Number(b.name === 'informationCategory') -
+                Number(a.name === 'informationCategory'),
+          )
+          .map((field) => ({
           ...field,
           ...(field.name === 'informationCategory'
-            ? { label: informationCategoryLabel }
+            ? { label: informationCategoryLabel, required: true }
             : {}),
           ...(mainInfoLocked && ktziMainFields.has(field.name)
             ? {
@@ -136,6 +156,60 @@ export default function KtziObjectForm({
       }),
   };
 
+  const [existingKtzi, setExistingKtzi] = useState<any[]>([]);
+  useEffect(() => {
+    if (initialData) return;
+    let cancelled = false;
+    fetch('/api/ktzi')
+      .then((response) => (response.ok ? response.json() : []))
+      .then((list) => {
+        if (!cancelled && Array.isArray(list)) setExistingKtzi(list);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [initialData]);
+
+  const formFieldNames = new Set(
+    config.sections.flatMap((section) => section.fields.map((f) => f.name)),
+  );
+
+  // Для нового об'єкта в приміщенні з уже існуючим КТЗІ спільні поля успадковуються від КТЗІ
+  const deriveLinkedFields = (data: Record<string, any>) => {
+    if (initialData || !existingKtzi.length) return null;
+    if (!['I', 'II', 'III'].includes(data.informationCategory)) return null;
+    const key = buildKtziKey(data);
+    if (!key.replace(/\|/g, '')) return null;
+    const ktzi = existingKtzi.find((item) => buildKtziKey(item) === key);
+    if (!ktzi) return null;
+
+    const patch: Record<string, any> = {};
+    ['subdivisionType', 'serviceName', 'objectType']
+      .filter((name) => formFieldNames.has(name) && ktzi[name])
+      .forEach((name) => {
+        patch[name] = ktzi[name];
+      });
+    const lockedFields = Object.keys(patch);
+    const categoryWarning =
+      ktzi.informationCategory &&
+      ktzi.informationCategory !== data.informationCategory
+        ? ` Для цього КТЗІ вказано вищий гриф ${ktzi.informationCategory}; він залишиться без змін, змінити його можна в картці КТЗІ.`
+        : '';
+
+    return {
+      patch,
+      lockedFields,
+      notice: `Цей об'єкт належатиме до вже існуючого КТЗІ (${[
+        ktzi.subdivisionName,
+        ktzi.premisesNumber ? `каб. ${ktzi.premisesNumber}` : '',
+        ktzi.address,
+      ]
+        .filter(Boolean)
+        .join(', ')}). Позначені поля успадковуються від КТЗІ й не редагуються тут.${categoryWarning}`,
+    };
+  };
+
   const handleSubmit = (data: Record<string, any>) => {
     const keepCategorization =
       preserveCategorizationForCategoryIv &&
@@ -166,6 +240,7 @@ export default function KtziObjectForm({
           : undefined
       }
       onSubmit={handleSubmit}
+      deriveLinkedFields={deriveLinkedFields}
       {...props}
     />
   );

@@ -209,6 +209,17 @@ mark {
   box-shadow: none;
 }
 
+.form-linked-notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #93c5fd;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.9rem;
+}
+
 .form-group-read-only .helper-text {
   margin-top: 0.35rem;
   color: #64748b;
