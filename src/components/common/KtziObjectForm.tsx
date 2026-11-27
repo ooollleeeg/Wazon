@@ -80,6 +80,10 @@ export default function KtziObjectForm({
   const mainInfoLocked =
     Boolean(initialData?.ktziId) &&
     ['II', 'III'].includes(initialData?.informationCategory);
+  const informationCategoryLabel =
+    !initialData || initialData.informationCategory === 'IV'
+      ? 'Вищий гриф ІзОД'
+      : 'Вищий гриф ІзОД, яка обробляється в КТЗІ';
   const objectFormConfig: FormConfig = {
     ...config,
     sections: config.sections
@@ -91,6 +95,9 @@ export default function KtziObjectForm({
         ...section,
         fields: section.fields.map((field) => ({
           ...field,
+          ...(field.name === 'informationCategory'
+            ? { label: informationCategoryLabel }
+            : {}),
           ...(mainInfoLocked && ktziMainFields.has(field.name)
             ? {
                 readOnly: true,

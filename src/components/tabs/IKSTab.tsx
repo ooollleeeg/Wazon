@@ -7,6 +7,8 @@ import IKSCardCompact from '../iks/IKSCardCompact';
 // ===== FORM CONFIG =====
 const iksFormConfig: FormConfig = {
   title: 'ІКС',
+  editTitle: (data) =>
+    `Редагування інформації про '${data.systemName || ''}'.`,
   sections: [
     {
       title: '🏢 Основна інформація',

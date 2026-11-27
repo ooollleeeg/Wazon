@@ -11,6 +11,8 @@ import KRTFilters from '../krt/KRTFilters';
 // ===== FORM CONFIG =====
 const krtFormConfig: FormConfig = {
   title: 'КРТ',
+  editTitle: (data) =>
+    `Редагування інформації про '${data.systemName || ''}'.`,
   sections: [
     {
       title: '🏢 Основна інформація',
@@ -26,6 +28,7 @@ const krtFormConfig: FormConfig = {
           name: 'premisesNumber',
           label: 'Номер приміщення, в якому розміщується КРТ',
           type: 'text',
+          required: true,
           placeholder: 'Наприклад: 101',
         },
         {
@@ -434,11 +437,6 @@ const krtCardConfig: CardConfig = {
         { label: 'Тип підрозділу', value: 'subdivisionType' },
         { label: 'Назва служби', value: 'serviceName' },
         { label: 'Назва КРА', value: 'systemName' },
-        {
-          label: 'Вищий гриф ІзОД',
-          value: 'informationCategory',
-          format: 'badge',
-        },
       ],
     },
     {

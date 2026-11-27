@@ -11,6 +11,8 @@ import ServicePremisesFilters from '../service-premises/ServicePremisesFilters';
 // ===== FORM CONFIG =====
 const servicePremisesFormConfig: FormConfig = {
   title: 'Службові приміщення',
+  editTitle: (data) =>
+    `Редагування інформації про приміщення № ${data.premisesNumber || ''} ${data.subdivisionName || ''}`,
   sections: [
     {
       title: '🏢 Основна інформація',
@@ -26,6 +28,7 @@ const servicePremisesFormConfig: FormConfig = {
           name: 'premisesNumber',
           label: 'Номер приміщення',
           type: 'text',
+          required: true,
           placeholder: 'Наприклад: 101',
         },
         {
@@ -445,11 +448,6 @@ const servicePremisesCardConfig: CardConfig = {
         },
         { label: 'Тип підрозділу', value: 'subdivisionType' },
         { label: 'Назва служби', value: 'serviceName' },
-        {
-          label: 'Вищий гриф ІзОД',
-          value: 'informationCategory',
-          format: 'badge',
-        },
       ],
     },
     {

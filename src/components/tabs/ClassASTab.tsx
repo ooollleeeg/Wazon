@@ -11,6 +11,7 @@ import ClassASFilters from '../class-as/ClassASFilters';
 // ===== FORM CONFIG =====
 const classASFormConfig: FormConfig = {
   title: 'АС класу 1, 2, 3',
+  editTitle: (data) => `Редагування інформації про АС '${data.systemName || ''}'`,
   sections: [
     {
       title: '🏢 Основна інформація',
@@ -26,6 +27,7 @@ const classASFormConfig: FormConfig = {
           name: 'premisesNumber',
           label: 'Номер приміщення, в якому розміщується АС',
           type: 'text',
+          required: true,
           placeholder: 'Наприклад: 101',
         },
         {
@@ -744,11 +746,6 @@ const classASCardConfig: CardConfig = {
         { label: 'Назва служби', value: 'serviceName' },
         { label: 'Клас системи', value: 'systemClass', format: 'badge' },
         { label: 'Назва системи', value: 'systemName' },
-        {
-          label: 'Вищий гриф ІзОД',
-          value: 'informationCategory',
-          format: 'badge',
-        },
         {
           label: "Тип об'єкта інформаційної діяльності",
           value: 'objectType',

@@ -61,6 +61,7 @@ export interface NestedFieldConfig {
 
 export interface FormConfig {
   title: string;
+  editTitle?: (data: Record<string, any>) => string;
   sections: FormSection[];
   nestedFields?: NestedFieldConfig[];
   submitLabel?: string; // 'Зберегти' (default)
@@ -594,9 +595,10 @@ export default function GenericForm({
       <div className='form-header'>
         <h2 className='form-title'>
           {initialData
-            ? '✎ Редагування інформації про'
-            : '+ Додавання інформації про'}{' '}
-          {config.title}
+            ? config.editTitle
+              ? `✎ ${config.editTitle(initialData)}`
+              : `✎ Редагування інформації про ${config.title}`
+            : `+ Додавання інформації про ${config.title}`}
         </h2>
         <button
           type='button'
