@@ -65,6 +65,7 @@ type Ktzi = {
   subdivisionType?: string;
   serviceName?: string;
   informationCategory?: string;
+  objectType?: string;
   objects: { id: number; objectType: string; objectName?: string }[];
   documents: KtziDocuments;
   documentVersions?: KtziDocumentVersions;
@@ -88,6 +89,12 @@ const MAIN_FIELDS: {
     label: 'Вищий гриф ІзОД',
     type: 'select',
     options: ['I', 'II', 'III'],
+  },
+  {
+    name: 'objectType',
+    label: "Тип об'єкта інформаційної діяльності",
+    type: 'select',
+    options: ["об'єкт ЕОТ", 'комбінований ОІД'],
   },
 ];
 
@@ -1055,7 +1062,14 @@ export default function KtziTab() {
                   <section className='card-section'>
                     <h4 className='section-title'>Основна інформація</h4>
                     <div className='ktzi-fields'>
-                      {MAIN_FIELDS.map((field) => (
+                      {MAIN_FIELDS.filter(
+                        (field) =>
+                          field.name !== 'objectType' ||
+                          ktzi.objects.some(
+                            (object) =>
+                              normalizeObjectType(object.objectType) === 'AS',
+                          ),
+                      ).map((field) => (
                         <label key={field.name}>
                           <span>{field.label}</span>
                           {field.type === 'select' ? (
@@ -1246,6 +1260,17 @@ export default function KtziTab() {
                         ['Тип підрозділу', ktzi.subdivisionType],
                         ['Служба', ktzi.serviceName],
                         ['Вищий гриф ІзОД', ktzi.informationCategory],
+                        ...(ktzi.objects.some(
+                          (object) =>
+                            normalizeObjectType(object.objectType) === 'AS',
+                        )
+                          ? [
+                              [
+                                "Тип об'єкта інформаційної діяльності",
+                                ktzi.objectType,
+                              ],
+                            ]
+                          : []),
                       ].map(([label, value]) => (
                         <div className='info-item' key={label}>
                           <span className='label'>{label}:</span>

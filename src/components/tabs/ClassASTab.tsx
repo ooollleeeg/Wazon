@@ -746,11 +746,6 @@ const classASCardConfig: CardConfig = {
         { label: 'Назва служби', value: 'serviceName' },
         { label: 'Клас системи', value: 'systemClass', format: 'badge' },
         { label: 'Назва системи', value: 'systemName' },
-        {
-          label: "Тип об'єкта інформаційної діяльності",
-          value: 'objectType',
-          format: 'badge',
-        },
       ],
     },
     {

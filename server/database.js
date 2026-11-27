@@ -33,6 +33,7 @@ function initializeDatabase() {
         subdivisionType TEXT,
         serviceName TEXT,
         informationCategory TEXT,
+        objectType TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -958,6 +959,32 @@ function initializeDatabase() {
         );
       },
     );
+
+    db.run('ALTER TABLE ktzi ADD COLUMN objectType TEXT', (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Не вдалося додати objectType до ktzi:', err.message);
+        return;
+      }
+      db.run(
+        `UPDATE ktzi
+         SET objectType = (
+           SELECT objectType FROM class_a_systems
+           WHERE ktziId = ktzi.id
+             AND informationCategory IN ('I', 'II', 'III')
+             AND objectType IS NOT NULL AND TRIM(objectType) != ''
+           ORDER BY id LIMIT 1
+         )
+         WHERE objectType IS NULL OR TRIM(objectType) = ''`,
+        (updateError) => {
+          if (updateError) {
+            console.error(
+              'Не вдалося перенести тип об’єкта до КТЗІ:',
+              updateError.message,
+            );
+          }
+        },
+      );
+    });
 
     // Add isProcessingSuspended to class_a_systems
     db.run(

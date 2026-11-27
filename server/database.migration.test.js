@@ -54,7 +54,8 @@ await legacyRun(`
     informationCategory TEXT,
     systemClass TEXT NOT NULL,
     systemName TEXT,
-    ktziId INTEGER
+    ktziId INTEGER,
+    objectType TEXT
   )
 `);
 await legacyRun(`
@@ -122,9 +123,18 @@ await legacyRun(
 const legacyObjectId = await legacyRun(
   `INSERT INTO class_a_systems
    (address, premisesNumber, subdivisionName, systemClass, systemName,
-    informationCategory, ktziId)
-   VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ['Legacy address', '101', 'Legacy department', 'АС класу 1', 'Legacy AS', 'II', 1],
+    informationCategory, ktziId, objectType)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  [
+    'Legacy address',
+    '101',
+    'Legacy department',
+    'АС класу 1',
+    'Legacy AS',
+    'II',
+    1,
+    'комбінований ОІД',
+  ],
 );
 const legacyMeanId = await legacyRun(
   `INSERT INTO protection_means
@@ -200,10 +210,13 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
   const documentColumns = await tableColumns('ktzi_documents');
   assert.ok(documentColumns.some((column) => column.name === 'documentData'));
   const ktzi = await get(
-    'SELECT informationCategory FROM ktzi WHERE id = ?',
+    'SELECT informationCategory, objectType FROM ktzi WHERE id = ?',
     [1],
   );
-  assert.deepEqual(ktzi, { informationCategory: 'II' });
+  assert.deepEqual(ktzi, {
+    informationCategory: 'II',
+    objectType: 'комбінований ОІД',
+  });
   const legacyDocument = await get(
     `SELECT documentNumber, documentDate, documentData
      FROM ktzi_documents WHERE ktziId = ?`,

@@ -98,7 +98,8 @@ const createRequiredTables = async () => {
       createdAt TEXT,
       serviceName TEXT,
       updatedAt TEXT,
-      ktziId INTEGER
+      ktziId INTEGER,
+      objectType TEXT
     )
   `);
   await run(`
@@ -238,12 +239,20 @@ describe('KTZI grouping and shared documents', () => {
       premisesNumber: ' 101 ',
       subdivisionName: ' Відділ А ',
       informationCategory: 'II',
+      objectType: 'комбінований ОІД',
     });
     const second = await attachObjectToKtzi('krt', {
       address: 'вул. Тестова 1',
       premisesNumber: '101',
       subdivisionName: 'Відділ А',
       informationCategory: 'III',
+    });
+    const secondAs = await attachObjectToKtzi('class_a_systems', {
+      address: 'вул. Тестова 1',
+      premisesNumber: '101',
+      subdivisionName: 'Відділ А',
+      informationCategory: 'II',
+      objectType: "об'єкт ЕОТ",
     });
     const differentRoom = await attachObjectToKtzi('krt', {
       address: 'вул. Тестова 1',
@@ -256,6 +265,11 @@ describe('KTZI grouping and shared documents', () => {
     assert.notEqual(first.ktziId, differentRoom.ktziId);
     assert.equal(first.informationCategory, 'II');
     assert.equal(second.informationCategory, 'II');
+    assert.equal(secondAs.objectType, 'комбінований ОІД');
+    const ktzi = await get('SELECT objectType FROM ktzi WHERE id = ?', [
+      first.ktziId,
+    ]);
+    assert.equal(ktzi.objectType, 'комбінований ОІД');
   });
 
   it('does not create a KTZI for category IV objects', async () => {
@@ -272,6 +286,16 @@ describe('KTZI grouping and shared documents', () => {
       await get('SELECT id FROM ktzi WHERE address = ?', ['вул. Четверта 4']),
       null,
     );
+
+    const asResult = await attachObjectToKtzi('class_a_systems', {
+      address: 'вул. Четверта 5',
+      premisesNumber: '5',
+      subdivisionName: 'Відділ IV АС',
+      informationCategory: 'IV',
+      objectType: "об'єкт ЕОТ",
+    });
+    assert.equal(asResult.ktziId, null);
+    assert.equal(Object.hasOwn(asResult, 'objectType'), false);
   });
 
   it('takes the main info of an object from its existing KTZI', async () => {
@@ -659,6 +683,7 @@ describe('KTZI main info', () => {
       systemName: 'АС main',
       ktziId: ktzi.id,
       informationCategory: 'II',
+      objectType: "об'єкт ЕОТ",
     });
     const krtId = await seedObject('krt', {
       systemName: 'КРТ main',
@@ -673,6 +698,7 @@ describe('KTZI main info', () => {
       subdivisionName: 'Відділ Новий',
       subdivisionType: 'apparatus',
       informationCategory: 'III',
+      objectType: 'комбінований ОІД',
     });
 
     assert.equal(updated.address, 'Нова 2');
@@ -696,6 +722,11 @@ describe('KTZI main info', () => {
         informationCategory: 'III',
       });
     }
+    const updatedAs = await get(
+      'SELECT objectType FROM class_a_systems WHERE id = ?',
+      [systemId],
+    );
+    assert.equal(updatedAs.objectType, 'комбінований ОІД');
   });
 
   it('rejects main info that duplicates another KTZI', async () => {

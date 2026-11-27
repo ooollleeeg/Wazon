@@ -30,6 +30,7 @@ const ktziMainFields = new Set([
   'subdivisionType',
   'serviceName',
   'informationCategory',
+  'objectType',
 ]);
 
 const categoryIvHiddenNestedFields = new Set([
@@ -104,7 +105,7 @@ export default function KtziObjectForm({
                 helperText: 'Редагується на вкладці «КТЗІ»',
               }
             : {}),
-          ...(!initialData && field.name === 'objectType'
+          ...(field.name === 'objectType'
             ? { hiddenWhen: categoryIvCondition }
             : {}),
         })),
@@ -141,11 +142,11 @@ export default function KtziObjectForm({
       (data.informationCategory === 'IV' ||
         initialData?.informationCategory === 'IV');
     const result = removeSharedDocuments(data, keepCategorization);
-    if (!initialData && result.informationCategory === 'IV') {
-      if (config.sections.some((section) =>
-        section.fields.some((field) => field.name === 'objectType'),
-      )) {
-        result.objectType = "об'єкт ЕОТ";
+    if (result.informationCategory === 'IV') {
+      if (initialData) {
+        result.objectType = '';
+      } else {
+        delete result.objectType;
       }
       categoryIvHiddenNestedFields.forEach((field) => delete result[field]);
     }

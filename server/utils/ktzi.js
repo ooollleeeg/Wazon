@@ -64,11 +64,20 @@ export const ensureKtzi = async (data) => {
 
   const existing = await get('SELECT * FROM ktzi WHERE ktziKey = ?', [ktziKey]);
   if (existing) {
+    const updates = {};
     if (!existing.informationCategory && data.informationCategory) {
-      await run('UPDATE ktzi SET informationCategory = ? WHERE id = ?', [
-        data.informationCategory,
-        existing.id,
-      ]);
+      updates.informationCategory = data.informationCategory;
+    }
+    if (!existing.objectType && data.objectType) {
+      updates.objectType = data.objectType;
+    }
+    const updateFields = Object.keys(updates);
+    if (updateFields.length) {
+      await run(
+        `UPDATE ktzi SET ${updateFields.map((field) => `${field} = ?`).join(', ')}
+         WHERE id = ?`,
+        [...updateFields.map((field) => updates[field]), existing.id],
+      );
       return get('SELECT * FROM ktzi WHERE id = ?', [existing.id]);
     }
     return existing;
@@ -77,8 +86,8 @@ export const ensureKtzi = async (data) => {
   const result = await run(
     `INSERT INTO ktzi
       (ktziKey, address, premisesNumber, subdivisionName, subdivisionType,
-       serviceName, informationCategory)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       serviceName, informationCategory, objectType)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       ktziKey,
       ktziData.address,
@@ -87,6 +96,7 @@ export const ensureKtzi = async (data) => {
       ktziData.subdivisionType,
       ktziData.serviceName,
       data.informationCategory || '',
+      data.objectType || '',
     ],
   );
 
@@ -96,7 +106,12 @@ export const ensureKtzi = async (data) => {
 export const attachObjectToKtzi = async (table, data) => {
   if (!isKtziTable(table)) return data;
   if (String(data.informationCategory || '').trim() === 'IV') {
-    return { ...data, ktziId: null };
+    const result = { ...data, ktziId: null };
+    if (table === 'class_a_systems') {
+      if (data.id) result.objectType = '';
+      else delete result.objectType;
+    }
+    return result;
   }
 
   if (data.ktziId) {
@@ -109,12 +124,37 @@ export const attachObjectToKtzi = async (table, data) => {
         ]);
         current.informationCategory = data.informationCategory;
       }
-      return { ...data, ...getKtziData(current), ktziId: current.id };
+      if (
+        table === 'class_a_systems' &&
+        !current.objectType &&
+        data.objectType
+      ) {
+        await run('UPDATE ktzi SET objectType = ? WHERE id = ?', [
+          data.objectType,
+          current.id,
+        ]);
+        current.objectType = data.objectType;
+      }
+      return {
+        ...data,
+        ...getKtziData(current),
+        ...(table === 'class_a_systems'
+          ? { objectType: current.objectType || data.objectType || '' }
+          : {}),
+        ktziId: current.id,
+      };
     }
   }
 
   const ktzi = await ensureKtzi(data);
-  return { ...data, ...getKtziData(ktzi), ktziId: ktzi.id };
+  return {
+    ...data,
+    ...getKtziData(ktzi),
+    ...(table === 'class_a_systems'
+      ? { objectType: ktzi.objectType || data.objectType || '' }
+      : {}),
+    ktziId: ktzi.id,
+  };
 };
 
 const KTZI_MAIN_FIELDS = [
@@ -124,6 +164,7 @@ const KTZI_MAIN_FIELDS = [
   'subdivisionType',
   'serviceName',
   'informationCategory',
+  'objectType',
 ];
 
 export const updateKtziMainInfo = async (ktziId, data) => {
@@ -155,6 +196,14 @@ export const updateKtziMainInfo = async (ktziId, data) => {
   ) {
     throw invalidInput('Вищий гриф ІзОД КТЗІ має бути I, II або III');
   }
+  if (
+    next.objectType &&
+    !["об'єкт ЕОТ", 'комбінований ОІД'].includes(next.objectType)
+  ) {
+    throw invalidInput(
+      "Тип об'єкта інформаційної діяльності не підтримується",
+    );
+  }
 
   const ktziKey = buildKtziKey(next);
   const duplicate = await get(
@@ -174,6 +223,7 @@ export const updateKtziMainInfo = async (ktziId, data) => {
       `UPDATE ktzi
        SET ktziKey = ?, address = ?, premisesNumber = ?, subdivisionName = ?,
          subdivisionType = ?, serviceName = ?, informationCategory = ?,
+         objectType = ?,
          updatedAt = CURRENT_TIMESTAMP
        WHERE id = ?`,
       [
@@ -184,6 +234,7 @@ export const updateKtziMainInfo = async (ktziId, data) => {
         next.subdivisionType,
         next.serviceName,
         next.informationCategory,
+        next.objectType,
         ktziId,
       ],
     );
@@ -205,6 +256,12 @@ export const updateKtziMainInfo = async (ktziId, data) => {
         ],
       );
     }
+    await run(
+      `UPDATE class_a_systems
+       SET objectType = ?, updatedAt = CURRENT_TIMESTAMP
+       WHERE ktziId = ?`,
+      [next.objectType, ktziId],
+    );
     await run('COMMIT');
   } catch (error) {
     await run('ROLLBACK');
