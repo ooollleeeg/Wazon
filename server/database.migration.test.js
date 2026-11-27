@@ -51,8 +51,10 @@ await legacyRun(`
     subdivisionName TEXT NOT NULL,
     subdivisionType TEXT,
     serviceName TEXT,
+    informationCategory TEXT,
     systemClass TEXT NOT NULL,
-    systemName TEXT
+    systemName TEXT,
+    ktziId INTEGER
   )
 `);
 await legacyRun(`
@@ -119,9 +121,10 @@ await legacyRun(
 );
 const legacyObjectId = await legacyRun(
   `INSERT INTO class_a_systems
-   (address, premisesNumber, subdivisionName, systemClass, systemName)
-   VALUES (?, ?, ?, ?, ?)`,
-  ['Legacy address', '101', 'Legacy department', 'АС класу 1', 'Legacy AS'],
+   (address, premisesNumber, subdivisionName, systemClass, systemName,
+    informationCategory, ktziId)
+   VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ['Legacy address', '101', 'Legacy department', 'АС класу 1', 'Legacy AS', 'II', 1],
 );
 const legacyMeanId = await legacyRun(
   `INSERT INTO protection_means
@@ -196,6 +199,11 @@ it('preserves legacy objects and adds KTZI migration columns', async () => {
   assert.ok(columns.some((column) => column.name === 'isProcessingSuspended'));
   const documentColumns = await tableColumns('ktzi_documents');
   assert.ok(documentColumns.some((column) => column.name === 'documentData'));
+  const ktzi = await get(
+    'SELECT informationCategory FROM ktzi WHERE id = ?',
+    [1],
+  );
+  assert.deepEqual(ktzi, { informationCategory: 'II' });
   const legacyDocument = await get(
     `SELECT documentNumber, documentDate, documentData
      FROM ktzi_documents WHERE ktziId = ?`,

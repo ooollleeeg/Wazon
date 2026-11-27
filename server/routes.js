@@ -28,6 +28,7 @@ import {
   updateKtziMainInfo,
   getKtziProtectionMeans,
   resolveKtziSubdivisionType,
+  resolveKtziInformationCategory,
   isKtziTable,
 } from './utils/ktzi.js';
 
@@ -69,6 +70,8 @@ const addKtziInformationToObject = async (object, cache = new Map()) => {
     ktziInfo: ktzi
       ? {
           ...ktzi,
+          informationCategory:
+            ktzi.informationCategory || object.informationCategory,
           documents,
           documentVersions: documentData.documentVersions,
           migrationConflicts: documentData.migrationConflicts,
@@ -169,6 +172,10 @@ router.get('/ktzi', async (_req, res) => {
           ...ktzi,
           subdivisionType: resolveKtziSubdivisionType(
             ktzi.subdivisionType,
+            objects,
+          ),
+          informationCategory: resolveKtziInformationCategory(
+            ktzi.informationCategory,
             objects,
           ),
           objects,

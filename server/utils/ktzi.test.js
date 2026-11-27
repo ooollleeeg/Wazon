@@ -254,6 +254,8 @@ describe('KTZI grouping and shared documents', () => {
 
     assert.equal(first.ktziId, second.ktziId);
     assert.notEqual(first.ktziId, differentRoom.ktziId);
+    assert.equal(first.informationCategory, 'II');
+    assert.equal(second.informationCategory, 'II');
   });
 
   it('does not create a KTZI for category IV objects', async () => {
@@ -651,15 +653,18 @@ describe('KTZI main info', () => {
       address: 'Стара 1',
       premisesNumber: '301',
       subdivisionName: 'Відділ Старий',
+      informationCategory: 'II',
     });
     const systemId = await seedObject('class_a_systems', {
       systemName: 'АС main',
       ktziId: ktzi.id,
+      informationCategory: 'II',
     });
     const krtId = await seedObject('krt', {
       systemName: 'КРТ main',
       subdivisionName: 'Відділ Старий',
       ktziId: ktzi.id,
+      informationCategory: 'II',
     });
 
     const updated = await updateKtziMainInfo(ktzi.id, {
@@ -667,16 +672,19 @@ describe('KTZI main info', () => {
       premisesNumber: '302',
       subdivisionName: 'Відділ Новий',
       subdivisionType: 'apparatus',
+      informationCategory: 'III',
     });
 
     assert.equal(updated.address, 'Нова 2');
     assert.equal(updated.premisesNumber, '302');
+    assert.equal(updated.informationCategory, 'III');
     for (const [table, id] of [
       ['class_a_systems', systemId],
       ['krt', krtId],
     ]) {
       const row = await get(
-        `SELECT address, premisesNumber, subdivisionName, subdivisionType
+        `SELECT address, premisesNumber, subdivisionName, subdivisionType,
+           informationCategory
          FROM ${table} WHERE id = ?`,
         [id],
       );
@@ -685,6 +693,7 @@ describe('KTZI main info', () => {
         premisesNumber: '302',
         subdivisionName: 'Відділ Новий',
         subdivisionType: 'apparatus',
+        informationCategory: 'III',
       });
     }
   });

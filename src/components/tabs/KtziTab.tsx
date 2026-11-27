@@ -64,6 +64,7 @@ type Ktzi = {
   subdivisionName?: string;
   subdivisionType?: string;
   serviceName?: string;
+  informationCategory?: string;
   objects: { id: number; objectType: string; objectName?: string }[];
   documents: KtziDocuments;
   documentVersions?: KtziDocumentVersions;
@@ -71,12 +72,23 @@ type Ktzi = {
   protectionMeans: KtziMean[];
 };
 
-const MAIN_FIELDS: { name: keyof Ktzi; label: string; type?: 'select' }[] = [
+const MAIN_FIELDS: {
+  name: keyof Ktzi;
+  label: string;
+  type?: 'select';
+  options?: string[];
+}[] = [
   { name: 'address', label: 'Адреса' },
   { name: 'premisesNumber', label: 'Номер приміщення' },
   { name: 'subdivisionName', label: 'Підрозділ' },
   { name: 'subdivisionType', label: 'Тип підрозділу', type: 'select' },
   { name: 'serviceName', label: 'Служба' },
+  {
+    name: 'informationCategory',
+    label: 'Вищий гриф ІзОД',
+    type: 'select',
+    options: ['I', 'II', 'III'],
+  },
 ];
 
 const KTZI_MEAN_FIELDS: { name: keyof KtziMean; label: string; date?: boolean; fullWidth?: boolean }[] = [
@@ -1057,7 +1069,7 @@ export default function KtziTab() {
                               }
                             >
                               <option value=''>— Не обрано —</option>
-                              {SUBDIVISION_TYPES.map((option) => (
+                              {(field.options || SUBDIVISION_TYPES).map((option) => (
                                 <option key={option} value={option}>
                                   {option}
                                 </option>
@@ -1233,6 +1245,7 @@ export default function KtziTab() {
                         ['Підрозділ', ktzi.subdivisionName],
                         ['Тип підрозділу', ktzi.subdivisionType],
                         ['Служба', ktzi.serviceName],
+                        ['Вищий гриф ІзОД', ktzi.informationCategory],
                       ].map(([label, value]) => (
                         <div className='info-item' key={label}>
                           <span className='label'>{label}:</span>

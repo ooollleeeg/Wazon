@@ -29,6 +29,7 @@ const ktziMainFields = new Set([
   'subdivisionName',
   'subdivisionType',
   'serviceName',
+  'informationCategory',
 ]);
 
 const categoryIvHiddenNestedFields = new Set([

@@ -478,6 +478,7 @@ export default function GenericCard({
                         ['Підрозділ', ktziInfo.subdivisionName],
                         ['Тип підрозділу', ktziInfo.subdivisionType],
                         ['Служба', ktziInfo.serviceName],
+                        ['Вищий гриф ІзОД', ktziInfo.informationCategory],
                       ].map(([label, value]) => (
                         <div className='info-item' key={label}>
                           <span className='label'>{label}:</span>

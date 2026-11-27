@@ -32,6 +32,7 @@ function initializeDatabase() {
         subdivisionName TEXT,
         subdivisionType TEXT,
         serviceName TEXT,
+        informationCategory TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -922,6 +923,39 @@ function initializeDatabase() {
         if (err && !err.message.includes('duplicate column name')) {
           console.error('❌ Не вдалося додати informationCategory до service_premises:', err.message);
         }
+      },
+    );
+
+    db.run(
+      'ALTER TABLE ktzi ADD COLUMN informationCategory TEXT',
+      (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('❌ Не вдалося додати informationCategory до ktzi:', err.message);
+          return;
+        }
+        db.run(
+          `UPDATE ktzi
+           SET informationCategory = COALESCE(
+             (SELECT informationCategory FROM class_a_systems
+              WHERE ktziId = ktzi.id AND informationCategory IN ('I', 'II', 'III')
+              ORDER BY id LIMIT 1),
+             (SELECT informationCategory FROM krt
+              WHERE ktziId = ktzi.id AND informationCategory IN ('I', 'II', 'III')
+              ORDER BY id LIMIT 1),
+             (SELECT informationCategory FROM service_premises
+              WHERE ktziId = ktzi.id AND informationCategory IN ('I', 'II', 'III')
+              ORDER BY id LIMIT 1)
+           )
+           WHERE informationCategory IS NULL OR TRIM(informationCategory) = ''`,
+          (updateError) => {
+            if (updateError) {
+              console.error(
+                '❌ Не вдалося перенести informationCategory до ktzi:',
+                updateError.message,
+              );
+            }
+          },
+        );
       },
     );
 

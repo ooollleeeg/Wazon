@@ -25,6 +25,9 @@ const getKtziData = (data) => ({
   subdivisionName: data.subdivisionName || '',
   subdivisionType: data.subdivisionType || '',
   serviceName: data.serviceName || '',
+  ...(data.informationCategory
+    ? { informationCategory: data.informationCategory }
+    : {}),
 });
 
 const run = (query, params = []) =>
@@ -60,12 +63,22 @@ export const ensureKtzi = async (data) => {
   }
 
   const existing = await get('SELECT * FROM ktzi WHERE ktziKey = ?', [ktziKey]);
-  if (existing) return existing;
+  if (existing) {
+    if (!existing.informationCategory && data.informationCategory) {
+      await run('UPDATE ktzi SET informationCategory = ? WHERE id = ?', [
+        data.informationCategory,
+        existing.id,
+      ]);
+      return get('SELECT * FROM ktzi WHERE id = ?', [existing.id]);
+    }
+    return existing;
+  }
 
   const result = await run(
     `INSERT INTO ktzi
-      (ktziKey, address, premisesNumber, subdivisionName, subdivisionType, serviceName)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+      (ktziKey, address, premisesNumber, subdivisionName, subdivisionType,
+       serviceName, informationCategory)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       ktziKey,
       ktziData.address,
@@ -73,6 +86,7 @@ export const ensureKtzi = async (data) => {
       ktziData.subdivisionName,
       ktziData.subdivisionType,
       ktziData.serviceName,
+      data.informationCategory || '',
     ],
   );
 
@@ -87,11 +101,20 @@ export const attachObjectToKtzi = async (table, data) => {
 
   if (data.ktziId) {
     const current = await get('SELECT * FROM ktzi WHERE id = ?', [data.ktziId]);
-    if (current) return { ...data, ...getKtziData(current), ktziId: current.id };
+    if (current) {
+      if (!current.informationCategory && data.informationCategory) {
+        await run('UPDATE ktzi SET informationCategory = ? WHERE id = ?', [
+          data.informationCategory,
+          current.id,
+        ]);
+        current.informationCategory = data.informationCategory;
+      }
+      return { ...data, ...getKtziData(current), ktziId: current.id };
+    }
   }
 
   const ktzi = await ensureKtzi(data);
-  return { ...data, ktziId: ktzi.id };
+  return { ...data, ...getKtziData(ktzi), ktziId: ktzi.id };
 };
 
 const KTZI_MAIN_FIELDS = [
@@ -100,6 +123,7 @@ const KTZI_MAIN_FIELDS = [
   'subdivisionName',
   'subdivisionType',
   'serviceName',
+  'informationCategory',
 ];
 
 export const updateKtziMainInfo = async (ktziId, data) => {
@@ -125,6 +149,12 @@ export const updateKtziMainInfo = async (ktziId, data) => {
   if (!next.subdivisionName) {
     throw invalidInput('Назва підрозділу є обов’язковою');
   }
+  if (
+    next.informationCategory &&
+    !['I', 'II', 'III'].includes(next.informationCategory)
+  ) {
+    throw invalidInput('Вищий гриф ІзОД КТЗІ має бути I, II або III');
+  }
 
   const ktziKey = buildKtziKey(next);
   const duplicate = await get(
@@ -143,7 +173,8 @@ export const updateKtziMainInfo = async (ktziId, data) => {
     await run(
       `UPDATE ktzi
        SET ktziKey = ?, address = ?, premisesNumber = ?, subdivisionName = ?,
-         subdivisionType = ?, serviceName = ?, updatedAt = CURRENT_TIMESTAMP
+         subdivisionType = ?, serviceName = ?, informationCategory = ?,
+         updatedAt = CURRENT_TIMESTAMP
        WHERE id = ?`,
       [
         ktziKey,
@@ -152,6 +183,7 @@ export const updateKtziMainInfo = async (ktziId, data) => {
         next.subdivisionName,
         next.subdivisionType,
         next.serviceName,
+        next.informationCategory,
         ktziId,
       ],
     );
@@ -159,7 +191,8 @@ export const updateKtziMainInfo = async (ktziId, data) => {
       await run(
         `UPDATE ${table}
          SET address = ?, premisesNumber = ?, subdivisionName = ?,
-           subdivisionType = ?, serviceName = ?, updatedAt = CURRENT_TIMESTAMP
+           subdivisionType = ?, serviceName = ?, informationCategory = ?,
+           updatedAt = CURRENT_TIMESTAMP
          WHERE ktziId = ?`,
         [
           next.address,
@@ -167,6 +200,7 @@ export const updateKtziMainInfo = async (ktziId, data) => {
           next.subdivisionName,
           next.subdivisionType,
           next.serviceName,
+          next.informationCategory,
           ktziId,
         ],
       );
@@ -779,13 +813,16 @@ export const getKtziObjects = (ktziId) =>
   new Promise((resolve, reject) => {
     const queries = [
       `SELECT id, 'AS' AS objectType, systemName AS objectName, systemClass,
-        subdivisionName, subdivisionType, premisesNumber, address
+        subdivisionName, subdivisionType, premisesNumber, address,
+        informationCategory
        FROM class_a_systems WHERE ktziId = ?`,
       `SELECT id, 'KRT' AS objectType, systemName AS objectName,
-        subdivisionName, subdivisionType, premisesNumber, address
+        subdivisionName, subdivisionType, premisesNumber, address,
+        informationCategory
        FROM krt WHERE ktziId = ?`,
       `SELECT id, 'SP' AS objectType, serviceName AS objectName,
-        subdivisionName, subdivisionType, premisesNumber, address
+        subdivisionName, subdivisionType, premisesNumber, address,
+        informationCategory
        FROM service_premises WHERE ktziId = ?`,
     ];
 
@@ -807,4 +844,9 @@ export const getKtziObjects = (ktziId) =>
 export const resolveKtziSubdivisionType = (ktziType, objects) =>
   ktziType ||
   objects.find((object) => object.subdivisionType)?.subdivisionType ||
+  '';
+
+export const resolveKtziInformationCategory = (ktziCategory, objects) =>
+  ktziCategory ||
+  objects.find((object) => object.informationCategory)?.informationCategory ||
   '';
